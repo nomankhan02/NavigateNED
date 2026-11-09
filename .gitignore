@@ -1,0 +1,40 @@
+# Dependencies and node
+node_modules/
+.pnp
+.pnp.js
+
+# Testing and coverage
+coverage/
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env*
+!.env.example
+
+# C++ Build outputs & temporary files
+core/build/
+*.obj
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

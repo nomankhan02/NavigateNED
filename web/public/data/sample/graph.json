@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "version": "1.0",
+    "origin": [24.9317, 67.1128]
+  },
+  "nodes": [
+    { "id": "n1", "lat": 24.9317, "lng": 67.1128, "kind": "gate" },
+    { "id": "n2", "lat": 24.9322, "lng": 67.1135, "kind": "path" },
+    { "id": "n3", "lat": 24.9328, "lng": 67.1140, "kind": "entrance" },
+    { "id": "n4", "lat": 24.9332, "lng": 67.1145, "kind": "assembly" }
+  ],
+  "edges": [
+    { "a": "n1", "b": "n2", "w": 65.0, "oneway": false, "covered": false },
+    { "a": "n2", "b": "n3", "w": 72.5, "oneway": false, "covered": true },
+    { "a": "n3", "b": "n4", "w": 54.0, "oneway": false, "covered": false }
+  ],
+  "landmarks": [
+    {
+      "id": "b-main-gate",
+      "name": "NED Main Gate",
+      "short": "Main Gate",
+      "nodeId": "n1",
+      "category": "gate",
+      "footprint": [[24.9316, 67.1127], [24.9318, 67.1127], [24.9318, 67.1129], [24.9316, 67.1129]]
+    },
+    {
+      "id": "b-csit",
+      "name": "Department of Computer Science & IT",
+      "short": "CSIT",
+      "nodeId": "n3",
+      "category": "academic",
+      "footprint": [[24.9326, 67.1138], [24.9330, 67.1138], [24.9330, 67.1142], [24.9326, 67.1142]]
+    }
+  ]
+}

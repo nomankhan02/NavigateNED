@@ -1,0 +1,35 @@
+# Repository Map
+
+- `agents.md`: Member ownership boundaries and 5-step task workflow.
+- `contracts.md`: Data schemas and C++ WASM API interface contract.
+- `design.md`: Visual constraints, forbidden design patterns, and token specification rules.
+- `memory.md`: Living project state, architectural decisions, and current issues (<100 lines).
+- `plan.md`: Roadmap and task breakdown assigned by team member.
+- `README.md`: Project overview, architecture summary, and instructions to run locally.
+- `repo_map.md`: Single-line directory and file index.
+- `rules.md`: Core architectural principles, git rules, code guidelines, and token rules.
+- `vercel.json`: Vercel static export deployment configuration.
+- `.gitignore`: Git ignore patterns for Node, C++, build caches, and WASM build outputs.
+- `.github/workflows/core.yml`: CI pipeline for building/testing native C++ and compiling WASM.
+- `core/`: C++17 DSA algorithmic engine and Emscripten bindings.
+- `core/CMakeLists.txt`: Build specification for native test target and Emscripten WASM target.
+- `core/src/api.cpp`: Single exported C++ WASM bridge function (`call()`).
+- `core/tests/test_main.cpp`: Native Doctest test harness.
+- `core/third_party/doctest/doctest.h`: Vendored single-header unit testing framework.
+- `core/third_party/nlohmann/json.hpp`: Vendored single-header JSON parser.
+- `data/`: Campus graph datasets and geo specifications.
+- `data/sample/graph.json`: 4-node sample graph for scaffolding and WASM bridge verification.
+- `data/indoor/`: Directory for indoor building floor navigation data.
+- `tools/`: Utility scripts for data processing and map extraction.
+- `web/`: Next.js 15 App Router static export frontend.
+- `web/package.json`: Web dependencies, scripts, and build tasks.
+- `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
+- `web/next.config.ts`: Next.js config with static export and cache headers.
+- `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
+- `web/src/app/layout.tsx`: Root layout document with baseline styling.
+- `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
+- `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime.
+- `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
+- `web/src/ui/`: Reusable accessible UI components (owned by Member C).
+- `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
+
