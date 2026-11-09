@@ -45,6 +45,27 @@
           67.11141
         ]
       }
+    },
+    "warpedOverlay": {
+      "image": "/map/ned_master_plan_warped.webp",
+      "bounds": [
+        [
+          24.92677,
+          67.10644
+        ],
+        [
+          24.93788,
+          67.11837
+        ]
+      ],
+      "sourceResolution": [
+        1024,
+        733
+      ],
+      "warpedResolution": [
+        2024,
+        2078
+      ]
     }
   },
   "nodes": [

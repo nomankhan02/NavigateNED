@@ -5,17 +5,14 @@ import "@/map/map.css";
 import type {
   BasemapMode,
   CampusLandmark,
-  MasterPlanCorners,
   OutdoorMapProps,
   OutdoorNode,
 } from "./types";
 
-const DEFAULT_CORNERS: MasterPlanCorners = {
-  topLeft: [24.93788, 67.11341],
-  topRight: [24.93076, 67.11837],
-  bottomLeft: [24.93389, 67.10644],
-  bottomRight: [24.92677, 67.11141],
-};
+const DEFAULT_WARPED_BOUNDS: [[number, number], [number, number]] = [
+  [24.92677, 67.10644],
+  [24.93788, 67.11837],
+];
 
 const DEFAULT_MAX_BOUNDS: [[number, number], [number, number]] = [
   [24.9255, 67.1045],
@@ -168,82 +165,16 @@ export function OutdoorMap({
       canvasRendererRef.current = L.canvas({ padding: 0.5 }).addTo(map);
       svgRendererRef.current = L.svg({ padding: 0.5 }).addTo(map);
 
-      // Master-Plan Image Overlay (warped L.imageOverlay if bounds present, fallback to affine corners until Slice b)
-      if (graph?.meta?.warpedOverlay?.bounds) {
-        masterPlanLayerRef.current = L.imageOverlay(
-          graph.meta.warpedOverlay.image,
-          graph.meta.warpedOverlay.bounds,
-          { opacity: 0.8, interactive: false }
-        );
-      } else {
-        const corners: MasterPlanCorners =
-          graph?.meta?.masterPlanControlCorners ||
-          graph?.meta?.mapOverlay?.corners ||
-          DEFAULT_CORNERS;
-        const imageUrl = graph?.meta?.mapOverlay?.image || "/map/ned_master_plan.jpg";
+      // North-Up Georeferenced Master-Plan Image Overlay via standard L.imageOverlay
+      const warpedUrl =
+        graph?.meta?.warpedOverlay?.image || "/map/ned_master_plan_warped.webp";
+      const warpedBounds: [[number, number], [number, number]] =
+        graph?.meta?.warpedOverlay?.bounds || DEFAULT_WARPED_BOUNDS;
 
-        const AffineMasterPlanOverlay = L.Layer.extend({
-          onAdd: function (mapInstance: any) {
-            this._map = mapInstance;
-            if (!this._container) {
-              const div = L.DomUtil.create("div", "leaflet-image-layer");
-              div.style.position = "absolute";
-              div.style.top = "0";
-              div.style.left = "0";
-              div.style.pointerEvents = "none";
-              div.style.zIndex = "5";
-
-              const img = L.DomUtil.create("img", "", div) as HTMLImageElement;
-              img.style.position = "absolute";
-              img.style.transformOrigin = "0 0";
-              img.style.clipPath = "inset(4% 4% 22% 4% round 12px)";
-              img.style.opacity = "0.8";
-              img.alt = "NED University Master Plan";
-
-              img.onload = () => {
-                if (this._map) this._reset();
-              };
-              img.src = imageUrl;
-
-              this._container = div;
-              this._img = img;
-            }
-            mapInstance.getPanes().tilePane.appendChild(this._container);
-            mapInstance.on("zoom viewreset move zoomanim", this._reset, this);
-            if (this._img.complete) {
-              this._reset();
-            }
-          },
-          onRemove: function (mapInstance: any) {
-            mapInstance.off("zoom viewreset move zoomanim", this._reset, this);
-            if (this._container && this._container.parentNode) {
-              this._container.parentNode.removeChild(this._container);
-            }
-          },
-          setOpacity: function (val: number) {
-            if (this._img) this._img.style.opacity = String(val);
-          },
-          _reset: function () {
-            if (!this._map || !this._img) return;
-            const W = this._img.naturalWidth || 1000;
-            const H = this._img.naturalHeight || 1000;
-            const pTL = this._map.latLngToLayerPoint(corners.topLeft);
-            const pTR = this._map.latLngToLayerPoint(corners.topRight);
-            const pBL = this._map.latLngToLayerPoint(corners.bottomLeft);
-
-            const a = (pTR.x - pTL.x) / W;
-            const b = (pTR.y - pTL.y) / W;
-            const c = (pBL.x - pTL.x) / H;
-            const d = (pBL.y - pTL.y) / H;
-
-            this._img.style.width = `${W}px`;
-            this._img.style.height = `${H}px`;
-            this._img.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${pTL.x}, ${pTL.y})`;
-          },
-        });
-
-        masterPlanLayerRef.current = new AffineMasterPlanOverlay();
-      }
+      masterPlanLayerRef.current = L.imageOverlay(warpedUrl, warpedBounds, {
+        opacity: 0.8,
+        interactive: false,
+      });
 
       graphLayerRef.current = L.layerGroup().addTo(map);
       footprintLayerRef.current = L.layerGroup().addTo(map);
