@@ -7,10 +7,14 @@
 - Task A2b delivered: Emergency evacuation dataset generated via `tools/generate_evac.py` in `data/evac.json` (7 assembly areas, 12 building exits across all 6 indoor buildings) and validated via `tools/validate.py`.
 - Task A3 delivered: Client-only `OutdoorMap` component (`web/src/map/OutdoorMap.tsx`), `useTraceReplay` hook (`web/src/map/useTraceReplay.ts`), CSS token stylesheet (`web/src/map/map.css`), and barrel exports (`web/src/map/index.ts`).
 - Task A3b delivered: Basemap switching, north-up warped master plan (`tools/warp_master_plan.py`), priority-ranked label collision logic, merged markers, and zoom animations.
-- Task A3c delivered:
-  - **CARTO Basemap & Tile Speed**: Switched street basemap to CARTO `light_nolabels` (`https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png`, subdomains `abcd`, OSM & CARTO attributions) so only custom vector labels show; added `keepBuffer: 4`, `updateWhenIdle: false`, `updateWhenZooming: false`, tile background color (`#f2ede5` / `#101c15`), and zoom 17 tile preloading across campus bounds.
-  - **Official Building Numbers**: Extracted TraverseNED's `blockNumber` (`"1"`..`"30"`, `"5A"`, `"LIB"`, `"G1"`, etc.) as stable `number` property on all 55 landmarks in `data/graph.json` & `web/public/data/graph.json`. At `zoom < 18`, map displays compact number badges; at `zoom >= 18` (or on hover/selected/route), expands to number badge + full landmark name.
-  - **Collapsible Key (Legend) Control**: Built a searchable, category-grouped legend panel with custom 1.75px stroke SVGs and `--map-*` theme tokens. Clicking an entry smoothly flies to and highlights the landmark. Renders as a side panel on desktop and a bottom drawer on mobile. Dev harness defaults unticked for raw walkways and master plan overlay.
+- Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
+- Task A3e delivered (urgent basemap fix):
+  - **CARTO Dropped**: Removed all CARTO tile usage and `preloadCampusTiles` because CARTO `light_nolabels` started serving "API KEY REQUIRED" watermarks.
+  - **Tile Sources**: Added three-way basemap switcher (Clean, Detailed, Satellite) defaulting to Clean.
+    - *Clean*: Esri World Light Gray Base (`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, keyless, label-less, `maxNativeZoom: 16`, `maxZoom: 20`, background `#f5f5f2`).
+    - *Detailed*: OpenStreetMap Standard (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, `maxNativeZoom: 19`, `maxZoom: 20`, background `#f2ede5`).
+    - *Satellite*: Esri World Imagery (`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`, `maxNativeZoom: 19`, `maxZoom: 20`, background `#101c15`).
+  - **Tile Speed & Fitting**: Kept `keepBuffer: 4`, `updateWhenIdle: false`, `updateWhenZooming: false`. Initial view auto-fits campus bounds from landmarks with 20px padding (`minZoom: 15`), filling view at ~zoom 17.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.

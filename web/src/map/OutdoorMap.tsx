@@ -81,30 +81,40 @@ const CATEGORY_ORDER = [
   "emergency",
 ];
 
-function preloadCampusTiles(zoom = 17) {
-  if (typeof window === "undefined") return;
-  const toTile = (lat: number, lng: number, z: number): [number, number] => {
-    const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z));
-    const latRad = (lat * Math.PI) / 180;
-    const y = Math.floor(
-      ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-        Math.pow(2, z)
-    );
-    return [x, y];
-  };
+function getCampusBounds(
+  graph?: { landmarks?: Array<{ footprint?: [number, number][] }> } | null
+): [[number, number], [number, number]] {
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
 
-  const [minX, maxY] = toTile(24.92677, 67.10644, zoom);
-  const [maxX, minY] = toTile(24.93788, 67.11837, zoom);
-  const subdomains = ["a", "b", "c", "d"];
-  let sub = 0;
-  for (let x = Math.min(minX, maxX); x <= Math.max(minX, maxX); x++) {
-    for (let y = Math.min(minY, maxY); y <= Math.max(minY, maxY); y++) {
-      const s = subdomains[sub % subdomains.length];
-      sub++;
-      const img = new window.Image();
-      img.src = `https://${s}.basemaps.cartocdn.com/light_nolabels/${zoom}/${x}/${y}.png`;
+  if (graph?.landmarks && graph.landmarks.length > 0) {
+    for (const lm of graph.landmarks) {
+      if (lm.footprint && lm.footprint.length > 0) {
+        for (const [lat, lng] of lm.footprint) {
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+        }
+      }
     }
   }
+
+  if (
+    Number.isFinite(minLat) &&
+    Number.isFinite(maxLat) &&
+    Number.isFinite(minLng) &&
+    Number.isFinite(maxLng)
+  ) {
+    return [
+      [minLat, minLng],
+      [maxLat, maxLng],
+    ];
+  }
+
+  return DEFAULT_WARPED_BOUNDS;
 }
 
 function haversineMeters(a: [number, number], b: [number, number]): number {
@@ -204,7 +214,8 @@ export function OutdoorMap({
   const canvasRendererRef = useRef<any>(null);
   const svgRendererRef = useRef<any>(null);
 
-  const streetTileLayerRef = useRef<any>(null);
+  const cleanTileLayerRef = useRef<any>(null);
+  const detailedTileLayerRef = useRef<any>(null);
   const satelliteTileLayerRef = useRef<any>(null);
   const masterPlanLayerRef = useRef<any>(null);
 
@@ -221,7 +232,7 @@ export function OutdoorMap({
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
   const [hoveredLandmarkId, setHoveredLandmarkId] = useState<string | null>(null);
-  const [basemapMode, setBasemapMode] = useState<BasemapMode>("street");
+  const [basemapMode, setBasemapMode] = useState<BasemapMode>("clean");
   const [showMasterPlan, setShowMasterPlan] = useState(false);
   const [masterPlanOpacity, setMasterPlanOpacity] = useState(0.8);
   const [isKeyOpen, setIsKeyOpen] = useState(false);
@@ -259,14 +270,11 @@ export function OutdoorMap({
 
       leafletRef.current = L;
 
-      const origin: [number, number] = [24.93165, 67.11315];
-      const isCompact = containerRef.current.clientWidth > 0 && containerRef.current.clientWidth < 560;
-      const initialZoom = isCompact ? 16 : 17;
-      setZoomLevel(initialZoom);
+      const campusBounds = getCampusBounds(graph);
 
       const map = L.map(containerRef.current, {
-        center: origin,
-        zoom: initialZoom,
+        center: [24.93165, 67.11315],
+        zoom: 17,
         minZoom: 15,
         maxZoom: 20,
         maxBounds: DEFAULT_MAX_BOUNDS,
@@ -276,13 +284,27 @@ export function OutdoorMap({
         preferCanvas: false,
       });
 
+      map.fitBounds(campusBounds, { padding: [20, 20] });
+      setZoomLevel(map.getZoom());
+
       mapRef.current = map;
 
-      // Basemap 1 (Default): CARTO light tiles without labels
-      const streetTiles = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+      // Basemap 1 (Default: Clean): Esri World Light Gray Base (no key, no labels, native up to 16, upscales to 20)
+      const cleanTiles = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
         {
-          subdomains: "abcd",
+          maxZoom: 20,
+          maxNativeZoom: 16,
+          keepBuffer: 4,
+          updateWhenIdle: false,
+          updateWhenZooming: false,
+        }
+      );
+
+      // Basemap 2 (Detailed): Standard OpenStreetMap tiles
+      const detailedTiles = L.tileLayer(
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
           maxZoom: 20,
           maxNativeZoom: 19,
           keepBuffer: 4,
@@ -291,7 +313,7 @@ export function OutdoorMap({
         }
       );
 
-      // Basemap 2: Satellite (Esri World Imagery)
+      // Basemap 3 (Satellite): Esri World Imagery
       const satelliteTiles = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -303,12 +325,10 @@ export function OutdoorMap({
         }
       );
 
-      streetTileLayerRef.current = streetTiles;
+      cleanTileLayerRef.current = cleanTiles;
+      detailedTileLayerRef.current = detailedTiles;
       satelliteTileLayerRef.current = satelliteTiles;
-      streetTiles.addTo(map);
-
-      // Preload tiles around campus at zoom 17
-      preloadCampusTiles(17);
+      cleanTiles.addTo(map);
 
       canvasRendererRef.current = L.canvas({ padding: 0.5 }).addTo(map);
       svgRendererRef.current = L.svg({ padding: 0.5 }).addTo(map);
@@ -1209,19 +1229,29 @@ export function OutdoorMap({
     }
   }, [isReady, graph, trace]);
 
-  // 9. Switchable Basemaps (Street vs Satellite)
+  // 9. Switchable Basemaps (Clean vs Detailed vs Satellite)
   useEffect(() => {
     const map = mapRef.current;
-    const streetLayer = streetTileLayerRef.current;
+    const cleanLayer = cleanTileLayerRef.current;
+    const detailedLayer = detailedTileLayerRef.current;
     const satLayer = satelliteTileLayerRef.current;
-    if (!isReady || !map || !streetLayer || !satLayer) return;
+    if (!isReady || !map || !cleanLayer || !detailedLayer || !satLayer) return;
 
-    if (basemapMode === "satellite") {
-      if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
-      if (!map.hasLayer(satLayer)) satLayer.addTo(map);
-    } else {
-      if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
-      if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+    const targetLayer =
+      basemapMode === "satellite"
+        ? satLayer
+        : basemapMode === "detailed"
+        ? detailedLayer
+        : cleanLayer;
+
+    const allLayers = [cleanLayer, detailedLayer, satLayer];
+    for (const layer of allLayers) {
+      if (layer !== targetLayer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    }
+    if (!map.hasLayer(targetLayer)) {
+      targetLayer.addTo(map);
     }
   }, [isReady, basemapMode]);
 
@@ -1251,8 +1281,8 @@ export function OutdoorMap({
 
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
-      const origin: [number, number] = graph?.meta?.origin || [24.9318, 67.1132];
-      mapRef.current.setView(origin, 17, { animate: true });
+      const bounds = getCampusBounds(graph);
+      mapRef.current.fitBounds(bounds, { padding: [20, 20], animate: true });
     }
   }, [graph]);
 
@@ -1528,15 +1558,41 @@ export function OutdoorMap({
         role="region"
         aria-label="Basemap and overlay switcher"
       >
-        <div className="ned-layer-switcher-row" role="group" aria-label="Base map mode">
+        <div className="ned-layer-switcher-row" role="radiogroup" aria-label="Basemap style">
           <button
             type="button"
             className={`ned-layer-btn ${
-              basemapMode === "street" ? "ned-layer-btn--active" : ""
+              basemapMode === "clean" ? "ned-layer-btn--active" : ""
             }`}
-            onClick={() => setBasemapMode("street")}
-            aria-pressed={basemapMode === "street"}
-            title="Clear Street & Ground Map"
+            onClick={() => setBasemapMode("clean")}
+            aria-pressed={basemapMode === "clean"}
+            title="Esri World Light Gray Base (clean, minimal)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="14" height="14" rx="2" />
+              <line x1="3" y1="9" x2="17" y2="9" />
+              <line x1="9" y1="9" x2="9" y2="17" />
+            </svg>
+            Clean
+          </button>
+
+          <button
+            type="button"
+            className={`ned-layer-btn ${
+              basemapMode === "detailed" ? "ned-layer-btn--active" : ""
+            }`}
+            onClick={() => setBasemapMode("detailed")}
+            aria-pressed={basemapMode === "detailed"}
+            title="OpenStreetMap Standard (detailed street map)"
           >
             <svg
               width="14"
@@ -1552,7 +1608,7 @@ export function OutdoorMap({
               <line x1="8" y1="3" x2="8" y2="15" />
               <line x1="12" y1="5" x2="12" y2="17" />
             </svg>
-            Street
+            Detailed
           </button>
 
           <button
@@ -1562,7 +1618,7 @@ export function OutdoorMap({
             }`}
             onClick={() => setBasemapMode("satellite")}
             aria-pressed={basemapMode === "satellite"}
-            title="Esri World Imagery Satellite"
+            title="Esri World Imagery (satellite aerial view)"
           >
             <svg
               width="14"
@@ -1709,7 +1765,7 @@ export function OutdoorMap({
             </a>{" "}
             &bull; NED GIS
           </span>
-        ) : (
+        ) : basemapMode === "detailed" ? (
           <span>
             &copy;{" "}
             <a
@@ -1719,13 +1775,13 @@ export function OutdoorMap({
             >
               OpenStreetMap
             </a>{" "}
-            contributors &copy;{" "}
-            <a
-              href="https://carto.com/attributions"
-              target="_blank"
-              rel="noreferrer"
-            >
-              CARTO
+            contributors &bull; NED GIS
+          </span>
+        ) : (
+          <span>
+            &copy;{" "}
+            <a href="https://www.esri.com/" target="_blank" rel="noreferrer">
+              Esri
             </a>{" "}
             &bull; NED GIS
           </span>

@@ -116,15 +116,22 @@
 .leaflet-tile {
   filter: inherit;
   visibility: hidden;
-  background-color: #f2ede5;
+  background-color: #f5f5f2;
 }
 
 .leaflet-tile-loaded {
   visibility: inherit;
 }
 
+.ned-outdoor-map-root[data-basemap="clean"] .ned-leaflet-viewport,
+.ned-outdoor-map-root[data-basemap="clean"] .leaflet-tile,
 .ned-outdoor-map-root[data-basemap="street"] .ned-leaflet-viewport,
 .ned-outdoor-map-root[data-basemap="street"] .leaflet-tile {
+  background-color: #f5f5f2;
+}
+
+.ned-outdoor-map-root[data-basemap="detailed"] .ned-leaflet-viewport,
+.ned-outdoor-map-root[data-basemap="detailed"] .leaflet-tile {
   background-color: #f2ede5;
 }
 

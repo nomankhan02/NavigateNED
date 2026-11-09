@@ -37,7 +37,7 @@ export interface MasterPlanCorners {
   bottomRight: [number, number];
 }
 
-export type BasemapMode = "street" | "satellite";
+export type BasemapMode = "clean" | "detailed" | "satellite";
 
 export interface WarpedMasterPlanOverlay {
   image: string;
