@@ -18,6 +18,7 @@ export interface OutdoorEdge {
   w: number;
   oneway?: boolean;
   covered?: boolean;
+  geometry?: [number, number][];
 }
 
 export interface CampusLandmark {
@@ -37,7 +38,7 @@ export interface MasterPlanCorners {
   bottomRight: [number, number];
 }
 
-export type BasemapMode = "clean" | "detailed" | "satellite";
+export type BasemapMode = "clean" | "satellite";
 
 export interface WarpedMasterPlanOverlay {
   image: string;

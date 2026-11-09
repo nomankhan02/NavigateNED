@@ -215,7 +215,6 @@ export function OutdoorMap({
   const svgRendererRef = useRef<any>(null);
 
   const cleanTileLayerRef = useRef<any>(null);
-  const detailedTileLayerRef = useRef<any>(null);
   const satelliteTileLayerRef = useRef<any>(null);
   const masterPlanLayerRef = useRef<any>(null);
 
@@ -301,19 +300,7 @@ export function OutdoorMap({
         }
       );
 
-      // Basemap 2 (Detailed): Standard OpenStreetMap tiles
-      const detailedTiles = L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-          maxZoom: 20,
-          maxNativeZoom: 19,
-          keepBuffer: 4,
-          updateWhenIdle: false,
-          updateWhenZooming: false,
-        }
-      );
-
-      // Basemap 3 (Satellite): Esri World Imagery
+      // Basemap 2 (Satellite): Esri World Imagery
       const satelliteTiles = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -326,7 +313,6 @@ export function OutdoorMap({
       );
 
       cleanTileLayerRef.current = cleanTiles;
-      detailedTileLayerRef.current = detailedTiles;
       satelliteTileLayerRef.current = satelliteTiles;
       cleanTiles.addTo(map);
 
@@ -1229,29 +1215,19 @@ export function OutdoorMap({
     }
   }, [isReady, graph, trace]);
 
-  // 9. Switchable Basemaps (Clean vs Detailed vs Satellite)
+  // 9. Switchable Basemaps (Clean vs Satellite)
   useEffect(() => {
     const map = mapRef.current;
     const cleanLayer = cleanTileLayerRef.current;
-    const detailedLayer = detailedTileLayerRef.current;
     const satLayer = satelliteTileLayerRef.current;
-    if (!isReady || !map || !cleanLayer || !detailedLayer || !satLayer) return;
+    if (!isReady || !map || !cleanLayer || !satLayer) return;
 
-    const targetLayer =
-      basemapMode === "satellite"
-        ? satLayer
-        : basemapMode === "detailed"
-        ? detailedLayer
-        : cleanLayer;
-
-    const allLayers = [cleanLayer, detailedLayer, satLayer];
-    for (const layer of allLayers) {
-      if (layer !== targetLayer && map.hasLayer(layer)) {
-        map.removeLayer(layer);
-      }
-    }
-    if (!map.hasLayer(targetLayer)) {
-      targetLayer.addTo(map);
+    if (basemapMode === "satellite") {
+      if (map.hasLayer(cleanLayer)) map.removeLayer(cleanLayer);
+      if (!map.hasLayer(satLayer)) satLayer.addTo(map);
+    } else {
+      if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
+      if (!map.hasLayer(cleanLayer)) cleanLayer.addTo(map);
     }
   }, [isReady, basemapMode]);
 
@@ -1588,32 +1564,6 @@ export function OutdoorMap({
           <button
             type="button"
             className={`ned-layer-btn ${
-              basemapMode === "detailed" ? "ned-layer-btn--active" : ""
-            }`}
-            onClick={() => setBasemapMode("detailed")}
-            aria-pressed={basemapMode === "detailed"}
-            title="OpenStreetMap Standard (detailed street map)"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="2,5 8,3 12,5 18,3 18,15 12,17 8,15 2,17" />
-              <line x1="8" y1="3" x2="8" y2="15" />
-              <line x1="12" y1="5" x2="12" y2="17" />
-            </svg>
-            Detailed
-          </button>
-
-          <button
-            type="button"
-            className={`ned-layer-btn ${
               basemapMode === "satellite" ? "ned-layer-btn--active" : ""
             }`}
             onClick={() => setBasemapMode("satellite")}
@@ -1749,43 +1699,13 @@ export function OutdoorMap({
 
       {/* Required Tile Attributions */}
       <div className="ned-map-attribution" aria-label="Map tile attribution">
-        {basemapMode === "satellite" ? (
-          <span>
-            &copy;{" "}
-            <a href="https://www.esri.com/" target="_blank" rel="noreferrer">
-              Esri
-            </a>{" "}
-            &bull; &copy;{" "}
-            <a
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-            >
-              OpenStreetMap
-            </a>{" "}
-            &bull; NED GIS
-          </span>
-        ) : basemapMode === "detailed" ? (
-          <span>
-            &copy;{" "}
-            <a
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-            >
-              OpenStreetMap
-            </a>{" "}
-            contributors &bull; NED GIS
-          </span>
-        ) : (
-          <span>
-            &copy;{" "}
-            <a href="https://www.esri.com/" target="_blank" rel="noreferrer">
-              Esri
-            </a>{" "}
-            &bull; NED GIS
-          </span>
-        )}
+        <span>
+          &copy;{" "}
+          <a href="https://www.esri.com/" target="_blank" rel="noreferrer">
+            Esri
+          </a>{" "}
+          &bull; NED GIS
+        </span>
       </div>
 
       {/* Architectural Map Legend Pill */}

@@ -15,7 +15,14 @@
     { "id": "n1", "lat": 24.9317, "lng": 67.1128, "kind": "entrance" }
   ],
   "edges": [
-    { "a": "n1", "b": "n2", "w": 45.2, "oneway": false, "covered": true }
+    {
+      "a": "n1",
+      "b": "n2",
+      "w": 45.2,
+      "oneway": false,
+      "covered": true,
+      "geometry": [[24.9317, 67.1128], [24.9318, 67.1129], [24.9320, 67.1130]]
+    }
   ],
   "landmarks": [
     {
@@ -30,7 +37,8 @@
 }
 ```
 - Node `kind` enum: `"path" | "entrance" | "gate" | "assembly" | "poi"`
-- Weights (`w`): Edge distances strictly in meters.
+- Weights (`w`): Edge distances strictly in meters (cumulative Haversine distance along `geometry` when present).
+- Optional `geometry`: Array of `[lat, lng]` points along the real footpath from `a` to `b` (display-only; consumers must continue working when omitted).
 
 ### 2. `data/indoor/<buildingId>.json`
 ```json
