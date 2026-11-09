@@ -1,0 +1,2363 @@
+{
+  "id": "b-csit",
+  "name": "Depts. of Comp. Sc. & I.T and Maths & Basic Sciences",
+  "landmarkId": "b-csit",
+  "meta": {
+    "demo": true,
+    "template": "ring",
+    "width": 70.0,
+    "height": 44.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor"
+    },
+    {
+      "level": 2,
+      "label": "Second Floor"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-csit:f0_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f0_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-csit:f0_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-csit:ent",
+      "x": 35.0,
+      "y": 41.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-csit:exit_nw",
+      "x": 11.8,
+      "y": 1.8,
+      "floor": 0,
+      "type": "exit",
+      "name": "North-West Emergency Exit"
+    },
+    {
+      "id": "b-csit:exit_ne",
+      "x": 58.2,
+      "y": 1.8,
+      "floor": 0,
+      "type": "exit",
+      "name": "North-East Emergency Exit"
+    },
+    {
+      "id": "b-csit:g01",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "CSIT Chairman Office"
+    },
+    {
+      "id": "b-csit:g02",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "CSIT Admin & Coordinations"
+    },
+    {
+      "id": "b-csit:g03",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Lecture Hall CS-01"
+    },
+    {
+      "id": "b-csit:g04",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Lecture Hall CS-02"
+    },
+    {
+      "id": "b-csit:g05",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Lecture Hall CS-03"
+    },
+    {
+      "id": "b-csit:g06",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Maths General Office"
+    },
+    {
+      "id": "b-csit:g07",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Student Advisor Office"
+    },
+    {
+      "id": "b-csit:g08",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Server & Datacenter Room"
+    },
+    {
+      "id": "b-csit:g09",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Faculty Lounge"
+    },
+    {
+      "id": "b-csit:g10",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Examination Cell CSIT"
+    },
+    {
+      "id": "b-csit:g11",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Lecture Hall M-01"
+    },
+    {
+      "id": "b-csit:g12",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Lecture Hall M-02"
+    },
+    {
+      "id": "b-csit:g13",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Basic Sciences Seminar Hall"
+    },
+    {
+      "id": "b-csit:g14",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "DSA Course Tutorial Room"
+    },
+    {
+      "id": "b-csit:g15",
+      "x": 27.9,
+      "y": 17.9,
+      "floor": 0,
+      "type": "room",
+      "name": "Smart Classroom A"
+    },
+    {
+      "id": "b-csit:g16",
+      "x": 42.1,
+      "y": 17.9,
+      "floor": 0,
+      "type": "room",
+      "name": "Smart Classroom B"
+    },
+    {
+      "id": "b-csit:f1_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f1_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-csit:f1_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-csit:101",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Software Engineering Lab"
+    },
+    {
+      "id": "b-csit:102",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "AI & Machine Learning Lab"
+    },
+    {
+      "id": "b-csit:103",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Lecture Hall CS-101"
+    },
+    {
+      "id": "b-csit:104",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Lecture Hall CS-102"
+    },
+    {
+      "id": "b-csit:105",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Data Science Research Lab"
+    },
+    {
+      "id": "b-csit:106",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Cyber Security Lab"
+    },
+    {
+      "id": "b-csit:107",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Senior Faculty Offices West"
+    },
+    {
+      "id": "b-csit:108",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Cloud Computing Studio"
+    },
+    {
+      "id": "b-csit:109",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Senior Faculty Offices East"
+    },
+    {
+      "id": "b-csit:110",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Graduate Seminar Room"
+    },
+    {
+      "id": "b-csit:111",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Lecture Hall M-101"
+    },
+    {
+      "id": "b-csit:112",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Applied Mathematics Lab"
+    },
+    {
+      "id": "b-csit:113",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Statistics & Modeling Room"
+    },
+    {
+      "id": "b-csit:114",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "FYP Incubation Lab"
+    },
+    {
+      "id": "b-csit:115",
+      "x": 27.9,
+      "y": 17.9,
+      "floor": 1,
+      "type": "room",
+      "name": "CSIT Conference Room"
+    },
+    {
+      "id": "b-csit:116",
+      "x": 42.1,
+      "y": 17.9,
+      "floor": 1,
+      "type": "room",
+      "name": "Academic Committee Room"
+    },
+    {
+      "id": "b-csit:f2_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit:f2_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 2,
+      "type": "stairs",
+      "name": "Staircase F2"
+    },
+    {
+      "id": "b-csit:f2_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 2,
+      "type": "lift",
+      "name": "Elevator F2"
+    },
+    {
+      "id": "b-csit:201",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "High-Speed Networks Lab"
+    },
+    {
+      "id": "b-csit:202",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "IoT & Embedded Systems Lab"
+    },
+    {
+      "id": "b-csit:203",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Lecture Hall CS-201"
+    },
+    {
+      "id": "b-csit:204",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Lecture Hall CS-202"
+    },
+    {
+      "id": "b-csit:205",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Computer Vision Lab"
+    },
+    {
+      "id": "b-csit:206",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Robotics & Autonomous Lab"
+    },
+    {
+      "id": "b-csit:207",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Maths Chair & Dean Annex"
+    },
+    {
+      "id": "b-csit:208",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 2,
+      "type": "room",
+      "name": "PhD Scholars Research Room"
+    },
+    {
+      "id": "b-csit:209",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Visiting Faculty Suite"
+    },
+    {
+      "id": "b-csit:210",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Digital Library & Reading Room"
+    },
+    {
+      "id": "b-csit:211",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Lecture Hall M-201"
+    },
+    {
+      "id": "b-csit:212",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Discrete Structures Room"
+    },
+    {
+      "id": "b-csit:213",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Computational Physics Room"
+    },
+    {
+      "id": "b-csit:214",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Postgraduate Lecture Hall"
+    },
+    {
+      "id": "b-csit:215",
+      "x": 27.9,
+      "y": 17.9,
+      "floor": 2,
+      "type": "room",
+      "name": "Quality Assurance Archive"
+    },
+    {
+      "id": "b-csit:216",
+      "x": 42.1,
+      "y": 17.9,
+      "floor": 2,
+      "type": "room",
+      "name": "Curriculum Design Studio"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-csit:f0_cn_0",
+      "b": "b-csit:f0_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_1",
+      "b": "b-csit:f0_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_2",
+      "b": "b-csit:f0_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_3",
+      "b": "b-csit:f0_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_4",
+      "b": "b-csit:f0_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_5",
+      "b": "b-csit:f0_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_6",
+      "b": "b-csit:f0_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_7",
+      "b": "b-csit:f0_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_0",
+      "b": "b-csit:f0_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_1",
+      "b": "b-csit:f0_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_2",
+      "b": "b-csit:f0_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_3",
+      "b": "b-csit:f0_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_4",
+      "b": "b-csit:f0_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_5",
+      "b": "b-csit:f0_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_6",
+      "b": "b-csit:f0_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cs_7",
+      "b": "b-csit:f0_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_0",
+      "b": "b-csit:f0_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cn_8",
+      "b": "b-csit:f0_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cw_0",
+      "b": "b-csit:f0_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_ce_0",
+      "b": "b-csit:f0_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cw_1",
+      "b": "b-csit:f0_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_ce_1",
+      "b": "b-csit:f0_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_cw_2",
+      "b": "b-csit:f0_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_ce_2",
+      "b": "b-csit:f0_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_stairs",
+      "b": "b-csit:f0_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_lift",
+      "b": "b-csit:f0_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:ent",
+      "b": "b-csit:f0_cs_4",
+      "kind": "walk",
+      "w": 9.3,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:exit_nw",
+      "b": "b-csit:f0_cn_0",
+      "kind": "walk",
+      "w": 10.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:exit_ne",
+      "b": "b-csit:f0_cn_8",
+      "kind": "walk",
+      "w": 10.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g01",
+      "b": "b-csit:f0_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g02",
+      "b": "b-csit:f0_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g03",
+      "b": "b-csit:f0_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g04",
+      "b": "b-csit:f0_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g05",
+      "b": "b-csit:f0_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g06",
+      "b": "b-csit:f0_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g07",
+      "b": "b-csit:f0_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g08",
+      "b": "b-csit:f0_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g09",
+      "b": "b-csit:f0_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g10",
+      "b": "b-csit:f0_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g11",
+      "b": "b-csit:f0_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g12",
+      "b": "b-csit:f0_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g13",
+      "b": "b-csit:f0_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g14",
+      "b": "b-csit:f0_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g15",
+      "b": "b-csit:f0_cn_3",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:g16",
+      "b": "b-csit:f0_cn_5",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_0",
+      "b": "b-csit:f1_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_1",
+      "b": "b-csit:f1_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_2",
+      "b": "b-csit:f1_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_3",
+      "b": "b-csit:f1_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_4",
+      "b": "b-csit:f1_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_5",
+      "b": "b-csit:f1_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_6",
+      "b": "b-csit:f1_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_7",
+      "b": "b-csit:f1_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_0",
+      "b": "b-csit:f1_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_1",
+      "b": "b-csit:f1_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_2",
+      "b": "b-csit:f1_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_3",
+      "b": "b-csit:f1_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_4",
+      "b": "b-csit:f1_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_5",
+      "b": "b-csit:f1_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_6",
+      "b": "b-csit:f1_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cs_7",
+      "b": "b-csit:f1_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_0",
+      "b": "b-csit:f1_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cn_8",
+      "b": "b-csit:f1_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cw_0",
+      "b": "b-csit:f1_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_ce_0",
+      "b": "b-csit:f1_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cw_1",
+      "b": "b-csit:f1_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_ce_1",
+      "b": "b-csit:f1_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_cw_2",
+      "b": "b-csit:f1_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_ce_2",
+      "b": "b-csit:f1_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_stairs",
+      "b": "b-csit:f1_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_lift",
+      "b": "b-csit:f1_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:101",
+      "b": "b-csit:f1_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:102",
+      "b": "b-csit:f1_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:103",
+      "b": "b-csit:f1_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:104",
+      "b": "b-csit:f1_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:105",
+      "b": "b-csit:f1_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:106",
+      "b": "b-csit:f1_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:107",
+      "b": "b-csit:f1_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:108",
+      "b": "b-csit:f1_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:109",
+      "b": "b-csit:f1_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:110",
+      "b": "b-csit:f1_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:111",
+      "b": "b-csit:f1_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:112",
+      "b": "b-csit:f1_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:113",
+      "b": "b-csit:f1_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:114",
+      "b": "b-csit:f1_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:115",
+      "b": "b-csit:f1_cn_3",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:116",
+      "b": "b-csit:f1_cn_5",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_0",
+      "b": "b-csit:f2_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_1",
+      "b": "b-csit:f2_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_2",
+      "b": "b-csit:f2_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_3",
+      "b": "b-csit:f2_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_4",
+      "b": "b-csit:f2_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_5",
+      "b": "b-csit:f2_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_6",
+      "b": "b-csit:f2_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_7",
+      "b": "b-csit:f2_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_0",
+      "b": "b-csit:f2_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_1",
+      "b": "b-csit:f2_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_2",
+      "b": "b-csit:f2_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_3",
+      "b": "b-csit:f2_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_4",
+      "b": "b-csit:f2_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_5",
+      "b": "b-csit:f2_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_6",
+      "b": "b-csit:f2_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cs_7",
+      "b": "b-csit:f2_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_0",
+      "b": "b-csit:f2_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cn_8",
+      "b": "b-csit:f2_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cw_0",
+      "b": "b-csit:f2_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_ce_0",
+      "b": "b-csit:f2_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cw_1",
+      "b": "b-csit:f2_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_ce_1",
+      "b": "b-csit:f2_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_cw_2",
+      "b": "b-csit:f2_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_ce_2",
+      "b": "b-csit:f2_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_stairs",
+      "b": "b-csit:f2_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f2_lift",
+      "b": "b-csit:f2_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:201",
+      "b": "b-csit:f2_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:202",
+      "b": "b-csit:f2_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:203",
+      "b": "b-csit:f2_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:204",
+      "b": "b-csit:f2_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:205",
+      "b": "b-csit:f2_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:206",
+      "b": "b-csit:f2_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:207",
+      "b": "b-csit:f2_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:208",
+      "b": "b-csit:f2_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:209",
+      "b": "b-csit:f2_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:210",
+      "b": "b-csit:f2_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:211",
+      "b": "b-csit:f2_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:212",
+      "b": "b-csit:f2_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:213",
+      "b": "b-csit:f2_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:214",
+      "b": "b-csit:f2_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:215",
+      "b": "b-csit:f2_cn_3",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:216",
+      "b": "b-csit:f2_cn_5",
+      "kind": "walk",
+      "w": 6.9,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f0_stairs",
+      "b": "b-csit:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-csit:f0_lift",
+      "b": "b-csit:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:f1_stairs",
+      "b": "b-csit:f2_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-csit:f1_lift",
+      "b": "b-csit:f2_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-csit:ent",
+      "b": "n21",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-csit:g01",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g02",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g03",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g04",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g05",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g06",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g07",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:g08",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:g09",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:g10",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:g11",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g12",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g13",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g14",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:g15",
+      "rect": [
+        24.8,
+        14.4,
+        6.2,
+        7.0
+      ]
+    },
+    {
+      "nodeId": "b-csit:g16",
+      "rect": [
+        39.0,
+        14.4,
+        6.2,
+        7.0
+      ]
+    },
+    {
+      "nodeId": "b-csit:101",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:102",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:103",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:104",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:105",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:106",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:107",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:108",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:109",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:110",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:111",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:112",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:113",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:114",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:115",
+      "rect": [
+        24.8,
+        14.4,
+        6.2,
+        7.0
+      ]
+    },
+    {
+      "nodeId": "b-csit:116",
+      "rect": [
+        39.0,
+        14.4,
+        6.2,
+        7.0
+      ]
+    },
+    {
+      "nodeId": "b-csit:201",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:202",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:203",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:204",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:205",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:206",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:207",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:208",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:209",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:210",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit:211",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:212",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:213",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:214",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit:215",
+      "rect": [
+        24.8,
+        14.4,
+        6.2,
+        7.0
+      ]
+    },
+    {
+      "nodeId": "b-csit:216",
+      "rect": [
+        39.0,
+        14.4,
+        6.2,
+        7.0
+      ]
+    }
+  ]
+}

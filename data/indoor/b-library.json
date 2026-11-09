@@ -1,0 +1,2384 @@
+{
+  "id": "b-library",
+  "name": "Engr. Abul Kalam Library (Circulation Library)",
+  "landmarkId": "b-library",
+  "meta": {
+    "demo": true,
+    "template": "H",
+    "width": 70.0,
+    "height": 56.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor"
+    },
+    {
+      "level": 2,
+      "label": "Second Floor"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-library:f0_cw_0",
+      "x": 12.8,
+      "y": 6.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_0",
+      "x": 57.2,
+      "y": 6.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_1",
+      "x": 12.8,
+      "y": 9.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_1",
+      "x": 57.2,
+      "y": 9.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_2",
+      "x": 12.8,
+      "y": 16.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_2",
+      "x": 57.2,
+      "y": 16.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_3",
+      "x": 12.8,
+      "y": 23.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_3",
+      "x": 57.2,
+      "y": 23.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_4",
+      "x": 12.8,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_4",
+      "x": 57.2,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_5",
+      "x": 12.8,
+      "y": 33.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_5",
+      "x": 57.2,
+      "y": 33.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_6",
+      "x": 12.8,
+      "y": 40.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_6",
+      "x": 57.2,
+      "y": 40.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_7",
+      "x": 12.8,
+      "y": 47.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_7",
+      "x": 57.2,
+      "y": 47.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cw_8",
+      "x": 12.8,
+      "y": 50.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_ce_8",
+      "x": 57.2,
+      "y": 50.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_0",
+      "x": 19.5,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_1",
+      "x": 26.5,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_2",
+      "x": 32.0,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_3",
+      "x": 35.0,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_4",
+      "x": 38.0,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_5",
+      "x": 43.5,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_cc_6",
+      "x": 50.5,
+      "y": 28.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f0_stairs",
+      "x": 32.0,
+      "y": 22.0,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-library:f0_lift",
+      "x": 38.0,
+      "y": 22.0,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-library:ent",
+      "x": 35.0,
+      "y": 36.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-library:exit_nw",
+      "x": 12.8,
+      "y": 2.0,
+      "floor": 0,
+      "type": "exit",
+      "name": "North-West Emergency Exit"
+    },
+    {
+      "id": "b-library:exit_se",
+      "x": 57.2,
+      "y": 54.0,
+      "floor": 0,
+      "type": "exit",
+      "name": "South-East Emergency Exit"
+    },
+    {
+      "id": "b-library:g01",
+      "x": 6.2,
+      "y": 9.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Circulation & Issue Desk"
+    },
+    {
+      "id": "b-library:g02",
+      "x": 6.2,
+      "y": 16.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Book Bank Section"
+    },
+    {
+      "id": "b-library:g03",
+      "x": 6.2,
+      "y": 23.3,
+      "floor": 0,
+      "type": "room",
+      "name": "New Arrivals & Display Hall"
+    },
+    {
+      "id": "b-library:g04",
+      "x": 6.2,
+      "y": 33.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Cataloging & Classification"
+    },
+    {
+      "id": "b-library:g05",
+      "x": 6.2,
+      "y": 40.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Acquisition & Procurement"
+    },
+    {
+      "id": "b-library:g06",
+      "x": 6.2,
+      "y": 47.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Bindery & Preservation Unit"
+    },
+    {
+      "id": "b-library:g07",
+      "x": 63.8,
+      "y": 9.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Chief Librarian Office"
+    },
+    {
+      "id": "b-library:g08",
+      "x": 63.8,
+      "y": 16.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Deputy Librarian Office"
+    },
+    {
+      "id": "b-library:g09",
+      "x": 63.8,
+      "y": 23.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Library Administration"
+    },
+    {
+      "id": "b-library:g10",
+      "x": 63.8,
+      "y": 33.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Security & Locker Bay"
+    },
+    {
+      "id": "b-library:g11",
+      "x": 63.8,
+      "y": 40.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Newspapers & Magazines Lounge"
+    },
+    {
+      "id": "b-library:g12",
+      "x": 63.8,
+      "y": 47.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Reprography & Printing Service"
+    },
+    {
+      "id": "b-library:g13",
+      "x": 19.5,
+      "y": 21.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Undergraduate Reading Hall A"
+    },
+    {
+      "id": "b-library:g14",
+      "x": 26.5,
+      "y": 21.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Undergraduate Reading Hall B"
+    },
+    {
+      "id": "b-library:g15",
+      "x": 43.5,
+      "y": 21.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Reference Inquiry Counter"
+    },
+    {
+      "id": "b-library:g16",
+      "x": 50.5,
+      "y": 21.6,
+      "floor": 0,
+      "type": "room",
+      "name": "OPAC Search Terminals"
+    },
+    {
+      "id": "b-library:f1_cw_0",
+      "x": 12.8,
+      "y": 6.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_0",
+      "x": 57.2,
+      "y": 6.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_1",
+      "x": 12.8,
+      "y": 9.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_1",
+      "x": 57.2,
+      "y": 9.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_2",
+      "x": 12.8,
+      "y": 16.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_2",
+      "x": 57.2,
+      "y": 16.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_3",
+      "x": 12.8,
+      "y": 23.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_3",
+      "x": 57.2,
+      "y": 23.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_4",
+      "x": 12.8,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_4",
+      "x": 57.2,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_5",
+      "x": 12.8,
+      "y": 33.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_5",
+      "x": 57.2,
+      "y": 33.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_6",
+      "x": 12.8,
+      "y": 40.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_6",
+      "x": 57.2,
+      "y": 40.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_7",
+      "x": 12.8,
+      "y": 47.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_7",
+      "x": 57.2,
+      "y": 47.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cw_8",
+      "x": 12.8,
+      "y": 50.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_ce_8",
+      "x": 57.2,
+      "y": 50.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_0",
+      "x": 19.5,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_1",
+      "x": 26.5,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_2",
+      "x": 32.0,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_3",
+      "x": 35.0,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_4",
+      "x": 38.0,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_5",
+      "x": 43.5,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_cc_6",
+      "x": 50.5,
+      "y": 28.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f1_stairs",
+      "x": 32.0,
+      "y": 22.0,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-library:f1_lift",
+      "x": 38.0,
+      "y": 22.0,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-library:101",
+      "x": 6.2,
+      "y": 9.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Civil & Architecture Book Stack"
+    },
+    {
+      "id": "b-library:102",
+      "x": 6.2,
+      "y": 16.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Mechanical & Manufacturing Stack"
+    },
+    {
+      "id": "b-library:103",
+      "x": 6.2,
+      "y": 23.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Electrical & Electronics Stack"
+    },
+    {
+      "id": "b-library:104",
+      "x": 6.2,
+      "y": 33.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Computer Science & IT Stack"
+    },
+    {
+      "id": "b-library:105",
+      "x": 6.2,
+      "y": 40.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Chemical & Materials Stack"
+    },
+    {
+      "id": "b-library:106",
+      "x": 6.2,
+      "y": 47.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Basic Sciences & Maths Stack"
+    },
+    {
+      "id": "b-library:107",
+      "x": 63.8,
+      "y": 9.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Engineering Quiet Reading Hall"
+    },
+    {
+      "id": "b-library:108",
+      "x": 63.8,
+      "y": 16.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Periodicals & Bound Journals"
+    },
+    {
+      "id": "b-library:109",
+      "x": 63.8,
+      "y": 23.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Standards & Codes Archive"
+    },
+    {
+      "id": "b-library:110",
+      "x": 63.8,
+      "y": 33.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Faculty Study Carrels"
+    },
+    {
+      "id": "b-library:111",
+      "x": 63.8,
+      "y": 40.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Group Discussion Room 1"
+    },
+    {
+      "id": "b-library:112",
+      "x": 63.8,
+      "y": 47.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Group Discussion Room 2"
+    },
+    {
+      "id": "b-library:113",
+      "x": 19.5,
+      "y": 21.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Reference Encyclopedias Wing"
+    },
+    {
+      "id": "b-library:114",
+      "x": 26.5,
+      "y": 21.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Humanities & Economics Stack"
+    },
+    {
+      "id": "b-library:115",
+      "x": 43.5,
+      "y": 21.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Assistant Librarian Desk"
+    },
+    {
+      "id": "b-library:116",
+      "x": 50.5,
+      "y": 21.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Silent Study Zone North"
+    },
+    {
+      "id": "b-library:f2_cw_0",
+      "x": 12.8,
+      "y": 6.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_0",
+      "x": 57.2,
+      "y": 6.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_1",
+      "x": 12.8,
+      "y": 9.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_1",
+      "x": 57.2,
+      "y": 9.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_2",
+      "x": 12.8,
+      "y": 16.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_2",
+      "x": 57.2,
+      "y": 16.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_3",
+      "x": 12.8,
+      "y": 23.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_3",
+      "x": 57.2,
+      "y": 23.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_4",
+      "x": 12.8,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_4",
+      "x": 57.2,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_5",
+      "x": 12.8,
+      "y": 33.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_5",
+      "x": 57.2,
+      "y": 33.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_6",
+      "x": 12.8,
+      "y": 40.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_6",
+      "x": 57.2,
+      "y": 40.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_7",
+      "x": 12.8,
+      "y": 47.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_7",
+      "x": 57.2,
+      "y": 47.5,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cw_8",
+      "x": 12.8,
+      "y": 50.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_ce_8",
+      "x": 57.2,
+      "y": 50.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_0",
+      "x": 19.5,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_1",
+      "x": 26.5,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_2",
+      "x": 32.0,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_3",
+      "x": 35.0,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_4",
+      "x": 38.0,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_5",
+      "x": 43.5,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_cc_6",
+      "x": 50.5,
+      "y": 28.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-library:f2_stairs",
+      "x": 32.0,
+      "y": 22.0,
+      "floor": 2,
+      "type": "stairs",
+      "name": "Staircase F2"
+    },
+    {
+      "id": "b-library:f2_lift",
+      "x": 38.0,
+      "y": 22.0,
+      "floor": 2,
+      "type": "lift",
+      "name": "Elevator F2"
+    },
+    {
+      "id": "b-library:201",
+      "x": 6.2,
+      "y": 9.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Digital Library & HEC E-Books"
+    },
+    {
+      "id": "b-library:202",
+      "x": 6.2,
+      "y": 16.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Postgraduate & MS Thesis Archive"
+    },
+    {
+      "id": "b-library:203",
+      "x": 6.2,
+      "y": 23.3,
+      "floor": 2,
+      "type": "room",
+      "name": "PhD Dissertations Repository"
+    },
+    {
+      "id": "b-library:204",
+      "x": 6.2,
+      "y": 33.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Rare Books & NED Heritage Wing"
+    },
+    {
+      "id": "b-library:205",
+      "x": 6.2,
+      "y": 40.7,
+      "floor": 2,
+      "type": "room",
+      "name": "IEEE & ACM Digital Access Lab"
+    },
+    {
+      "id": "b-library:206",
+      "x": 6.2,
+      "y": 47.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Research Scholars Carrels West"
+    },
+    {
+      "id": "b-library:207",
+      "x": 63.8,
+      "y": 9.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Research Scholars Carrels East"
+    },
+    {
+      "id": "b-library:208",
+      "x": 63.8,
+      "y": 16.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Audio-Visual & Microfilm Room"
+    },
+    {
+      "id": "b-library:209",
+      "x": 63.8,
+      "y": 23.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Seminar & Workshop Room"
+    },
+    {
+      "id": "b-library:210",
+      "x": 63.8,
+      "y": 33.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Bibliometrics & Citation Desk"
+    },
+    {
+      "id": "b-library:211",
+      "x": 63.8,
+      "y": 40.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Digital Scanning & Archiving"
+    },
+    {
+      "id": "b-library:212",
+      "x": 63.8,
+      "y": 47.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Server & IT Support Room"
+    },
+    {
+      "id": "b-library:213",
+      "x": 19.5,
+      "y": 21.6,
+      "floor": 2,
+      "type": "room",
+      "name": "Postgraduate Quiet Hall West"
+    },
+    {
+      "id": "b-library:214",
+      "x": 26.5,
+      "y": 21.6,
+      "floor": 2,
+      "type": "room",
+      "name": "Postgraduate Quiet Hall East"
+    },
+    {
+      "id": "b-library:215",
+      "x": 43.5,
+      "y": 21.6,
+      "floor": 2,
+      "type": "room",
+      "name": "Journal Indexing Office"
+    },
+    {
+      "id": "b-library:216",
+      "x": 50.5,
+      "y": 21.6,
+      "floor": 2,
+      "type": "room",
+      "name": "Collaborative Research Pod"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-library:f0_cw_0",
+      "b": "b-library:f0_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_0",
+      "b": "b-library:f0_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_1",
+      "b": "b-library:f0_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_1",
+      "b": "b-library:f0_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_2",
+      "b": "b-library:f0_cw_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_2",
+      "b": "b-library:f0_ce_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_3",
+      "b": "b-library:f0_cw_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_3",
+      "b": "b-library:f0_ce_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_4",
+      "b": "b-library:f0_cw_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_4",
+      "b": "b-library:f0_ce_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_5",
+      "b": "b-library:f0_cw_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_5",
+      "b": "b-library:f0_ce_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_6",
+      "b": "b-library:f0_cw_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_6",
+      "b": "b-library:f0_ce_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_7",
+      "b": "b-library:f0_cw_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_ce_7",
+      "b": "b-library:f0_ce_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cw_4",
+      "b": "b-library:f0_cc_0",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_0",
+      "b": "b-library:f0_cc_1",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_1",
+      "b": "b-library:f0_cc_2",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_2",
+      "b": "b-library:f0_cc_3",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_3",
+      "b": "b-library:f0_cc_4",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_4",
+      "b": "b-library:f0_cc_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_5",
+      "b": "b-library:f0_cc_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_cc_6",
+      "b": "b-library:f0_ce_4",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_stairs",
+      "b": "b-library:f0_cc_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_lift",
+      "b": "b-library:f0_cc_4",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:ent",
+      "b": "b-library:f0_cc_3",
+      "kind": "walk",
+      "w": 8.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:exit_nw",
+      "b": "b-library:f0_cw_0",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:exit_se",
+      "b": "b-library:f0_ce_8",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g01",
+      "b": "b-library:f0_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g02",
+      "b": "b-library:f0_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g03",
+      "b": "b-library:f0_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g04",
+      "b": "b-library:f0_cw_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g05",
+      "b": "b-library:f0_cw_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g06",
+      "b": "b-library:f0_cw_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g07",
+      "b": "b-library:f0_ce_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g08",
+      "b": "b-library:f0_ce_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g09",
+      "b": "b-library:f0_ce_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g10",
+      "b": "b-library:f0_ce_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g11",
+      "b": "b-library:f0_ce_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g12",
+      "b": "b-library:f0_ce_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g13",
+      "b": "b-library:f0_cc_0",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g14",
+      "b": "b-library:f0_cc_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g15",
+      "b": "b-library:f0_cc_5",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:g16",
+      "b": "b-library:f0_cc_6",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_0",
+      "b": "b-library:f1_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_0",
+      "b": "b-library:f1_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_1",
+      "b": "b-library:f1_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_1",
+      "b": "b-library:f1_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_2",
+      "b": "b-library:f1_cw_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_2",
+      "b": "b-library:f1_ce_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_3",
+      "b": "b-library:f1_cw_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_3",
+      "b": "b-library:f1_ce_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_4",
+      "b": "b-library:f1_cw_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_4",
+      "b": "b-library:f1_ce_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_5",
+      "b": "b-library:f1_cw_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_5",
+      "b": "b-library:f1_ce_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_6",
+      "b": "b-library:f1_cw_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_6",
+      "b": "b-library:f1_ce_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_7",
+      "b": "b-library:f1_cw_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_ce_7",
+      "b": "b-library:f1_ce_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cw_4",
+      "b": "b-library:f1_cc_0",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_0",
+      "b": "b-library:f1_cc_1",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_1",
+      "b": "b-library:f1_cc_2",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_2",
+      "b": "b-library:f1_cc_3",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_3",
+      "b": "b-library:f1_cc_4",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_4",
+      "b": "b-library:f1_cc_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_5",
+      "b": "b-library:f1_cc_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_cc_6",
+      "b": "b-library:f1_ce_4",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_stairs",
+      "b": "b-library:f1_cc_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_lift",
+      "b": "b-library:f1_cc_4",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:101",
+      "b": "b-library:f1_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:102",
+      "b": "b-library:f1_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:103",
+      "b": "b-library:f1_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:104",
+      "b": "b-library:f1_cw_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:105",
+      "b": "b-library:f1_cw_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:106",
+      "b": "b-library:f1_cw_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:107",
+      "b": "b-library:f1_ce_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:108",
+      "b": "b-library:f1_ce_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:109",
+      "b": "b-library:f1_ce_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:110",
+      "b": "b-library:f1_ce_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:111",
+      "b": "b-library:f1_ce_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:112",
+      "b": "b-library:f1_ce_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:113",
+      "b": "b-library:f1_cc_0",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:114",
+      "b": "b-library:f1_cc_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:115",
+      "b": "b-library:f1_cc_5",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:116",
+      "b": "b-library:f1_cc_6",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_0",
+      "b": "b-library:f2_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_0",
+      "b": "b-library:f2_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_1",
+      "b": "b-library:f2_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_1",
+      "b": "b-library:f2_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_2",
+      "b": "b-library:f2_cw_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_2",
+      "b": "b-library:f2_ce_3",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_3",
+      "b": "b-library:f2_cw_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_3",
+      "b": "b-library:f2_ce_4",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_4",
+      "b": "b-library:f2_cw_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_4",
+      "b": "b-library:f2_ce_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_5",
+      "b": "b-library:f2_cw_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_5",
+      "b": "b-library:f2_ce_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_6",
+      "b": "b-library:f2_cw_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_6",
+      "b": "b-library:f2_ce_7",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_7",
+      "b": "b-library:f2_cw_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_ce_7",
+      "b": "b-library:f2_ce_8",
+      "kind": "walk",
+      "w": 2.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cw_4",
+      "b": "b-library:f2_cc_0",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_0",
+      "b": "b-library:f2_cc_1",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_1",
+      "b": "b-library:f2_cc_2",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_2",
+      "b": "b-library:f2_cc_3",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_3",
+      "b": "b-library:f2_cc_4",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_4",
+      "b": "b-library:f2_cc_5",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_5",
+      "b": "b-library:f2_cc_6",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_cc_6",
+      "b": "b-library:f2_ce_4",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_stairs",
+      "b": "b-library:f2_cc_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f2_lift",
+      "b": "b-library:f2_cc_4",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-library:201",
+      "b": "b-library:f2_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:202",
+      "b": "b-library:f2_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:203",
+      "b": "b-library:f2_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:204",
+      "b": "b-library:f2_cw_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:205",
+      "b": "b-library:f2_cw_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:206",
+      "b": "b-library:f2_cw_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:207",
+      "b": "b-library:f2_ce_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:208",
+      "b": "b-library:f2_ce_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:209",
+      "b": "b-library:f2_ce_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:210",
+      "b": "b-library:f2_ce_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:211",
+      "b": "b-library:f2_ce_6",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:212",
+      "b": "b-library:f2_ce_7",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-library:213",
+      "b": "b-library:f2_cc_0",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:214",
+      "b": "b-library:f2_cc_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:215",
+      "b": "b-library:f2_cc_5",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:216",
+      "b": "b-library:f2_cc_6",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f0_stairs",
+      "b": "b-library:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-library:f0_lift",
+      "b": "b-library:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-library:f1_stairs",
+      "b": "b-library:f2_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-library:f1_lift",
+      "b": "b-library:f2_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-library:ent",
+      "b": "n76",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-library:g01",
+      "rect": [
+        2.0,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g02",
+      "rect": [
+        2.0,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g03",
+      "rect": [
+        2.0,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g04",
+      "rect": [
+        2.0,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g05",
+      "rect": [
+        2.0,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g06",
+      "rect": [
+        2.0,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g07",
+      "rect": [
+        59.6,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g08",
+      "rect": [
+        59.6,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g09",
+      "rect": [
+        59.6,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g10",
+      "rect": [
+        59.6,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g11",
+      "rect": [
+        59.6,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g12",
+      "rect": [
+        59.6,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:g13",
+      "rect": [
+        16.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:g14",
+      "rect": [
+        23.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:g15",
+      "rect": [
+        40.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:g16",
+      "rect": [
+        47.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:101",
+      "rect": [
+        2.0,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:102",
+      "rect": [
+        2.0,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:103",
+      "rect": [
+        2.0,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:104",
+      "rect": [
+        2.0,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:105",
+      "rect": [
+        2.0,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:106",
+      "rect": [
+        2.0,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:107",
+      "rect": [
+        59.6,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:108",
+      "rect": [
+        59.6,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:109",
+      "rect": [
+        59.6,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:110",
+      "rect": [
+        59.6,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:111",
+      "rect": [
+        59.6,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:112",
+      "rect": [
+        59.6,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:113",
+      "rect": [
+        16.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:114",
+      "rect": [
+        23.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:115",
+      "rect": [
+        40.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:116",
+      "rect": [
+        47.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:201",
+      "rect": [
+        2.0,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:202",
+      "rect": [
+        2.0,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:203",
+      "rect": [
+        2.0,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:204",
+      "rect": [
+        2.0,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:205",
+      "rect": [
+        2.0,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:206",
+      "rect": [
+        2.0,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:207",
+      "rect": [
+        59.6,
+        6.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:208",
+      "rect": [
+        59.6,
+        13.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:209",
+      "rect": [
+        59.6,
+        20.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:210",
+      "rect": [
+        59.6,
+        30.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:211",
+      "rect": [
+        59.6,
+        37.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:212",
+      "rect": [
+        59.6,
+        44.6,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-library:213",
+      "rect": [
+        16.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:214",
+      "rect": [
+        23.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:215",
+      "rect": [
+        40.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    },
+    {
+      "nodeId": "b-library:216",
+      "rect": [
+        47.4,
+        17.6,
+        6.2,
+        8.0
+      ]
+    }
+  ]
+}
