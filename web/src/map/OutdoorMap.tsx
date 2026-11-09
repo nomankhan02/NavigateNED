@@ -75,6 +75,8 @@ export function OutdoorMap({
   onMapClick,
   showGraph = true,
   userLocation = null,
+  evacuation = null,
+  trace = null,
 }: OutdoorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -89,6 +91,8 @@ export function OutdoorMap({
   const routeLayerRef = useRef<any>(null);
   const highlightLayerRef = useRef<any>(null);
   const userLayerRef = useRef<any>(null);
+  const evacLayerRef = useRef<any>(null);
+  const traceLayerRef = useRef<any>(null);
 
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
@@ -198,7 +202,9 @@ export function OutdoorMap({
 
       graphLayerRef.current = L.layerGroup().addTo(map);
       footprintLayerRef.current = L.layerGroup().addTo(map);
+      evacLayerRef.current = L.layerGroup().addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
+      traceLayerRef.current = L.layerGroup().addTo(map);
       highlightLayerRef.current = L.layerGroup().addTo(map);
       userLayerRef.current = L.layerGroup().addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
@@ -587,6 +593,239 @@ export function OutdoorMap({
       interactive: false,
     }).addTo(usrGroup);
   }, [isReady, userLocation]);
+
+  // 7. Layer (g): Evacuation Overlay (hatched hazard lines for blocked edges/nodes + assignment paths)
+  useEffect(() => {
+    const L = leafletRef.current;
+    const evGroup = evacLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    if (!isReady || !L || !evGroup || !svgRenderer || !graph) return;
+
+    evGroup.clearLayers();
+    if (!evacuation) return;
+
+    const nodeLookup = new Map<string, OutdoorNode>();
+    for (const n of graph.nodes) {
+      nodeLookup.set(n.id, n);
+    }
+
+    // Blocked edges as hatched hazard lines
+    if (evacuation.blockedEdges) {
+      for (const [aId, bId] of evacuation.blockedEdges) {
+        const na = nodeLookup.get(aId);
+        const nb = nodeLookup.get(bId);
+        if (!na || !nb) continue;
+
+        const pts: [number, number][] = [
+          [na.lat, na.lng],
+          [nb.lat, nb.lng],
+        ];
+
+        L.polyline(pts, {
+          renderer: svgRenderer,
+          color: "var(--map-evac-blocked-bg)",
+          weight: 9,
+          opacity: 0.95,
+          lineCap: "butt",
+          interactive: false,
+        }).addTo(evGroup);
+
+        L.polyline(pts, {
+          renderer: svgRenderer,
+          color: "var(--map-evac-blocked)",
+          weight: 6.5,
+          opacity: 1,
+          dashArray: "7 5",
+          lineCap: "butt",
+          interactive: false,
+        }).addTo(evGroup);
+      }
+    }
+
+    // Blocked nodes as hazard cross markers
+    if (evacuation.blockedNodes) {
+      for (const nodeId of evacuation.blockedNodes) {
+        const node = nodeLookup.get(nodeId);
+        if (!node) continue;
+
+        const hazardHtml = `
+          <div class="ned-map-marker" title="Blocked Hazard Node (${nodeId})">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="8" fill="var(--map-evac-blocked-bg)" stroke="var(--map-evac-blocked)" stroke-width="2"/>
+              <line x1="6.5" y1="6.5" x2="13.5" y2="13.5" stroke="var(--map-evac-blocked)" stroke-width="2" stroke-linecap="round"/>
+              <line x1="13.5" y1="6.5" x2="6.5" y2="13.5" stroke="var(--map-evac-blocked)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>`;
+        L.marker([node.lat, node.lng], {
+          icon: L.divIcon({ className: "", iconSize: [0, 0], html: hazardHtml }),
+          interactive: false,
+        }).addTo(evGroup);
+      }
+    }
+
+    // Assignment paths with start/end markers
+    if (evacuation.assignments) {
+      for (const assign of evacuation.assignments) {
+        const coords: [number, number][] = [];
+        for (const nid of assign.path) {
+          const n = nodeLookup.get(nid);
+          if (n) coords.push([n.lat, n.lng]);
+        }
+        if (coords.length < 2) continue;
+
+        L.polyline(coords, {
+          renderer: svgRenderer,
+          color: "var(--map-surface-elevated)",
+          weight: 7,
+          opacity: 0.9,
+          lineCap: "round",
+          lineJoin: "round",
+          interactive: false,
+        }).addTo(evGroup);
+
+        L.polyline(coords, {
+          renderer: svgRenderer,
+          color: "var(--map-evac-assign)",
+          weight: 4,
+          opacity: 0.98,
+          dashArray: "9 5",
+          lineCap: "round",
+          lineJoin: "round",
+          interactive: false,
+        }).addTo(evGroup);
+
+        const startCoord = coords[0];
+        const endCoord = coords[coords.length - 1];
+
+        const evacStartHtml = `
+          <div class="ned-map-marker" title="Evacuation Exit (${assign.from})">
+            <span class="ned-marker-badge ned-marker-badge--evac-start">
+              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 10h12M11 5l5 5-5 5"/>
+              </svg>
+              EXIT
+            </span>
+          </div>`;
+        L.marker(startCoord, {
+          icon: L.divIcon({ className: "", iconSize: [0, 0], html: evacStartHtml }),
+          interactive: false,
+        }).addTo(evGroup);
+
+        const evacEndHtml = `
+          <div class="ned-map-marker" title="Assigned Assembly (${assign.to})">
+            <span class="ned-marker-badge ned-marker-badge--evac-end">
+              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 11l3 3 7-7"/>
+              </svg>
+              SAFE
+            </span>
+          </div>`;
+        L.marker(endCoord, {
+          icon: L.divIcon({ className: "", iconSize: [0, 0], html: evacEndHtml }),
+          interactive: false,
+        }).addTo(evGroup);
+      }
+    }
+  }, [isReady, graph, evacuation]);
+
+  // 8. Trace Replay Layer: Lights visited nodes in visit order and shows the frontier
+  useEffect(() => {
+    const L = leafletRef.current;
+    const trGroup = traceLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    if (!isReady || !L || !trGroup || !svgRenderer || !graph) return;
+
+    trGroup.clearLayers();
+    if (!trace) return;
+
+    const nodeLookup = new Map<string, OutdoorNode>();
+    for (const n of graph.nodes) {
+      nodeLookup.set(n.id, n);
+    }
+
+    let visitedNodeIds: string[] = [];
+    let frontierNodeIds: string[] = [];
+    let activeNodeId: string | null = null;
+
+    if (Array.isArray(trace)) {
+      const vSet = new Set<string>();
+      const fSet = new Set<string>();
+      for (const ev of trace) {
+        if (ev.op === "visit") {
+          vSet.add(ev.nodeId);
+          fSet.delete(ev.nodeId);
+        } else if (!vSet.has(ev.nodeId)) {
+          fSet.add(ev.nodeId);
+        }
+        activeNodeId = ev.nodeId;
+      }
+      visitedNodeIds = Array.from(vSet);
+      frontierNodeIds = Array.from(fSet);
+    } else {
+      visitedNodeIds = trace.visitedNodeIds;
+      frontierNodeIds = trace.frontierNodeIds;
+      activeNodeId = trace.activeNodeId;
+    }
+
+    // Draw frontier nodes
+    for (const fid of frontierNodeIds) {
+      const node = nodeLookup.get(fid);
+      if (!node) continue;
+      L.circleMarker([node.lat, node.lng], {
+        renderer: svgRenderer,
+        radius: 6.5,
+        color: "var(--map-trace-frontier)",
+        weight: 2.2,
+        fillColor: "var(--map-surface-elevated)",
+        fillOpacity: 0.9,
+        interactive: false,
+      }).addTo(trGroup);
+    }
+
+    // Draw visited nodes in visit order
+    visitedNodeIds.forEach((vid, orderIdx) => {
+      const node = nodeLookup.get(vid);
+      if (!node) return;
+      L.circleMarker([node.lat, node.lng], {
+        renderer: svgRenderer,
+        radius: 6,
+        color: "var(--map-surface-elevated)",
+        weight: 1.75,
+        fillColor: "var(--map-trace-visited)",
+        fillOpacity: 0.95,
+        interactive: false,
+      }).addTo(trGroup);
+
+      if (zoomLevel >= 17) {
+        const orderBadge = `
+          <div class="ned-map-marker" style="pointer-events:none; transform: translate(-50%, -140%);">
+            <span style="background: var(--map-trace-visited); color: var(--map-text-inverse); font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid var(--map-surface-elevated);">
+              ${orderIdx + 1}
+            </span>
+          </div>`;
+        L.marker([node.lat, node.lng], {
+          icon: L.divIcon({ className: "", iconSize: [0, 0], html: orderBadge }),
+          interactive: false,
+        }).addTo(trGroup);
+      }
+    });
+
+    // Draw active trace cursor node
+    if (activeNodeId) {
+      const activeNode = nodeLookup.get(activeNodeId);
+      if (activeNode) {
+        L.circleMarker([activeNode.lat, activeNode.lng], {
+          renderer: svgRenderer,
+          radius: 9.5,
+          color: "var(--map-trace-active)",
+          weight: 2.6,
+          fillColor: "var(--map-trace-active)",
+          fillOpacity: 0.28,
+          interactive: false,
+        }).addTo(trGroup);
+      }
+    }
+  }, [isReady, graph, trace, zoomLevel]);
 
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) mapRef.current.zoomIn();
