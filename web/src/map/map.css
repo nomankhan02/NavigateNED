@@ -1,0 +1,301 @@
+/* web/src/map/map.css */
+/* OutdoorMap tokens (--map-*) with institutional architectural campus fallbacks */
+
+:root {
+  --map-bg: #e7ece8;
+  --map-Turf-tint: #dde7df;
+  --map-surface-card: rgba(250, 252, 251, 0.94);
+  --map-surface-elevated: #ffffff;
+  --map-border: #b8c6be;
+  --map-border-strong: #5c7468;
+
+  --map-text-primary: #14241d;
+  --map-text-secondary: #3f544a;
+  --map-text-inverse: #f7faf8;
+
+  --map-edge-walkway: #6b8276;
+  --map-edge-covered: #3d6352;
+
+  --map-landmark-fill: rgba(20, 82, 62, 0.16);
+  --map-landmark-stroke: #185a44;
+  --map-landmark-hover-fill: rgba(20, 82, 62, 0.32);
+  --map-landmark-hover-stroke: #0d3d2d;
+  --map-landmark-selected-fill: rgba(184, 93, 25, 0.34);
+  --map-landmark-selected-stroke: #b85d19;
+
+  --map-marker-entrance: #166534;
+  --map-marker-gate: #9a3412;
+  --map-marker-assembly: #0f766e;
+  --map-marker-highlight: #d97706;
+
+  --map-route-stroke: #b85d19;
+  --map-route-casing: #fff9f2;
+  --map-user-dot: #0284c7;
+  --map-user-accuracy: rgba(2, 132, 199, 0.18);
+
+  --map-evac-blocked: #b91c1c;
+  --map-evac-blocked-bg: #fef2f2;
+  --map-evac-assign: #15803d;
+
+  --map-trace-visited: #0d9488;
+  --map-trace-frontier: #d97706;
+  --map-trace-active: #be123c;
+
+  --map-shadow: 0 4px 14px rgba(18, 31, 25, 0.12);
+  --map-font-sans: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --map-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Core Leaflet structural rules (self-contained, zero default Leaflet chrome) */
+.ned-outdoor-map-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  background-color: var(--map-bg);
+  font-family: var(--map-font-sans);
+  color: var(--map-text-primary);
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--map-border);
+  user-select: none;
+}
+
+.ned-leaflet-viewport {
+  width: 100%;
+  height: 100%;
+  background-color: var(--map-bg);
+  outline: none;
+}
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.leaflet-container {
+  overflow: hidden;
+  background: var(--map-bg);
+  outline-offset: 1px;
+  font-family: var(--map-font-sans);
+}
+
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.leaflet-Interactive {
+  cursor: pointer;
+}
+
+.leaflet-grab {
+  cursor: grab;
+}
+
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+  cursor: grabbing;
+}
+
+.leaflet-map-pane { z-index: 200; }
+.leaflet-tile-pane { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane { z-index: 500; }
+.leaflet-marker-pane { z-index: 600; }
+.leaflet-tooltip-pane { z-index: 650; }
+.leaflet-popup-pane { z-index: 700; }
+.leaflet-control-container { display: none; }
+
+.leaflet-zoom-animated {
+  transform-origin: 0 0;
+}
+
+svg.leaflet-zoom-animated {
+  will-change: transform;
+}
+
+/* Landmark label tags rendered on map */
+.ned-landmark-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: var(--map-surface-card);
+  color: var(--map-text-primary);
+  border: 1px solid var(--map-border-strong);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(18, 31, 25, 0.14);
+  pointer-events: none;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.ned-landmark-label--selected {
+  background: var(--map-landmark-selected-stroke);
+  color: var(--map-text-inverse);
+  border-color: var(--map-text-primary);
+  z-index: 25;
+}
+
+/* Custom SVG markers (entrance, gate, assembly, highlight, user, evacuation) */
+.ned-map-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  transition: transform 160ms ease;
+}
+
+.ned-map-marker:hover {
+  transform: translate(-50%, -50%) scale(1.16);
+}
+
+.ned-marker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--map-text-inverse);
+  box-shadow: 0 2px 5px rgba(18, 31, 25, 0.22);
+  border: 1.5px solid var(--map-surface-elevated);
+  white-space: nowrap;
+}
+
+.ned-marker-badge--gate {
+  background: var(--map-marker-gate);
+}
+
+.ned-marker-badge--assembly {
+  background: var(--map-marker-assembly);
+}
+
+.ned-marker-badge--evac-start {
+  background: var(--map-evac-blocked);
+}
+
+.ned-marker-badge--evac-end {
+  background: var(--map-evac-assign);
+}
+
+/* Animated route draw-on effect via stroke-dashoffset */
+@keyframes ned-route-draw {
+  from {
+    stroke-dashoffset: 1800;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.ned-route-animated-path {
+  stroke-dasharray: 1800;
+  stroke-dashoffset: 0;
+  animation: ned-route-draw 950ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Custom architectural zoom & recenter controls (hand-drawn SVG, unified 1.75px stroke) */
+.ned-map-controls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ned-map-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--map-surface-card);
+  color: var(--map-text-primary);
+  border: 1px solid var(--map-border-strong);
+  border-radius: 6px;
+  box-shadow: var(--map-shadow);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.ned-map-ctrl-btn:hover {
+  background: var(--map-surface-elevated);
+  transform: translateY(-1px);
+}
+
+.ned-map-ctrl-btn:active {
+  transform: translateY(0);
+}
+
+.ned-map-ctrl-btn:focus-visible {
+  outline: 2px solid var(--map-landmark-selected-stroke);
+  outline-offset: 2px;
+}
+
+/* Map Legend / Status Pill */
+.ned-map-hud {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 800;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--map-surface-card);
+  border: 1px solid var(--map-border);
+  border-radius: 6px;
+  box-shadow: var(--map-shadow);
+  font-size: 11px;
+  color: var(--map-text-secondary);
+}
+
+.ned-map-hud-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.ned-map-hud-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ned-route-animated-path {
+    animation: none !important;
+    stroke-dasharray: none !important;
+  }
+  .ned-landmark-label,
+  .ned-map-marker,
+  .ned-map-ctrl-btn {
+    transition: none !important;
+  }
+}
