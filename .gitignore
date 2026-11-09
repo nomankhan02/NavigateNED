@@ -19,8 +19,10 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Environment variables
+.env
 .env*
 !.env.example
+
 
 # C++ Build outputs & temporary files
 core/build/
@@ -38,3 +40,6 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Private keys and certificates
+*.pem
+*.key

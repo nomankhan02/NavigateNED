@@ -50,4 +50,3 @@ jobs:
             git commit -m "build(wasm): update compiled navcore.js artifact [skip ci]"
             git push
           fi
-
