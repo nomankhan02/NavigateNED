@@ -13,12 +13,9 @@
 - **CSS**: Pure vanilla CSS variables for tokens (`tokens.css`), scoped CSS modules for components, standard CSS resets.
 
 ## Git & Workflow Rules
-- **Branches**:
-  - `member-a-data`: Member A (Data & GIS)
-  - `member-b-core`: Member B (C++ & WASM Core)
-  - `member-c-web`: Member C (Web UI & Frontend)
-- **Commits**: Small, atomic, well-described commits. Never rewrite shared history (`git push --force` is prohibited).
-- **Trunk Integration**: Merge to `main` through clean PRs with verified builds and tests.
+- Work directly on `main`, one member at a time. Run `git pull` before starting.
+- Agents never run git commands (no add, commit, push, pull, merge). At the end of each task, print a one-line suggested commit message and the list of changed files. The user commits and pushes.
+- Never force push.
 
 ## Token & Agent Efficiency Rules
 - Read markdown documentation files first before acting.
