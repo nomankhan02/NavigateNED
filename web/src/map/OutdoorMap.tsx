@@ -43,6 +43,74 @@ const MAJOR_LANDMARK_IDS = new Set([
   "b-admission-centre",
 ]);
 
+const TIER1_ADMIN_LIBRARY_IDS = new Set([
+  "b-library",
+  "b-admin",
+  "b-dean-offices",
+  "b-auditorium",
+  "b-main-masjid",
+  "b-csit",
+  "b-admission-centre",
+]);
+
+function haversineMeters(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const dLat = ((b[0] - a[0]) * Math.PI) / 180;
+  const dLng = ((b[1] - a[1]) * Math.PI) / 180;
+  const lat1 = (a[0] * Math.PI) / 180;
+  const lat2 = (b[0] * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+function getLandmarkPriority(
+  lm: CampusLandmark,
+  selectedLandmarkId: string | null | undefined,
+  hoveredLandmarkId: string | null,
+  activeRouteNodes: Set<string>
+): number {
+  if (
+    lm.id === selectedLandmarkId ||
+    lm.id === hoveredLandmarkId ||
+    activeRouteNodes.has(lm.nodeId)
+  ) {
+    return 100;
+  }
+  if (
+    lm.category === "gate" ||
+    lm.id === "b-main-gate" ||
+    lm.id === "b-bank-gate" ||
+    lm.id === "b-cricket-ground" ||
+    lm.id === "b-soccer-field"
+  ) {
+    return 90;
+  }
+  if (TIER1_ADMIN_LIBRARY_IDS.has(lm.id)) {
+    return 78;
+  }
+  if (MAJOR_LANDMARK_IDS.has(lm.id) || lm.category === "academic") {
+    return 58;
+  }
+  return 35;
+}
+
+function getLandmarkLabelText(
+  lm: CampusLandmark,
+  zoom: number,
+  isFocused: boolean
+): string {
+  if (zoom >= 19 || (zoom >= 18 && isFocused)) {
+    return lm.name;
+  }
+  if (zoom <= 16 && !isFocused) {
+    const codeMatch = lm.short.match(/\(([0-9A-Za-z-]+)\)$/);
+    if (codeMatch) return codeMatch[1];
+  }
+  return lm.short;
+}
+
 function getPolygonCenter(ring: [number, number][]): [number, number] {
   if (!ring || ring.length === 0) return [24.9322, 67.1133];
   let latSum = 0;
@@ -98,9 +166,17 @@ export function OutdoorMap({
 
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
+  const [hoveredLandmarkId, setHoveredLandmarkId] = useState<string | null>(null);
   const [basemapMode, setBasemapMode] = useState<BasemapMode>("street");
   const [showMasterPlan, setShowMasterPlan] = useState(false);
   const [masterPlanOpacity, setMasterPlanOpacity] = useState(0.8);
+
+  const labelItemsRef = useRef<
+    Array<{ lm: CampusLandmark; center: [number, number]; el: HTMLDivElement }>
+  >([]);
+  const fixedBadgesRef = useRef<
+    Array<{ lat: number; lng: number; w: number; h: number }>
+  >([]);
 
   const onLandmarkClickRef = useRef(onLandmarkClick);
   onLandmarkClickRef.current = onLandmarkClick;
@@ -285,51 +361,51 @@ export function OutdoorMap({
     }
   }, [isReady, graph, showGraph]);
 
-  // 3. Layer (b) & (c): Landmark footprints + zoom-aware labels + entrance/gate/assembly markers
+  // 3a. Layer (b): Landmark Footprints on Canvas Renderer (smooth native zoom animation)
   useEffect(() => {
     const L = leafletRef.current;
     const fpGroup = footprintLayerRef.current;
-    const mkGroup = markerLayerRef.current;
-    const lblGroup = labelLayerRef.current;
-    const svgRenderer = svgRendererRef.current;
-    const map = mapRef.current;
-    if (!isReady || !L || !fpGroup || !mkGroup || !lblGroup || !map || !graph) return;
+    const canvasRenderer = canvasRendererRef.current;
+    if (!isReady || !L || !fpGroup || !canvasRenderer || !graph) return;
 
     fpGroup.clearLayers();
-    mkGroup.clearLayers();
-    lblGroup.clearLayers();
+    const rootEl = containerRef.current;
 
-    // (b) Landmark Footprints
+    const strokeNormal = resolveMapVar(rootEl, "--map-landmark-stroke", "#185a44");
+    const fillNormal = resolveMapVar(rootEl, "--map-landmark-fill", "#185a44");
+    const strokeHover = resolveMapVar(rootEl, "--map-landmark-hover-stroke", "#0d3d2d");
+    const fillHover = resolveMapVar(rootEl, "--map-landmark-hover-fill", "#0d3d2d");
+    const strokeSel = resolveMapVar(rootEl, "--map-landmark-selected-stroke", "#b85d19");
+    const fillSel = resolveMapVar(rootEl, "--map-landmark-selected-fill", "#d97706");
+
     for (const lm of graph.landmarks) {
       if (!lm.footprint || lm.footprint.length < 3) continue;
       const isSelected = selectedLandmarkId === lm.id;
 
       const baseStyle = {
-        renderer: svgRenderer,
-        color: isSelected
-          ? "var(--map-landmark-selected-stroke)"
-          : "var(--map-landmark-stroke)",
-        weight: isSelected ? 2.5 : 1.5,
-        fillColor: isSelected
-          ? "var(--map-landmark-selected-fill)"
-          : "var(--map-landmark-fill)",
-        fillOpacity: isSelected ? 0.36 : 0.18,
+        renderer: canvasRenderer,
+        color: isSelected ? strokeSel : strokeNormal,
+        weight: isSelected ? 2.5 : 1.6,
+        fillColor: isSelected ? fillSel : fillNormal,
+        fillOpacity: isSelected ? 0.36 : 0.2,
       };
 
       const poly = L.polygon(lm.footprint, baseStyle);
 
       poly.on("mouseover", () => {
+        setHoveredLandmarkId(lm.id);
         if (selectedLandmarkId !== lm.id) {
           poly.setStyle({
-            weight: 2.2,
-            fillColor: "var(--map-landmark-hover-fill)",
-            fillOpacity: 0.32,
-            color: "var(--map-landmark-hover-stroke)",
+            weight: 2.3,
+            fillColor: fillHover,
+            fillOpacity: 0.34,
+            color: strokeHover,
           });
         }
       });
 
       poly.on("mouseout", () => {
+        setHoveredLandmarkId((prev) => (prev === lm.id ? null : prev));
         poly.setStyle(baseStyle);
       });
 
@@ -342,148 +418,280 @@ export function OutdoorMap({
 
       poly.addTo(fpGroup);
     }
+  }, [isReady, graph, selectedLandmarkId]);
 
-    // Zoom-dependent non-overlapping short labels + Gate/Assembly collision registration
-    const placedBoxes: Array<[number, number, number, number]> = [];
+  // 3b. Layer (c): Merged Gate Markers & Deduplicated Assembly Area Markers (created once, not recreated on zoom)
+  useEffect(() => {
+    const L = leafletRef.current;
+    const mkGroup = markerLayerRef.current;
+    if (!isReady || !L || !mkGroup || !graph) return;
 
-    // Pre-register Gate and Assembly badge bounding boxes so landmark labels never overlap them
-    for (const n of graph.nodes) {
-      if (n.kind === "gate" || n.kind === "assembly") {
-        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
-        const badgeW = n.kind === "assembly" ? 86 : 58;
-        const badgeH = 22;
-        placedBoxes.push([
-          pt.x - badgeW / 2,
-          pt.y - badgeH / 2,
-          pt.x + badgeW / 2,
-          pt.y + badgeH / 2,
-        ]);
+    mkGroup.clearLayers();
+    const fixedBadges: Array<{ lat: number; lng: number; w: number; h: number }> = [];
+
+    // Active evacuation target assembly node IDs (to highlight assigned assembly areas without stacking duplicate SAFE markers)
+    const assignedAssemblyNodeIds = new Set<string>();
+    if (evacuation?.assignments) {
+      for (const a of evacuation.assignments) {
+        if (a.path && a.path.length > 0) {
+          assignedAssemblyNodeIds.add(a.path[a.path.length - 1]);
+        }
       }
     }
 
-    const sortedLandmarks = [...graph.landmarks].sort((a, b) => {
-      if (a.id === selectedLandmarkId) return -1;
-      if (b.id === selectedLandmarkId) return 1;
-      const aMaj = MAJOR_LANDMARK_IDS.has(a.id) ? 1 : 0;
-      const bMaj = MAJOR_LANDMARK_IDS.has(b.id) ? 1 : 0;
-      return bMaj - aMaj;
-    });
+    // Merge nearby gate nodes (< 65m apart) into one unified GATE marker per gate complex
+    const gateNodes = graph.nodes.filter((n) => n.kind === "gate");
+    const mergedGates: Array<{ id: string; lat: number; lng: number }> = [];
+    const usedGateIds = new Set<string>();
 
-    for (const lm of sortedLandmarks) {
-      const isSelected = lm.id === selectedLandmarkId;
-      const isMajor = MAJOR_LANDMARK_IDS.has(lm.id);
+    for (let i = 0; i < gateNodes.length; i++) {
+      const g1 = gateNodes[i];
+      if (usedGateIds.has(g1.id)) continue;
+      usedGateIds.add(g1.id);
 
-      if (!isSelected) {
-        if (zoomLevel < 16) continue;
-        if (zoomLevel === 16 && !isMajor) continue;
-        if (zoomLevel === 17 && !isMajor && lm.category === "labs") continue;
-      }
-
-      const center = getPolygonCenter(lm.footprint);
-      const pt = map.latLngToContainerPoint(center);
-      const estW = Math.max(48, lm.short.length * 6.5 + 14);
-      const estH = 20;
-      const box: [number, number, number, number] = [
-        pt.x - estW / 2,
-        pt.y - estH / 2,
-        pt.x + estW / 2,
-        pt.y + estH / 2,
-      ];
-
-      let collides = false;
-      if (!isSelected) {
-        for (const [x0, y0, x1, y1] of placedBoxes) {
-          if (box[0] < x1 + 4 && box[2] > x0 - 4 && box[1] < y1 + 3 && box[3] > y0 - 3) {
-            collides = true;
-            break;
-          }
+      let latSum = g1.lat;
+      let lngSum = g1.lng;
+      let count = 1;
+      for (let j = i + 1; j < gateNodes.length; j++) {
+        const g2 = gateNodes[j];
+        if (usedGateIds.has(g2.id)) continue;
+        if (haversineMeters([g1.lat, g1.lng], [g2.lat, g2.lng]) < 65) {
+          usedGateIds.add(g2.id);
+          latSum += g2.lat;
+          lngSum += g2.lng;
+          count += 1;
         }
       }
-      if (collides) continue;
-      placedBoxes.push(box);
+      mergedGates.push({
+        id: g1.id,
+        lat: latSum / count,
+        lng: lngSum / count,
+      });
+    }
+
+    for (const gate of mergedGates) {
+      fixedBadges.push({ lat: gate.lat, lng: gate.lng, w: 62, h: 24 });
+      const gateHtml = `
+        <div class="ned-map-marker" title="Campus Gate (${gate.id})">
+          <span class="ned-marker-badge ned-marker-badge--gate">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 17V6l7-3 7 3v11"/>
+              <path d="M8 17v-6h4v6"/>
+            </svg>
+            GATE
+          </span>
+        </div>`;
+      L.marker([gate.lat, gate.lng], {
+        icon: L.divIcon({ className: "", iconSize: [0, 0], html: gateHtml }),
+        interactive: false,
+      }).addTo(mkGroup);
+    }
+
+    // One unified marker per Assembly Area (deduplicating SAFE and SAFE ZONE)
+    const assemblyNodes = graph.nodes.filter((n) => n.kind === "assembly");
+    for (const n of assemblyNodes) {
+      const isAssigned = assignedAssemblyNodeIds.has(n.id);
+      fixedBadges.push({ lat: n.lat, lng: n.lng, w: 92, h: 24 });
+      const assemblyHtml = `
+        <div class="ned-map-marker" title="Assembly Area (${n.id})">
+          <span class="ned-marker-badge ${
+            isAssigned ? "ned-marker-badge--evac-end" : "ned-marker-badge--assembly"
+          }">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 2L18 6v5c0 4.5-3.4 7.5-8 9-4.6-1.5-8-4.5-8-9V6l8-4z"/>
+              <path d="M7 10l2 2 4-4"/>
+            </svg>
+            SAFE ZONE
+          </span>
+        </div>`;
+      L.marker([n.lat, n.lng], {
+        icon: L.divIcon({ className: "", iconSize: [0, 0], html: assemblyHtml }),
+        interactive: false,
+      }).addTo(mkGroup);
+    }
+
+    fixedBadgesRef.current = fixedBadges;
+  }, [isReady, graph, evacuation]);
+
+  // 3c. Persistent Landmark Label Markers (mounted once when graph changes, never recreated on zoom)
+  useEffect(() => {
+    const L = leafletRef.current;
+    const lblGroup = labelLayerRef.current;
+    if (!isReady || !L || !lblGroup || !graph) return;
+
+    lblGroup.clearLayers();
+    const items: Array<{
+      lm: CampusLandmark;
+      center: [number, number];
+      el: HTMLDivElement;
+    }> = [];
+
+    for (const lm of graph.landmarks) {
+      if (!lm.footprint || lm.footprint.length < 3) continue;
+      const center = getPolygonCenter(lm.footprint);
+      const el = document.createElement("div");
+      el.className = "ned-landmark-label";
+      el.textContent = lm.short;
 
       const icon = L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<div class="ned-landmark-label ${
-          isSelected ? "ned-landmark-label--selected" : ""
-        }">${lm.short}</div>`,
+        html: el,
       });
 
       L.marker(center, { icon, interactive: false }).addTo(lblGroup);
+      items.push({ lm, center, el });
     }
 
-    // (c) Entrance, Gate & Assembly-Area Markers (unified 1.75px stroke SVG icons)
-    const markerBoxes: Array<[number, number, number, number]> = [];
-    for (const n of graph.nodes) {
-      if (n.kind === "gate") {
-        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
-        const box: [number, number, number, number] = [pt.x - 28, pt.y - 11, pt.x + 28, pt.y + 11];
-        if (
-          markerBoxes.some(
-            ([x0, y0, x1, y1]) =>
-              box[0] < x1 + 2 && box[2] > x0 - 2 && box[1] < y1 + 2 && box[3] > y0 - 2
-          )
-        ) {
-          continue;
-        }
-        markerBoxes.push(box);
+    labelItemsRef.current = items;
+  }, [isReady, graph]);
 
-        const gateHtml = `
-          <div class="ned-map-marker" title="Campus Gate (${n.id})">
-            <span class="ned-marker-badge ned-marker-badge--gate">
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 17V6l7-3 7 3v11"/>
-                <path d="M8 17v-6h4v6"/>
-              </svg>
-              GATE
-            </span>
-          </div>`;
-        L.marker([n.lat, n.lng], {
-          icon: L.divIcon({ className: "", iconSize: [0, 0], html: gateHtml }),
-          interactive: false,
-        }).addTo(mkGroup);
-      } else if (n.kind === "assembly") {
-        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
-        const box: [number, number, number, number] = [pt.x - 42, pt.y - 11, pt.x + 42, pt.y + 11];
-        if (
-          markerBoxes.some(
-            ([x0, y0, x1, y1]) =>
-              box[0] < x1 + 2 && box[2] > x0 - 2 && box[1] < y1 + 2 && box[3] > y0 - 2
-          )
-        ) {
-          continue;
-        }
-        markerBoxes.push(box);
+  // 3d. Debounced Priority + Greedy Rectangle Collision Label Placement on zoomend (never on move)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!isReady || !map || !graph) return;
 
-        const assemblyHtml = `
-          <div class="ned-map-marker" title="Assembly Area (${n.id})">
-            <span class="ned-marker-badge ned-marker-badge--assembly">
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 2L18 6v5c0 4.5-3.4 7.5-8 9-4.6-1.5-8-4.5-8-9V6l8-4z"/>
-                <path d="M7 10l2 2 4-4"/>
-              </svg>
-              SAFE ZONE
-            </span>
-          </div>`;
-        L.marker([n.lat, n.lng], {
-          icon: L.divIcon({ className: "", iconSize: [0, 0], html: assemblyHtml }),
-          interactive: false,
-        }).addTo(mkGroup);
-      } else if (n.kind === "entrance" && zoomLevel >= 17) {
-        const entHtml = `
-          <div class="ned-map-marker" title="Building Entrance (${n.id})">
-            <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="5" fill="var(--map-marker-entrance)" stroke="var(--map-surface-elevated)" stroke-width="1.75"/>
-            </svg>
-          </div>`;
-        L.marker([n.lat, n.lng], {
-          icon: L.divIcon({ className: "", iconSize: [0, 0], html: entHtml }),
-          interactive: false,
-        }).addTo(mkGroup);
+    const rafId = requestAnimationFrame(() => {
+      const items = labelItemsRef.current;
+      if (!items || items.length === 0) return;
+
+      const activeRouteNodes = new Set<string>();
+      if (route && route.length > 0) {
+        activeRouteNodes.add(route[0]);
+        activeRouteNodes.add(route[route.length - 1]);
       }
-    }
-  }, [isReady, graph, selectedLandmarkId, zoomLevel]);
+
+      // Seed collision rectangles with merged GATE, SAFE ZONE, and route/evacuation endpoint badges
+      const placedBoxes: Array<[number, number, number, number]> = [];
+      for (const b of fixedBadgesRef.current) {
+        const pt = map.latLngToContainerPoint([b.lat, b.lng]);
+        placedBoxes.push([
+          pt.x - b.w / 2,
+          pt.y - b.h / 2,
+          pt.x + b.w / 2,
+          pt.y + b.h / 2,
+        ]);
+      }
+
+      if (route && route.length >= 2) {
+        const startNode = graph.nodes.find((n) => n.id === route[0]);
+        const endNode = graph.nodes.find((n) => n.id === route[route.length - 1]);
+        if (startNode) {
+          const pt = map.latLngToContainerPoint([startNode.lat, startNode.lng]);
+          placedBoxes.push([pt.x - 34, pt.y + 2, pt.x + 34, pt.y + 26]);
+        }
+        if (endNode) {
+          const pt = map.latLngToContainerPoint([endNode.lat, endNode.lng]);
+          placedBoxes.push([pt.x - 28, pt.y - 34, pt.x + 28, pt.y - 10]);
+        }
+      }
+
+      if (evacuation?.assignments) {
+        for (const assign of evacuation.assignments) {
+          if (assign.path.length === 0) continue;
+          const fromNode = graph.nodes.find((n) => n.id === assign.path[0]);
+          if (fromNode) {
+            const pt = map.latLngToContainerPoint([fromNode.lat, fromNode.lng]);
+            placedBoxes.push([pt.x - 58, pt.y - 12, pt.x - 2, pt.y + 12]);
+          }
+        }
+      }
+
+      const ranked = [...items].sort((a, b) => {
+        const pa = getLandmarkPriority(
+          a.lm,
+          selectedLandmarkId,
+          hoveredLandmarkId,
+          activeRouteNodes
+        );
+        const pb = getLandmarkPriority(
+          b.lm,
+          selectedLandmarkId,
+          hoveredLandmarkId,
+          activeRouteNodes
+        );
+        return pb - pa;
+      });
+
+      for (const item of ranked) {
+        const { lm, center, el } = item;
+        const isSelected = lm.id === selectedLandmarkId;
+        const isHovered = lm.id === hoveredLandmarkId;
+        const isFocused = isSelected || isHovered;
+        const priority = getLandmarkPriority(
+          lm,
+          selectedLandmarkId,
+          hoveredLandmarkId,
+          activeRouteNodes
+        );
+
+        // Minimum zoom filter by priority tier
+        let eligible = true;
+        if (!isFocused) {
+          if (zoomLevel < 16 && priority < 85) eligible = false;
+          else if (zoomLevel === 16 && priority < 55) eligible = false;
+          else if (zoomLevel === 17 && priority < 40 && lm.category === "labs") {
+            eligible = false;
+          }
+        }
+
+        const text = getLandmarkLabelText(lm, zoomLevel, isFocused);
+        if (el.textContent !== text) {
+          el.textContent = text;
+        }
+
+        el.classList.toggle("ned-landmark-label--selected", isSelected);
+        el.classList.toggle("ned-landmark-label--hovered", isHovered && !isSelected);
+
+        if (!eligible) {
+          el.classList.remove("ned-landmark-label--visible");
+          continue;
+        }
+
+        const pt = map.latLngToContainerPoint(center);
+        const estW = Math.max(44, text.length * 6.4 + 14);
+        const estH = 20;
+        const box: [number, number, number, number] = [
+          pt.x - estW / 2,
+          pt.y - estH / 2,
+          pt.x + estW / 2,
+          pt.y + estH / 2,
+        ];
+
+        let collides = false;
+        if (!isFocused) {
+          for (const [x0, y0, x1, y1] of placedBoxes) {
+            if (
+              box[0] < x1 + 5 &&
+              box[2] > x0 - 5 &&
+              box[1] < y1 + 4 &&
+              box[3] > y0 - 4
+            ) {
+              collides = true;
+              break;
+            }
+          }
+        }
+
+        if (collides) {
+          el.classList.remove("ned-landmark-label--visible");
+        } else {
+          placedBoxes.push(box);
+          el.classList.add("ned-landmark-label--visible");
+        }
+      }
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [
+    isReady,
+    graph,
+    zoomLevel,
+    selectedLandmarkId,
+    hoveredLandmarkId,
+    route,
+    evacuation,
+  ]);
 
   // 4. Layer (d): Route polyline from node IDs with animated draw-on effect
   useEffect(() => {
@@ -731,6 +939,8 @@ export function OutdoorMap({
 
         const startCoord = coords[0];
         const endCoord = coords[coords.length - 1];
+        const endNodeId = assign.path[assign.path.length - 1];
+        const endNode = nodeLookup.get(endNodeId);
 
         const evacStartHtml = `
           <div class="ned-map-marker" style="transform: translate(-115%, -50%);" title="Evacuation Exit (${assign.from})">
@@ -746,19 +956,22 @@ export function OutdoorMap({
           interactive: false,
         }).addTo(evGroup);
 
-        const evacEndHtml = `
-          <div class="ned-map-marker" style="transform: translate(-50%, -145%);" title="Assigned Assembly (${assign.assemblyId})">
-            <span class="ned-marker-badge ned-marker-badge--evac-end">
-              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 11l3 3 7-7"/>
-              </svg>
-              SAFE
-            </span>
-          </div>`;
-        L.marker(endCoord, {
-          icon: L.divIcon({ className: "", iconSize: [0, 0], html: evacEndHtml }),
-          interactive: false,
-        }).addTo(evGroup);
+        // Only draw a standalone SAFE badge if the target is NOT already a SAFE ZONE assembly marker
+        if (!endNode || endNode.kind !== "assembly") {
+          const evacEndHtml = `
+            <div class="ned-map-marker" style="transform: translate(-50%, -145%);" title="Assigned Assembly (${assign.assemblyId})">
+              <span class="ned-marker-badge ned-marker-badge--evac-end">
+                <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 11l3 3 7-7"/>
+                </svg>
+                SAFE
+              </span>
+            </div>`;
+          L.marker(endCoord, {
+            icon: L.divIcon({ className: "", iconSize: [0, 0], html: evacEndHtml }),
+            interactive: false,
+          }).addTo(evGroup);
+        }
       }
     }
   }, [isReady, graph, evacuation]);
@@ -831,18 +1044,16 @@ export function OutdoorMap({
         interactive: false,
       }).addTo(trGroup);
 
-      if (zoomLevel >= 17) {
-        const orderBadge = `
-          <div class="ned-map-marker" style="pointer-events:none; transform: translate(-50%, -140%);">
-            <span style="background: var(--map-trace-visited); color: var(--map-text-inverse); font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid var(--map-surface-elevated);">
-              ${orderIdx + 1}
-            </span>
-          </div>`;
-        L.marker([node.lat, node.lng], {
-          icon: L.divIcon({ className: "", iconSize: [0, 0], html: orderBadge }),
-          interactive: false,
-        }).addTo(trGroup);
-      }
+      const orderBadge = `
+        <div class="ned-map-marker ned-trace-order-badge" style="pointer-events:none; transform: translate(-50%, -140%);">
+          <span style="background: var(--map-trace-visited); color: var(--map-text-inverse); font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid var(--map-surface-elevated);">
+            ${orderIdx + 1}
+          </span>
+        </div>`;
+      L.marker([node.lat, node.lng], {
+        icon: L.divIcon({ className: "", iconSize: [0, 0], html: orderBadge }),
+        interactive: false,
+      }).addTo(trGroup);
     });
 
     // Draw active trace cursor node
@@ -860,7 +1071,7 @@ export function OutdoorMap({
         }).addTo(trGroup);
       }
     }
-  }, [isReady, graph, trace, zoomLevel]);
+  }, [isReady, graph, trace]);
 
   // 9. Switchable Basemaps (Street vs Satellite)
   useEffect(() => {

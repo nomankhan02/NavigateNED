@@ -194,6 +194,18 @@ def extract():
         if not footprint or len(footprint) == 0:
             if l.get("id") == "poi-soccer" and raw_meta.get("soccerPolygon"):
                 footprint = raw_meta.get("soccerPolygon")
+            elif l.get("id") == "poi-cricket":
+                clat = 24.93202
+                clng = 67.11531
+                r_lat = 62.0 / EARTH_RADIUS_M * (180.0 / math.pi)
+                r_lng = r_lat / math.cos(math.radians(clat))
+                footprint = [
+                    [
+                        round(clat + r_lat * math.sin(2.0 * math.pi * k / 16), 6),
+                        round(clng + r_lng * math.cos(2.0 * math.pi * k / 16), 6),
+                    ]
+                    for k in range(16)
+                ]
             else:
                 clat = float(l["coordinates"][0])
                 clng = float(l["coordinates"][1])

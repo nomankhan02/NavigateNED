@@ -195,14 +195,27 @@ svg.leaflet-zoom-animated {
   white-space: nowrap;
   box-shadow: 0 1px 4px rgba(18, 31, 25, 0.14);
   pointer-events: none;
-  transition: transform 160ms ease, opacity 160ms ease;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 160ms ease;
+}
+
+.ned-landmark-label--visible {
+  opacity: 1;
+}
+
+.ned-landmark-label--hovered {
+  opacity: 1;
+  background: var(--map-surface-elevated);
+  border-color: var(--map-landmark-hover-stroke);
+  z-index: 28;
 }
 
 .ned-landmark-label--selected {
+  opacity: 1;
   background: var(--map-landmark-selected-stroke);
   color: var(--map-text-inverse);
   border-color: var(--map-text-primary);
-  z-index: 25;
+  z-index: 30;
 }
 
 /* Custom SVG markers (entrance, gate, assembly, highlight, user, evacuation) */
