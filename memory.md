@@ -1,26 +1,24 @@
 # Project Memory
 
 ## Current State
-- Repository initialized with foundation rules, agent boundaries, and data/API contracts.
-- C++17 core scaffolded with native test suite (Doctest) and WASM bridge (`call()`).
-- Emscripten GitHub Actions CI workflow configured to test and compile WASM artifact to `web/public/wasm/navcore.js`.
-- Next.js 15+ App Router web application initialized with static HTML export (`output: "export"`).
-- WASM loader and typed bridge implemented in `web/src/core/`.
-- Sample 4-node campus graph defined in `data/sample/graph.json`.
-- Minimal placeholder wasm runtime committed to `web/public/wasm/` for initial local verification pending GitHub Actions execution.
+- Repository foundation initialized with governance rules, contracts, and static export workflow.
+- Task A1 delivered: Outdoor campus graph extracted to `data/graph.json` (86 nodes, 108 edges, 55 landmarks).
+- Calibrated master plan map image committed to `web/public/map/ned_master_plan.jpg` with corner coordinates in `data/graph.json` meta.
+- Automated extractor `tools/extract_ned.py` and validator `tools/validate.py` built and passing.
+- Next.js static export verified with updated public assets.
 
-## Architectural Decisions
-- Single entry point C++ WASM API via `std::string call(const std::string& fn, const std::string& argsJson)`.
-- Zero local C++ build tool requirement for frontend development; CI builds and commits compiled WASM.
-- Headless UI + vanilla CSS modules + custom unified SVG icon system (no Tailwind/icon libraries).
-- In-memory WASM caching and browser fetch caching for JSON graphs; service worker deferred to future task.
+## Architectural & Data Notes
+- Identifiers: Outdoor nodes use `n<number>` (`n1`..`n86`), landmarks use `b-<slug>` (e.g., `b-csit`, `b-admin`, `b-library`).
+- Graph Topology: Fully connected single component verified by BFS. Every landmark has a designated entrance node.
+- Distance Metrics: Great-circle Haversine formula strictly computed in meters for all edges.
+- Raster Alignment: `meta.masterPlanControlCorners` provides 4-corner affine control coordinates for 2D map overlay.
+- Contract alignment: `category` values normalized to contract standards (`academic`, `services`, `labs`, `gate`, `assembly`, `library`, etc.).
 
 ## Open Tasks
-- [ ] Member A: Map campus geo-boundaries, populate `data/graph.json` and indoor JSON specs.
-- [ ] Member B: Implement C++ DSA algorithms in `core/` (Dijkstra, A*, BFS, Bellman-Ford, Floyd-Warshall, Kruskal/Prim MST, TSP, Trie search, Max-Flow / Evacuation).
-- [ ] Member C: Establish typography and CSS design tokens in `design.md`, build accessible UI layout and visualizer.
-- [ ] Verify first GitHub Actions run on remote push to generate production Emscripten WASM binary.
+- [ ] Member A (Task A2/A3): Indoor floor plans (`data/indoor/*.json`) and evacuation checkpoints (`data/evac.json`).
+- [ ] Member A (Task A4): 2D Canvas / SVG map renderer in `web/src/map/`.
+- [ ] Member B: Implement C++ DSA routing algorithms in `core/` (Dijkstra, A*, BFS, Bellman-Ford, Floyd-Warshall, MST, TSP, Trie, Max-Flow).
+- [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
 ## Known Issues
-- Local Windows environment lacks CMake / working native compiler; native builds and WASM compilation will run via GitHub Actions.
-
+- Local Windows host lacks CMake/native compiler; C++ native tests and Emscripten WASM compile in GitHub Actions.

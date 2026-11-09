@@ -1,0 +1,2703 @@
+{
+  "meta": {
+    "version": "1.0",
+    "origin": [
+      24.9322,
+      67.1133
+    ],
+    "campusName": "NED University of Engineering & Technology",
+    "city": "Karachi, Pakistan",
+    "masterPlanControlCorners": {
+      "topLeft": [
+        24.93788,
+        67.11341
+      ],
+      "topRight": [
+        24.93076,
+        67.11837
+      ],
+      "bottomLeft": [
+        24.93389,
+        67.10644
+      ],
+      "bottomRight": [
+        24.92677,
+        67.11141
+      ]
+    },
+    "mapOverlay": {
+      "image": "/map/ned_master_plan.jpg",
+      "corners": {
+        "topLeft": [
+          24.93788,
+          67.11341
+        ],
+        "topRight": [
+          24.93076,
+          67.11837
+        ],
+        "bottomLeft": [
+          24.93389,
+          67.10644
+        ],
+        "bottomRight": [
+          24.92677,
+          67.11141
+        ]
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "lat": 24.92901,
+      "lng": 67.1135,
+      "kind": "gate"
+    },
+    {
+      "id": "n2",
+      "lat": 24.93006,
+      "lng": 67.11555,
+      "kind": "gate"
+    },
+    {
+      "id": "n3",
+      "lat": 24.93036,
+      "lng": 67.11534,
+      "kind": "gate"
+    },
+    {
+      "id": "n4",
+      "lat": 24.93086,
+      "lng": 67.11499,
+      "kind": "path"
+    },
+    {
+      "id": "n5",
+      "lat": 24.93167,
+      "lng": 67.11443,
+      "kind": "path"
+    },
+    {
+      "id": "n6",
+      "lat": 24.93232,
+      "lng": 67.11397,
+      "kind": "path"
+    },
+    {
+      "id": "n7",
+      "lat": 24.93293,
+      "lng": 67.11442,
+      "kind": "path"
+    },
+    {
+      "id": "n8",
+      "lat": 24.93299,
+      "lng": 67.11521,
+      "kind": "entrance"
+    },
+    {
+      "id": "n9",
+      "lat": 24.9301,
+      "lng": 67.11274,
+      "kind": "entrance"
+    },
+    {
+      "id": "n10",
+      "lat": 24.93056,
+      "lng": 67.11242,
+      "kind": "path"
+    },
+    {
+      "id": "n11",
+      "lat": 24.93094,
+      "lng": 67.11216,
+      "kind": "entrance"
+    },
+    {
+      "id": "n12",
+      "lat": 24.93131,
+      "lng": 67.1119,
+      "kind": "path"
+    },
+    {
+      "id": "n13",
+      "lat": 24.93197,
+      "lng": 67.11144,
+      "kind": "entrance"
+    },
+    {
+      "id": "n14",
+      "lat": 24.93224,
+      "lng": 67.11125,
+      "kind": "path"
+    },
+    {
+      "id": "n15",
+      "lat": 24.9326,
+      "lng": 67.111,
+      "kind": "path"
+    },
+    {
+      "id": "n16",
+      "lat": 24.93277,
+      "lng": 67.11088,
+      "kind": "path"
+    },
+    {
+      "id": "n17",
+      "lat": 24.93305,
+      "lng": 67.11068,
+      "kind": "path"
+    },
+    {
+      "id": "n18",
+      "lat": 24.93411,
+      "lng": 67.10995,
+      "kind": "path"
+    },
+    {
+      "id": "n19",
+      "lat": 24.9309,
+      "lng": 67.11301,
+      "kind": "path"
+    },
+    {
+      "id": "n20",
+      "lat": 24.93105,
+      "lng": 67.11328,
+      "kind": "entrance"
+    },
+    {
+      "id": "n21",
+      "lat": 24.93121,
+      "lng": 67.11356,
+      "kind": "entrance"
+    },
+    {
+      "id": "n22",
+      "lat": 24.93145,
+      "lng": 67.11397,
+      "kind": "entrance"
+    },
+    {
+      "id": "n23",
+      "lat": 24.93124,
+      "lng": 67.11243,
+      "kind": "path"
+    },
+    {
+      "id": "n24",
+      "lat": 24.93154,
+      "lng": 67.11295,
+      "kind": "entrance"
+    },
+    {
+      "id": "n25",
+      "lat": 24.93184,
+      "lng": 67.11348,
+      "kind": "entrance"
+    },
+    {
+      "id": "n26",
+      "lat": 24.93147,
+      "lng": 67.11217,
+      "kind": "path"
+    },
+    {
+      "id": "n27",
+      "lat": 24.93165,
+      "lng": 67.11249,
+      "kind": "path"
+    },
+    {
+      "id": "n28",
+      "lat": 24.93182,
+      "lng": 67.11278,
+      "kind": "entrance"
+    },
+    {
+      "id": "n29",
+      "lat": 24.93201,
+      "lng": 67.11311,
+      "kind": "path"
+    },
+    {
+      "id": "n30",
+      "lat": 24.93249,
+      "lng": 67.11366,
+      "kind": "path"
+    },
+    {
+      "id": "n31",
+      "lat": 24.9319,
+      "lng": 67.11193,
+      "kind": "entrance"
+    },
+    {
+      "id": "n32",
+      "lat": 24.93208,
+      "lng": 67.11224,
+      "kind": "entrance"
+    },
+    {
+      "id": "n33",
+      "lat": 24.93235,
+      "lng": 67.11271,
+      "kind": "entrance"
+    },
+    {
+      "id": "n34",
+      "lat": 24.93253,
+      "lng": 67.11303,
+      "kind": "entrance"
+    },
+    {
+      "id": "n35",
+      "lat": 24.93275,
+      "lng": 67.11207,
+      "kind": "path"
+    },
+    {
+      "id": "n36",
+      "lat": 24.93303,
+      "lng": 67.11134,
+      "kind": "path"
+    },
+    {
+      "id": "n37",
+      "lat": 24.9334,
+      "lng": 67.112,
+      "kind": "path"
+    },
+    {
+      "id": "n38",
+      "lat": 24.93364,
+      "lng": 67.11241,
+      "kind": "path"
+    },
+    {
+      "id": "n39",
+      "lat": 24.93382,
+      "lng": 67.11273,
+      "kind": "path"
+    },
+    {
+      "id": "n40",
+      "lat": 24.93304,
+      "lng": 67.11327,
+      "kind": "path"
+    },
+    {
+      "id": "n41",
+      "lat": 24.9341,
+      "lng": 67.11341,
+      "kind": "entrance"
+    },
+    {
+      "id": "n42",
+      "lat": 24.93366,
+      "lng": 67.11372,
+      "kind": "path"
+    },
+    {
+      "id": "n43",
+      "lat": 24.93329,
+      "lng": 67.11412,
+      "kind": "path"
+    },
+    {
+      "id": "n44",
+      "lat": 24.93413,
+      "lng": 67.11251,
+      "kind": "path"
+    },
+    {
+      "id": "n45",
+      "lat": 24.93477,
+      "lng": 67.11207,
+      "kind": "path"
+    },
+    {
+      "id": "n46",
+      "lat": 24.93497,
+      "lng": 67.11241,
+      "kind": "path"
+    },
+    {
+      "id": "n47",
+      "lat": 24.93552,
+      "lng": 67.11154,
+      "kind": "path"
+    },
+    {
+      "id": "n48",
+      "lat": 24.93399,
+      "lng": 67.11127,
+      "kind": "path"
+    },
+    {
+      "id": "n49",
+      "lat": 24.93432,
+      "lng": 67.11084,
+      "kind": "entrance"
+    },
+    {
+      "id": "n50",
+      "lat": 24.9303,
+      "lng": 67.11548,
+      "kind": "entrance"
+    },
+    {
+      "id": "n51",
+      "lat": 24.93088,
+      "lng": 67.11302,
+      "kind": "entrance"
+    },
+    {
+      "id": "n52",
+      "lat": 24.93109,
+      "lng": 67.11273,
+      "kind": "entrance"
+    },
+    {
+      "id": "n53",
+      "lat": 24.93194,
+      "lng": 67.11299,
+      "kind": "entrance"
+    },
+    {
+      "id": "n54",
+      "lat": 24.93166,
+      "lng": 67.11243,
+      "kind": "entrance"
+    },
+    {
+      "id": "n55",
+      "lat": 24.93175,
+      "lng": 67.11262,
+      "kind": "entrance"
+    },
+    {
+      "id": "n56",
+      "lat": 24.93149,
+      "lng": 67.11226,
+      "kind": "entrance"
+    },
+    {
+      "id": "n57",
+      "lat": 24.93195,
+      "lng": 67.11267,
+      "kind": "entrance"
+    },
+    {
+      "id": "n58",
+      "lat": 24.93335,
+      "lng": 67.11184,
+      "kind": "entrance"
+    },
+    {
+      "id": "n59",
+      "lat": 24.93338,
+      "lng": 67.11269,
+      "kind": "entrance"
+    },
+    {
+      "id": "n60",
+      "lat": 24.93291,
+      "lng": 67.11195,
+      "kind": "entrance"
+    },
+    {
+      "id": "n61",
+      "lat": 24.93298,
+      "lng": 67.11137,
+      "kind": "entrance"
+    },
+    {
+      "id": "n62",
+      "lat": 24.93331,
+      "lng": 67.11416,
+      "kind": "entrance"
+    },
+    {
+      "id": "n63",
+      "lat": 24.93351,
+      "lng": 67.11451,
+      "kind": "entrance"
+    },
+    {
+      "id": "n64",
+      "lat": 24.93362,
+      "lng": 67.11365,
+      "kind": "entrance"
+    },
+    {
+      "id": "n65",
+      "lat": 24.93387,
+      "lng": 67.1141,
+      "kind": "entrance"
+    },
+    {
+      "id": "n66",
+      "lat": 24.93308,
+      "lng": 67.11334,
+      "kind": "entrance"
+    },
+    {
+      "id": "n67",
+      "lat": 24.9338,
+      "lng": 67.11289,
+      "kind": "entrance"
+    },
+    {
+      "id": "n68",
+      "lat": 24.93328,
+      "lng": 67.11242,
+      "kind": "entrance"
+    },
+    {
+      "id": "n69",
+      "lat": 24.93419,
+      "lng": 67.11262,
+      "kind": "entrance"
+    },
+    {
+      "id": "n70",
+      "lat": 24.93352,
+      "lng": 67.11214,
+      "kind": "entrance"
+    },
+    {
+      "id": "n71",
+      "lat": 24.93476,
+      "lng": 67.11193,
+      "kind": "entrance"
+    },
+    {
+      "id": "n72",
+      "lat": 24.93546,
+      "lng": 67.11144,
+      "kind": "entrance"
+    },
+    {
+      "id": "n73",
+      "lat": 24.93299,
+      "lng": 67.11058,
+      "kind": "entrance"
+    },
+    {
+      "id": "n74",
+      "lat": 24.93256,
+      "lng": 67.11093,
+      "kind": "entrance"
+    },
+    {
+      "id": "n75",
+      "lat": 24.93222,
+      "lng": 67.11122,
+      "kind": "entrance"
+    },
+    {
+      "id": "n76",
+      "lat": 24.93304,
+      "lng": 67.11131,
+      "kind": "entrance"
+    },
+    {
+      "id": "n77",
+      "lat": 24.93401,
+      "lng": 67.11125,
+      "kind": "entrance"
+    },
+    {
+      "id": "n78",
+      "lat": 24.93402,
+      "lng": 67.11254,
+      "kind": "entrance"
+    },
+    {
+      "id": "n79",
+      "lat": 24.93285,
+      "lng": 67.1142,
+      "kind": "entrance"
+    },
+    {
+      "id": "n80",
+      "lat": 24.93181,
+      "lng": 67.11467,
+      "kind": "assembly"
+    },
+    {
+      "id": "n81",
+      "lat": 24.9313,
+      "lng": 67.11585,
+      "kind": "assembly"
+    },
+    {
+      "id": "n82",
+      "lat": 24.93276,
+      "lng": 67.11561,
+      "kind": "entrance"
+    },
+    {
+      "id": "n83",
+      "lat": 24.93478,
+      "lng": 67.11235,
+      "kind": "entrance"
+    },
+    {
+      "id": "n84",
+      "lat": 24.93428,
+      "lng": 67.10973,
+      "kind": "entrance"
+    },
+    {
+      "id": "n85",
+      "lat": 24.9324,
+      "lng": 67.11411,
+      "kind": "entrance"
+    },
+    {
+      "id": "n86",
+      "lat": 24.93472,
+      "lng": 67.1121,
+      "kind": "entrance"
+    }
+  ],
+  "edges": [
+    {
+      "a": "n1",
+      "b": "n9",
+      "w": 143.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n2",
+      "b": "n3",
+      "w": 39.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n3",
+      "b": "n4",
+      "w": 65.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n4",
+      "b": "n5",
+      "w": 106.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n5",
+      "b": "n6",
+      "w": 85.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n6",
+      "b": "n30",
+      "w": 36.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n6",
+      "b": "n7",
+      "w": 81.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n7",
+      "b": "n8",
+      "w": 79.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n5",
+      "b": "n8",
+      "w": 166.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n9",
+      "b": "n10",
+      "w": 60.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n10",
+      "b": "n11",
+      "w": 49.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n11",
+      "b": "n12",
+      "w": 48.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n12",
+      "b": "n13",
+      "w": 86.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n13",
+      "b": "n14",
+      "w": 35.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n14",
+      "b": "n15",
+      "w": 47.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n15",
+      "b": "n16",
+      "w": 22.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n16",
+      "b": "n17",
+      "w": 37.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n17",
+      "b": "n18",
+      "w": 139.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n10",
+      "b": "n19",
+      "w": 70.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n19",
+      "b": "n20",
+      "w": 31.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n20",
+      "b": "n21",
+      "w": 33.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n21",
+      "b": "n22",
+      "w": 49.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n22",
+      "b": "n5",
+      "w": 52.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n11",
+      "b": "n23",
+      "w": 43.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n23",
+      "b": "n24",
+      "w": 62.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n24",
+      "b": "n25",
+      "w": 63.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n25",
+      "b": "n6",
+      "w": 72.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n19",
+      "b": "n23",
+      "w": 69.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n21",
+      "b": "n24",
+      "w": 71.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n22",
+      "b": "n25",
+      "w": 65.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n12",
+      "b": "n26",
+      "w": 32.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n26",
+      "b": "n27",
+      "w": 38.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n27",
+      "b": "n28",
+      "w": 34.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n28",
+      "b": "n29",
+      "w": 39.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n29",
+      "b": "n30",
+      "w": 77.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n24",
+      "b": "n28",
+      "w": 35.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n25",
+      "b": "n29",
+      "w": 41.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n13",
+      "b": "n31",
+      "w": 50.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n31",
+      "b": "n27",
+      "w": 62.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n31",
+      "b": "n32",
+      "w": 37.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n32",
+      "b": "n28",
+      "w": 61.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n32",
+      "b": "n33",
+      "w": 56.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n33",
+      "b": "n29",
+      "w": 55.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n33",
+      "b": "n34",
+      "w": 38.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n34",
+      "b": "n30",
+      "w": 63.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n32",
+      "b": "n35",
+      "w": 76.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n33",
+      "b": "n35",
+      "w": 78.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n16",
+      "b": "n36",
+      "w": 54.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n36",
+      "b": "n37",
+      "w": 78.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n37",
+      "b": "n38",
+      "w": 49.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n38",
+      "b": "n39",
+      "w": 38.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n36",
+      "b": "n31",
+      "w": 139.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n37",
+      "b": "n35",
+      "w": 72.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n38",
+      "b": "n34",
+      "w": 138.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n30",
+      "b": "n40",
+      "w": 72.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n40",
+      "b": "n39",
+      "w": 102.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n39",
+      "b": "n41",
+      "w": 75.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n41",
+      "b": "n42",
+      "w": 58.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n42",
+      "b": "n43",
+      "w": 57.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n43",
+      "b": "n7",
+      "w": 50.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n40",
+      "b": "n42",
+      "w": 82.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n39",
+      "b": "n44",
+      "w": 41.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n44",
+      "b": "n45",
+      "w": 83.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n45",
+      "b": "n46",
+      "w": 40.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n45",
+      "b": "n47",
+      "w": 99.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n37",
+      "b": "n48",
+      "w": 98.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n36",
+      "b": "n48",
+      "w": 107.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n48",
+      "b": "n49",
+      "w": 56.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n45",
+      "b": "n49",
+      "w": 133.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n47",
+      "b": "n49",
+      "w": 151.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n49",
+      "b": "n18",
+      "w": 92.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n50",
+      "b": "n3",
+      "w": 15.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n51",
+      "b": "n19",
+      "w": 2.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n52",
+      "b": "n23",
+      "w": 34.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n53",
+      "b": "n29",
+      "w": 14.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n54",
+      "b": "n27",
+      "w": 6.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n55",
+      "b": "n27",
+      "w": 17.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n56",
+      "b": "n26",
+      "w": 9.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n57",
+      "b": "n28",
+      "w": 18.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n58",
+      "b": "n37",
+      "w": 17.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n59",
+      "b": "n38",
+      "w": 40.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n60",
+      "b": "n35",
+      "w": 21.5,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n61",
+      "b": "n36",
+      "w": 6.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n62",
+      "b": "n43",
+      "w": 4.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n63",
+      "b": "n43",
+      "w": 46.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n64",
+      "b": "n42",
+      "w": 8.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n65",
+      "b": "n42",
+      "w": 44.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n66",
+      "b": "n40",
+      "w": 8.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n67",
+      "b": "n39",
+      "w": 16.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n68",
+      "b": "n38",
+      "w": 40.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n69",
+      "b": "n44",
+      "w": 12.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n70",
+      "b": "n37",
+      "w": 19.4,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n71",
+      "b": "n45",
+      "w": 14.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n72",
+      "b": "n47",
+      "w": 12.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n73",
+      "b": "n17",
+      "w": 12.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n74",
+      "b": "n15",
+      "w": 8.3,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n75",
+      "b": "n14",
+      "w": 3.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n76",
+      "b": "n36",
+      "w": 3.2,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n77",
+      "b": "n48",
+      "w": 3.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n78",
+      "b": "n44",
+      "w": 12.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n79",
+      "b": "n7",
+      "w": 23.9,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n80",
+      "b": "n5",
+      "w": 28.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n81",
+      "b": "n4",
+      "w": 99.6,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n82",
+      "b": "n8",
+      "w": 47.8,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n83",
+      "b": "n46",
+      "w": 22.0,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n84",
+      "b": "n18",
+      "w": 29.1,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n85",
+      "b": "n6",
+      "w": 16.7,
+      "oneway": false,
+      "covered": false
+    },
+    {
+      "a": "n86",
+      "b": "n45",
+      "w": 6.3,
+      "oneway": false,
+      "covered": false
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "b-banks",
+      "name": "Banks (National Bank of Pakistan & Campus Banking)",
+      "short": "Banks (NBP)",
+      "nodeId": "n50",
+      "category": "services",
+      "footprint": [
+        [
+          24.93029,
+          67.1152
+        ],
+        [
+          24.93007,
+          67.11536
+        ],
+        [
+          24.92997,
+          67.11518
+        ],
+        [
+          24.93019,
+          67.11502
+        ]
+      ]
+    },
+    {
+      "id": "b-video-conferencing",
+      "name": "Video Conferencing Facility",
+      "short": "Video Conferencing",
+      "nodeId": "n51",
+      "category": "services",
+      "footprint": [
+        [
+          24.93087,
+          67.11315
+        ],
+        [
+          24.93069,
+          67.11328
+        ],
+        [
+          24.93059,
+          67.11311
+        ],
+        [
+          24.93077,
+          67.11298
+        ]
+      ]
+    },
+    {
+      "id": "b-urban-engg",
+      "name": "Department of Urban & Infrastructure Engineering",
+      "short": "Urban Engg.",
+      "nodeId": "n52",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93127,
+          67.11265
+        ],
+        [
+          24.93088,
+          67.11293
+        ],
+        [
+          24.93075,
+          67.11271
+        ],
+        [
+          24.93114,
+          67.11243
+        ]
+      ]
+    },
+    {
+      "id": "b-civil-engg",
+      "name": "Civil Engineering Dept. (Blocks 4, 4A, 4B)",
+      "short": "Civil Engg.",
+      "nodeId": "n24",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93147,
+          67.11297
+        ],
+        [
+          24.93106,
+          67.11326
+        ],
+        [
+          24.93085,
+          67.11289
+        ],
+        [
+          24.93126,
+          67.1126
+        ]
+      ]
+    },
+    {
+      "id": "b-ced-labs",
+      "name": "Labs of Civil Engineering Dept. (Survey & CED Labs)",
+      "short": "CED Labs (4A)",
+      "nodeId": "n25",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93194,
+          67.11362
+        ],
+        [
+          24.93157,
+          67.11388
+        ],
+        [
+          24.93142,
+          67.11362
+        ],
+        [
+          24.93179,
+          67.11336
+        ]
+      ]
+    },
+    {
+      "id": "b-material-lab",
+      "name": "Advanced Material Testing Lab",
+      "short": "Material Lab (4B)",
+      "nodeId": "n20",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93107,
+          67.11339
+        ],
+        [
+          24.93076,
+          67.11361
+        ],
+        [
+          24.93065,
+          67.11343
+        ],
+        [
+          24.93096,
+          67.11321
+        ]
+      ]
+    },
+    {
+      "id": "b-csit",
+      "name": "Depts. of Comp. Sc. & I.T and Maths & Basic Sciences",
+      "short": "CSIT & Maths",
+      "nodeId": "n21",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93131,
+          67.11391
+        ],
+        [
+          24.93097,
+          67.11414
+        ],
+        [
+          24.93083,
+          67.11389
+        ],
+        [
+          24.93117,
+          67.11366
+        ]
+      ]
+    },
+    {
+      "id": "b-csit-labs",
+      "name": "Labs of CSIT Dept. & Maths & Basic Sciences",
+      "short": "CSIT Labs (5A)",
+      "nodeId": "n22",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93148,
+          67.1142
+        ],
+        [
+          24.93113,
+          67.11444
+        ],
+        [
+          24.93098,
+          67.11418
+        ],
+        [
+          24.93133,
+          67.11394
+        ]
+      ]
+    },
+    {
+      "id": "b-courtyard-fountain",
+      "name": "Courtyard Fountain",
+      "short": "Courtyard Fountain",
+      "nodeId": "n28",
+      "category": "landmark",
+      "footprint": [
+        [
+          24.93193,
+          67.1128
+        ],
+        [
+          24.93179,
+          67.1129
+        ],
+        [
+          24.93171,
+          67.11276
+        ],
+        [
+          24.93185,
+          67.11266
+        ]
+      ]
+    },
+    {
+      "id": "b-girls-common-room",
+      "name": "Girls Common Room",
+      "short": "Girls Common Room",
+      "nodeId": "n53",
+      "category": "services",
+      "footprint": [
+        [
+          24.93214,
+          67.11314
+        ],
+        [
+          24.93186,
+          67.11334
+        ],
+        [
+          24.93176,
+          67.11316
+        ],
+        [
+          24.93204,
+          67.11296
+        ]
+      ]
+    },
+    {
+      "id": "b-it-pvc-office",
+      "name": "IT Dept. / PVC (Dev.) Office",
+      "short": "IT / PVC Office",
+      "nodeId": "n54",
+      "category": "administration",
+      "footprint": [
+        [
+          24.9318,
+          67.1123
+        ],
+        [
+          24.93154,
+          67.11248
+        ],
+        [
+          24.93144,
+          67.11232
+        ],
+        [
+          24.9317,
+          67.11214
+        ]
+      ]
+    },
+    {
+      "id": "b-audio-visual",
+      "name": "IT Dept. / Audio Visual Centre",
+      "short": "Audio Visual (IT)",
+      "nodeId": "n55",
+      "category": "services",
+      "footprint": [
+        [
+          24.93188,
+          67.11251
+        ],
+        [
+          24.93163,
+          67.11269
+        ],
+        [
+          24.93154,
+          67.11253
+        ],
+        [
+          24.93179,
+          67.11235
+        ]
+      ]
+    },
+    {
+      "id": "b-staff-centre",
+      "name": "Staff Centre",
+      "short": "Staff Centre",
+      "nodeId": "n56",
+      "category": "services",
+      "footprint": [
+        [
+          24.93157,
+          67.11221
+        ],
+        [
+          24.93137,
+          67.11235
+        ],
+        [
+          24.93129,
+          67.11219
+        ],
+        [
+          24.93149,
+          67.11205
+        ]
+      ]
+    },
+    {
+      "id": "b-auditorium",
+      "name": "Main Auditorium",
+      "short": "Auditorium",
+      "nodeId": "n57",
+      "category": "services",
+      "footprint": [
+        [
+          24.93229,
+          67.11258
+        ],
+        [
+          24.93203,
+          67.11276
+        ],
+        [
+          24.93191,
+          67.11256
+        ],
+        [
+          24.93217,
+          67.11238
+        ]
+      ]
+    },
+    {
+      "id": "b-mechanical-engg",
+      "name": "Mechanical Engineering Dept. & Labs (12, 12A)",
+      "short": "Mechanical Engg.",
+      "nodeId": "n31",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93232,
+          67.11182
+        ],
+        [
+          24.93192,
+          67.1121
+        ],
+        [
+          24.93176,
+          67.11184
+        ],
+        [
+          24.93216,
+          67.11156
+        ]
+      ]
+    },
+    {
+      "id": "b-med-labs",
+      "name": "Mechanical Engineering Labs (MED Labs)",
+      "short": "MED Labs (12A)",
+      "nodeId": "n34",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93294,
+          67.11292
+        ],
+        [
+          24.93254,
+          67.11319
+        ],
+        [
+          24.9324,
+          67.11294
+        ],
+        [
+          24.9328,
+          67.11267
+        ]
+      ]
+    },
+    {
+      "id": "b-electrical-engg",
+      "name": "Electrical Engineering Dept. & Labs (13, 13A)",
+      "short": "Electrical Engg.",
+      "nodeId": "n32",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93247,
+          67.11211
+        ],
+        [
+          24.93209,
+          67.11238
+        ],
+        [
+          24.93197,
+          67.11217
+        ],
+        [
+          24.93235,
+          67.1119
+        ]
+      ]
+    },
+    {
+      "id": "b-eed-labs",
+      "name": "Electrical Engineering Labs (EED Labs)",
+      "short": "EED Labs (13A)",
+      "nodeId": "n33",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93274,
+          67.11258
+        ],
+        [
+          24.93236,
+          67.11285
+        ],
+        [
+          24.93224,
+          67.11264
+        ],
+        [
+          24.93262,
+          67.11237
+        ]
+      ]
+    },
+    {
+      "id": "b-industrial-engg",
+      "name": "Industrial & Manufacturing Engg. Dept. (14, 14A)",
+      "short": "Industrial Engg.",
+      "nodeId": "n58",
+      "category": "academic",
+      "footprint": [
+        [
+          24.9338,
+          67.11168
+        ],
+        [
+          24.93345,
+          67.11193
+        ],
+        [
+          24.93332,
+          67.1117
+        ],
+        [
+          24.93367,
+          67.11145
+        ]
+      ]
+    },
+    {
+      "id": "b-imd-labs",
+      "name": "IMD Labs (Industrial & Manufacturing Labs)",
+      "short": "IMD Labs (14A)",
+      "nodeId": "n59",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93343,
+          67.11279
+        ],
+        [
+          24.93313,
+          67.11299
+        ],
+        [
+          24.93303,
+          67.11281
+        ],
+        [
+          24.93333,
+          67.11261
+        ]
+      ]
+    },
+    {
+      "id": "b-cis-engg",
+      "name": "CIS Lecture Hall & Class Rooms (15, 15A CIS Labs)",
+      "short": "CIS Engg.",
+      "nodeId": "n60",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93299,
+          67.11208
+        ],
+        [
+          24.93266,
+          67.11231
+        ],
+        [
+          24.93251,
+          67.11206
+        ],
+        [
+          24.93284,
+          67.11183
+        ]
+      ]
+    },
+    {
+      "id": "b-cis-labs",
+      "name": "CIS Engineering Labs",
+      "short": "CIS Labs (15A)",
+      "nodeId": "n61",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93301,
+          67.11156
+        ],
+        [
+          24.93283,
+          67.11169
+        ],
+        [
+          24.93265,
+          67.11138
+        ],
+        [
+          24.93283,
+          67.11125
+        ]
+      ]
+    },
+    {
+      "id": "b-petroleum-engg",
+      "name": "Petroleum Engineering Dept. & Labs (16, 16A)",
+      "short": "Petroleum Engg.",
+      "nodeId": "n62",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93364,
+          67.11432
+        ],
+        [
+          24.9333,
+          67.11456
+        ],
+        [
+          24.93318,
+          67.11434
+        ],
+        [
+          24.93352,
+          67.1141
+        ]
+      ]
+    },
+    {
+      "id": "b-ped-labs",
+      "name": "Petroleum Engineering Labs (PED Labs)",
+      "short": "PED Labs (16A)",
+      "nodeId": "n63",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93382,
+          67.11463
+        ],
+        [
+          24.93347,
+          67.11487
+        ],
+        [
+          24.93336,
+          67.11467
+        ],
+        [
+          24.93371,
+          67.11443
+        ]
+      ]
+    },
+    {
+      "id": "b-textile-engg",
+      "name": "Textile Engineering Dept. & Labs (17, 17A)",
+      "short": "Textile Engg.",
+      "nodeId": "n64",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93394,
+          67.11383
+        ],
+        [
+          24.93361,
+          67.11406
+        ],
+        [
+          24.93348,
+          67.11383
+        ],
+        [
+          24.93381,
+          67.1136
+        ]
+      ]
+    },
+    {
+      "id": "b-textile-labs",
+      "name": "Textile Engineering Labs",
+      "short": "Textile Labs (17A)",
+      "nodeId": "n65",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93419,
+          67.11428
+        ],
+        [
+          24.93387,
+          67.11449
+        ],
+        [
+          24.93375,
+          67.11428
+        ],
+        [
+          24.93407,
+          67.11407
+        ]
+      ]
+    },
+    {
+      "id": "b-automotive-engg",
+      "name": "Automotive & Marine Engineering Dept.",
+      "short": "Automotive Engg.",
+      "nodeId": "n66",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93351,
+          67.1135
+        ],
+        [
+          24.93303,
+          67.11384
+        ],
+        [
+          24.93289,
+          67.1136
+        ],
+        [
+          24.93337,
+          67.11326
+        ]
+      ]
+    },
+    {
+      "id": "b-electronic-engg",
+      "name": "Electronic Engineering Dept. & Labs (19, 19A, 19B)",
+      "short": "Electronic Engg.",
+      "nodeId": "n67",
+      "category": "academic",
+      "footprint": [
+        [
+          24.9342,
+          67.11317
+        ],
+        [
+          24.93386,
+          67.11341
+        ],
+        [
+          24.93368,
+          67.11309
+        ],
+        [
+          24.93402,
+          67.11285
+        ]
+      ]
+    },
+    {
+      "id": "b-electronic-labs",
+      "name": "Electronic Engineering Labs",
+      "short": "Electronic Labs (19A)",
+      "nodeId": "n41",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93444,
+          67.1136
+        ],
+        [
+          24.9341,
+          67.11383
+        ],
+        [
+          24.93396,
+          67.11358
+        ],
+        [
+          24.9343,
+          67.11335
+        ]
+      ]
+    },
+    {
+      "id": "b-telecom-labs",
+      "name": "Telecommunications Engineering Labs",
+      "short": "Telecom Labs (19B)",
+      "nodeId": "n68",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93331,
+          67.11253
+        ],
+        [
+          24.93307,
+          67.11269
+        ],
+        [
+          24.93297,
+          67.11251
+        ],
+        [
+          24.93321,
+          67.11235
+        ]
+      ]
+    },
+    {
+      "id": "b-environmental-engg",
+      "name": "Environmental Engineering Dept.",
+      "short": "Environmental Engg.",
+      "nodeId": "n69",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93455,
+          67.11284
+        ],
+        [
+          24.93421,
+          67.11308
+        ],
+        [
+          24.93409,
+          67.11286
+        ],
+        [
+          24.93443,
+          67.11262
+        ]
+      ]
+    },
+    {
+      "id": "b-metallurgy-engg",
+      "name": "Metallurgical Engineering Dept.",
+      "short": "Metallurgy Engg.",
+      "nodeId": "n70",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93398,
+          67.11197
+        ],
+        [
+          24.93364,
+          67.11221
+        ],
+        [
+          24.93352,
+          67.11199
+        ],
+        [
+          24.93386,
+          67.11175
+        ]
+      ]
+    },
+    {
+      "id": "b-polymer-engg",
+      "name": "Polymer & Petrochemical Engineering Dept.",
+      "short": "Polymer Engg.",
+      "nodeId": "n49",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93489,
+          67.11067
+        ],
+        [
+          24.93449,
+          67.11094
+        ],
+        [
+          24.93427,
+          67.11055
+        ],
+        [
+          24.93467,
+          67.11028
+        ]
+      ]
+    },
+    {
+      "id": "b-materials-engg",
+      "name": "Materials Engineering Dept.",
+      "short": "Materials Engg.",
+      "nodeId": "n71",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93489,
+          67.11165
+        ],
+        [
+          24.93448,
+          67.11194
+        ],
+        [
+          24.93431,
+          67.11165
+        ],
+        [
+          24.93472,
+          67.11136
+        ]
+      ]
+    },
+    {
+      "id": "b-chemical-engg",
+      "name": "Chemical Engineering Dept.",
+      "short": "Chemical Engg.",
+      "nodeId": "n72",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93557,
+          67.11113
+        ],
+        [
+          24.93516,
+          67.11142
+        ],
+        [
+          24.93499,
+          67.11113
+        ],
+        [
+          24.9354,
+          67.11084
+        ]
+      ]
+    },
+    {
+      "id": "b-admission-centre",
+      "name": "Admission Centre",
+      "short": "Admission Centre",
+      "nodeId": "n9",
+      "category": "administration",
+      "footprint": [
+        [
+          24.93023,
+          67.11256
+        ],
+        [
+          24.9299,
+          67.11278
+        ],
+        [
+          24.92979,
+          67.1126
+        ],
+        [
+          24.93012,
+          67.11238
+        ]
+      ]
+    },
+    {
+      "id": "b-food-centre",
+      "name": "Food Centre / Main Student Cafeterias",
+      "short": "Food Centre",
+      "nodeId": "n11",
+      "category": "cafeteria",
+      "footprint": [
+        [
+          24.93101,
+          67.11191
+        ],
+        [
+          24.9307,
+          67.11213
+        ],
+        [
+          24.93059,
+          67.11195
+        ],
+        [
+          24.9309,
+          67.11173
+        ]
+      ]
+    },
+    {
+      "id": "b-admin",
+      "name": "Administration Block (VC Secretariat & Registrar)",
+      "short": "Admin Block",
+      "nodeId": "n73",
+      "category": "administration",
+      "footprint": [
+        [
+          24.93305,
+          67.11028
+        ],
+        [
+          24.93259,
+          67.1106
+        ],
+        [
+          24.93241,
+          67.11028
+        ],
+        [
+          24.93287,
+          67.10996
+        ]
+      ]
+    },
+    {
+      "id": "b-dean-offices",
+      "name": "Dean Offices & Academic Secretariats",
+      "short": "Dean Offices",
+      "nodeId": "n74",
+      "category": "administration",
+      "footprint": [
+        [
+          24.93264,
+          67.11066
+        ],
+        [
+          24.93231,
+          67.11089
+        ],
+        [
+          24.93216,
+          67.11064
+        ],
+        [
+          24.93249,
+          67.11041
+        ]
+      ]
+    },
+    {
+      "id": "b-medical-dept",
+      "name": "Medical Department & Campus Clinic",
+      "short": "Medical Dept.",
+      "nodeId": "n75",
+      "category": "emergency",
+      "footprint": [
+        [
+          24.93224,
+          67.11103
+        ],
+        [
+          24.93206,
+          67.11116
+        ],
+        [
+          24.93194,
+          67.11095
+        ],
+        [
+          24.93212,
+          67.11082
+        ]
+      ]
+    },
+    {
+      "id": "b-humanities-dept",
+      "name": "Humanities Department",
+      "short": "Humanities Dept.",
+      "nodeId": "n13",
+      "category": "academic",
+      "footprint": [
+        [
+          24.93206,
+          67.1113
+        ],
+        [
+          24.93182,
+          67.11147
+        ],
+        [
+          24.93172,
+          67.1113
+        ],
+        [
+          24.93196,
+          67.11113
+        ]
+      ]
+    },
+    {
+      "id": "b-library",
+      "name": "Engr. Abul Kalam Library (Circulation Library)",
+      "short": "Central Library",
+      "nodeId": "n76",
+      "category": "library",
+      "footprint": [
+        [
+          24.93359,
+          67.11117
+        ],
+        [
+          24.93322,
+          67.11143
+        ],
+        [
+          24.93303,
+          67.11109
+        ],
+        [
+          24.9334,
+          67.11083
+        ]
+      ]
+    },
+    {
+      "id": "b-main-masjid",
+      "name": "Main Campus Masjid",
+      "short": "Main Masjid",
+      "nodeId": "n77",
+      "category": "services",
+      "footprint": [
+        [
+          24.93447,
+          67.11108
+        ],
+        [
+          24.9342,
+          67.11127
+        ],
+        [
+          24.93407,
+          67.11104
+        ],
+        [
+          24.93434,
+          67.11085
+        ]
+      ]
+    },
+    {
+      "id": "b-hpc-centre",
+      "name": "High Performance Computing Centre (HPCC)",
+      "short": "HPC Centre",
+      "nodeId": "n78",
+      "category": "labs",
+      "footprint": [
+        [
+          24.93411,
+          67.11232
+        ],
+        [
+          24.9338,
+          67.11254
+        ],
+        [
+          24.93369,
+          67.11234
+        ],
+        [
+          24.934,
+          67.11212
+        ]
+      ]
+    },
+    {
+      "id": "b-central-store",
+      "name": "Central Store & Procurement",
+      "short": "Central Store",
+      "nodeId": "n79",
+      "category": "services",
+      "footprint": [
+        [
+          24.93312,
+          67.11417
+        ],
+        [
+          24.93297,
+          67.11428
+        ],
+        [
+          24.93284,
+          67.11405
+        ],
+        [
+          24.93299,
+          67.11394
+        ]
+      ]
+    },
+    {
+      "id": "b-cricket-ground",
+      "name": "NED Cricket Ground",
+      "short": "Cricket Ground",
+      "nodeId": "n80",
+      "category": "sports",
+      "footprint": [
+        [
+          24.9319,
+          67.11519
+        ],
+        [
+          24.93214,
+          67.11519
+        ],
+        [
+          24.93214,
+          67.11543
+        ],
+        [
+          24.9319,
+          67.11543
+        ]
+      ]
+    },
+    {
+      "id": "b-soccer-field",
+      "name": "Soccer Field & Athletics Track",
+      "short": "Soccer Field",
+      "nodeId": "n81",
+      "category": "sports",
+      "footprint": [
+        [
+          24.9323,
+          67.11682
+        ],
+        [
+          24.93116,
+          67.11762
+        ],
+        [
+          24.93076,
+          67.11692
+        ],
+        [
+          24.9319,
+          67.11612
+        ]
+      ]
+    },
+    {
+      "id": "b-gymnasium",
+      "name": "Gymnasium & Girls Gymnasium",
+      "short": "Gymnasium",
+      "nodeId": "n8",
+      "category": "sports",
+      "footprint": [
+        [
+          24.93333,
+          67.11556
+        ],
+        [
+          24.93303,
+          67.11577
+        ],
+        [
+          24.93287,
+          67.1155
+        ],
+        [
+          24.93317,
+          67.11529
+        ]
+      ]
+    },
+    {
+      "id": "b-squash-tennis",
+      "name": "Squash Complex & Tennis Courts",
+      "short": "Squash & Tennis",
+      "nodeId": "n82",
+      "category": "sports",
+      "footprint": [
+        [
+          24.93306,
+          67.11611
+        ],
+        [
+          24.93276,
+          67.11632
+        ],
+        [
+          24.93264,
+          67.11611
+        ],
+        [
+          24.93294,
+          67.1159
+        ]
+      ]
+    },
+    {
+      "id": "b-boys-hostel",
+      "name": "Boys Hostel & Hostel Student Cafeteria",
+      "short": "Boys Hostel",
+      "nodeId": "n83",
+      "category": "hostels",
+      "footprint": [
+        [
+          24.93589,
+          67.11233
+        ],
+        [
+          24.93529,
+          67.11275
+        ],
+        [
+          24.93507,
+          67.11237
+        ],
+        [
+          24.93567,
+          67.11195
+        ]
+      ]
+    },
+    {
+      "id": "b-girls-hostel",
+      "name": "Girls Hostel & Bus Shed",
+      "short": "Girls Hostel",
+      "nodeId": "n84",
+      "category": "hostels",
+      "footprint": [
+        [
+          24.9348,
+          67.10909
+        ],
+        [
+          24.93431,
+          67.10943
+        ],
+        [
+          24.93414,
+          67.10913
+        ],
+        [
+          24.93463,
+          67.10879
+        ]
+      ]
+    },
+    {
+      "id": "b-sports-cafeteria",
+      "name": "Sports Complex Cafeteria",
+      "short": "Sports Cafeteria",
+      "nodeId": "n85",
+      "category": "cafeteria",
+      "footprint": [
+        [
+          24.93268,
+          67.11436
+        ],
+        [
+          24.93248,
+          67.1145
+        ],
+        [
+          24.9324,
+          67.11434
+        ],
+        [
+          24.9326,
+          67.1142
+        ]
+      ]
+    },
+    {
+      "id": "b-hostel-cafeteria",
+      "name": "Hostel Student Cafeteria",
+      "short": "Hostel Cafeteria",
+      "nodeId": "n86",
+      "category": "cafeteria",
+      "footprint": [
+        [
+          24.93497,
+          67.11225
+        ],
+        [
+          24.93474,
+          67.11241
+        ],
+        [
+          24.93465,
+          67.11225
+        ],
+        [
+          24.93488,
+          67.11209
+        ]
+      ]
+    },
+    {
+      "id": "b-main-gate",
+      "name": "Main Gate (University Road Admissions Entrance)",
+      "short": "Main Gate (G1)",
+      "nodeId": "n1",
+      "category": "gate",
+      "footprint": [
+        [
+          24.92889,
+          67.11338
+        ],
+        [
+          24.92913,
+          67.11338
+        ],
+        [
+          24.92913,
+          67.11362
+        ],
+        [
+          24.92889,
+          67.11362
+        ]
+      ]
+    },
+    {
+      "id": "b-bank-gate",
+      "name": "Bank & Sports Gate (University Road Entrance)",
+      "short": "Bank Gate (G2)",
+      "nodeId": "n2",
+      "category": "gate",
+      "footprint": [
+        [
+          24.92994,
+          67.11543
+        ],
+        [
+          24.93018,
+          67.11543
+        ],
+        [
+          24.93018,
+          67.11567
+        ],
+        [
+          24.92994,
+          67.11567
+        ]
+      ]
+    }
+  ]
+}

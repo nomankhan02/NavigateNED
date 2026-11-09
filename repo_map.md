@@ -9,7 +9,7 @@
 - `repo_map.md`: Single-line directory and file index.
 - `rules.md`: Core architectural principles, git rules, code guidelines, and token rules.
 - `vercel.json`: Vercel static export deployment configuration.
-- `.gitignore`: Git ignore patterns for Node, C++, build caches, and WASM build outputs.
+- `.gitignore`: Git ignore patterns for Node, C++, build caches, .ref/, and WASM build outputs.
 - `.github/workflows/core.yml`: CI pipeline for building/testing native C++ and compiling WASM.
 - `core/`: C++17 DSA algorithmic engine and Emscripten bindings.
 - `core/CMakeLists.txt`: Build specification for native test target and Emscripten WASM target.
@@ -18,13 +18,18 @@
 - `core/third_party/doctest/doctest.h`: Vendored single-header unit testing framework.
 - `core/third_party/nlohmann/json.hpp`: Vendored single-header JSON parser.
 - `data/`: Campus graph datasets and geo specifications.
+- `data/graph.json`: Georeferenced campus road network (86 nodes, 108 edges, 55 landmarks).
 - `data/sample/graph.json`: 4-node sample graph for scaffolding and WASM bridge verification.
 - `data/indoor/`: Directory for indoor building floor navigation data.
 - `tools/`: Utility scripts for data processing and map extraction.
+- `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
+- `tools/validate.py`: Schema and graph topology validation tool checking contracts.md.
 - `web/`: Next.js 15 App Router static export frontend.
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
 - `web/next.config.ts`: Next.js config with static export and cache headers.
+- `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.
+- `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay image.
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
 - `web/src/app/layout.tsx`: Root layout document with baseline styling.
 - `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
@@ -32,4 +37,3 @@
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
 - `web/src/ui/`: Reusable accessible UI components (owned by Member C).
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
-

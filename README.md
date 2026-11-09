@@ -20,3 +20,7 @@ npm run build
 ```
 Deployment: Connect Vercel to repository with root directory set to `web/` (build command `next build`, output `out`).
 
+## Credits & Data Sources
+- Campus georeferenced dataset and master plan control calibration referenced from [TraverseNED](https://github.com/hasanshahir/TraverseNED) by Hasan Shahir.
+
+
