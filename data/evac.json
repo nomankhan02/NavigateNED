@@ -1,0 +1,96 @@
+{
+  "assemblyAreas": [
+    {
+      "id": "a-cricket-ground",
+      "name": "NED Cricket Ground",
+      "nodeId": "n80",
+      "capacity": 1800
+    },
+    {
+      "id": "a-soccer-field",
+      "name": "Soccer Field & Athletics Track",
+      "nodeId": "n81",
+      "capacity": 1500
+    },
+    {
+      "id": "a-courtyard-fountain",
+      "name": "Courtyard Fountain Central Plaza",
+      "nodeId": "n28",
+      "capacity": 600
+    },
+    {
+      "id": "a-main-gate",
+      "name": "Main Gate (G1) Assembly Zone",
+      "nodeId": "n1",
+      "capacity": 800
+    },
+    {
+      "id": "a-bank-gate",
+      "name": "Bank & Sports Gate (G2) Assembly Zone",
+      "nodeId": "n2",
+      "capacity": 700
+    },
+    {
+      "id": "a-squash-tennis",
+      "name": "Squash & Tennis Complex Open Lawn",
+      "nodeId": "n82",
+      "capacity": 500
+    },
+    {
+      "id": "a-masjid-plaza",
+      "name": "Main Masjid Courtyard Plaza",
+      "nodeId": "n77",
+      "capacity": 900
+    }
+  ],
+  "buildingExits": [
+    {
+      "buildingId": "b-admin",
+      "nodeId": "b-admin:exit_nw"
+    },
+    {
+      "buildingId": "b-admin",
+      "nodeId": "b-admin:exit_ne"
+    },
+    {
+      "buildingId": "b-auditorium",
+      "nodeId": "b-auditorium:exit_w"
+    },
+    {
+      "buildingId": "b-auditorium",
+      "nodeId": "b-auditorium:exit_e"
+    },
+    {
+      "buildingId": "b-csit-labs",
+      "nodeId": "b-csit-labs:exit_w"
+    },
+    {
+      "buildingId": "b-csit-labs",
+      "nodeId": "b-csit-labs:exit_e"
+    },
+    {
+      "buildingId": "b-csit",
+      "nodeId": "b-csit:exit_nw"
+    },
+    {
+      "buildingId": "b-csit",
+      "nodeId": "b-csit:exit_ne"
+    },
+    {
+      "buildingId": "b-dean-offices",
+      "nodeId": "b-dean-offices:exit_n"
+    },
+    {
+      "buildingId": "b-dean-offices",
+      "nodeId": "b-dean-offices:exit_e"
+    },
+    {
+      "buildingId": "b-library",
+      "nodeId": "b-library:exit_nw"
+    },
+    {
+      "buildingId": "b-library",
+      "nodeId": "b-library:exit_se"
+    }
+  ]
+}

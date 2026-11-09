@@ -3,7 +3,7 @@
 ## Member A: Data & GIS Engineering
 - [x] Task A.1: NED University outdoor campus survey and graph extraction (`data/graph.json`).
 - [x] Task A.2: Indoor floor plans and schemas for academic blocks (`data/indoor/*.json`).
-- [ ] Task A.3: Evacuation checkpoints and assembly point datasets (`data/evac.json`).
+- [x] Task A.3: Evacuation checkpoints and assembly point datasets (`data/evac.json`).
 - [ ] Task A.4: Scalable 2D SVG / Canvas map renderers in `web/src/map/`.
 
 ## Member B: C++ Core Algorithms & WASM Bridge

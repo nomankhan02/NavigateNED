@@ -18,6 +18,7 @@
 - `core/third_party/doctest/doctest.h`: Vendored single-header unit testing framework.
 - `core/third_party/nlohmann/json.hpp`: Vendored single-header JSON parser.
 - `data/`: Campus graph datasets and geo specifications.
+- `data/evac.json`: Emergency evacuation dataset (7 assembly areas, 12 building exits across 6 indoor buildings).
 - `data/graph.json`: Georeferenced campus road network (86 nodes, 108 edges, 55 landmarks).
 - `data/sample/graph.json`: 4-node sample graph for scaffolding and WASM bridge verification.
 - `data/indoor/`: Directory for indoor building floor navigation data.
@@ -30,8 +31,9 @@
 - `tools/`: Utility scripts for data processing and map extraction.
 - `tools/.gitignore`: Git ignore rule excluding generated floor preview PNGs (`previews/`).
 - `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
+- `tools/generate_evac.py`: Re-runnable emergency evacuation assembly areas and building exits generator.
 - `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.
-- `tools/validate.py`: Schema and graph topology validation tool checking outdoor and indoor contracts.
+- `tools/validate.py`: Schema and graph topology validation tool checking outdoor, indoor, and evacuation contracts.
 - `web/`: Next.js 15 App Router static export frontend.
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.

@@ -156,6 +156,8 @@ def validate(graph_path="data/graph.json"):
     # 6. Indoor buildings validation (data/indoor/*.json)
     indoor_dir = os.path.join(os.path.dirname(graph_path), "indoor")
     indoor_summaries = []
+    unified_adj = {nid: list(nbs) for nid, nbs in adj.items()}
+    indoor_exits_by_building = {}
     if os.path.isdir(indoor_dir):
         indoor_files = sorted(f for f in os.listdir(indoor_dir) if f.endswith(".json"))
         for fname in indoor_files:
@@ -219,6 +221,9 @@ def validate(graph_path="data/graph.json"):
                 errors.append(f"{fname}: expected at least 1 exit node, found {len(exits)}")
 
             ent_id = entrances[0] if entrances else None
+            indoor_exits_by_building[bid] = set(exits)
+            for nid in in_node_map:
+                unified_adj.setdefault(nid, [])
 
             # Build adjacency lists (all edges vs accessible-only edges)
             adj_all = {nid: [] for nid in in_node_map}
@@ -247,6 +252,8 @@ def validate(graph_path="data/graph.json"):
                 if {u, v} == {ent_id, outdoor_target}:
                     if w == 3.0 and kind == "walk" and acc is True:
                         has_outdoor_link = True
+                        unified_adj.setdefault(u, []).append(v)
+                        unified_adj.setdefault(v, []).append(u)
                     else:
                         errors.append(f"{fname}: outdoor link ({u}--{v}) must have w=3.0, kind='walk', accessible=true")
                     continue
@@ -257,6 +264,8 @@ def validate(graph_path="data/graph.json"):
 
                 adj_all[u].append(v)
                 adj_all[v].append(u)
+                unified_adj[u].append(v)
+                unified_adj[v].append(u)
                 if acc is True:
                     adj_acc[u].append(v)
                     adj_acc[v].append(u)
@@ -324,6 +333,93 @@ def validate(graph_path="data/graph.json"):
                 f"accessible_rooms={len(room_nodes - unreached_rooms_acc)}/{len(room_nodes)}, overlaps={overlap_count}"
             )
 
+    # 7. Evacuation dataset validation (data/evac.json)
+    evac_path = os.path.join(os.path.dirname(graph_path), "evac.json")
+    evac_summary = None
+    if os.path.exists(evac_path):
+        with open(evac_path, "r", encoding="utf-8") as f:
+            try:
+                evac = json.load(f)
+            except Exception as e:
+                errors.append(f"evac.json: Invalid JSON ({e})")
+                evac = {}
+
+        assembly_areas = evac.get("assemblyAreas", [])
+        building_exits = evac.get("buildingExits", [])
+
+        if not (6 <= len(assembly_areas) <= 8):
+            errors.append(f"evac.json: expected 6-8 assemblyAreas, found {len(assembly_areas)}")
+
+        aa_ids = set()
+        aa_node_ids = []
+        total_capacity = 0
+        for idx, aa in enumerate(assembly_areas):
+            aid = aa.get("id", "")
+            aname = aa.get("name", "")
+            anid = aa.get("nodeId", "")
+            cap = aa.get("capacity")
+
+            if not aid or not aid.startswith("a-"):
+                errors.append(f"evac.json: assemblyArea[{idx}] invalid id '{aid}'")
+            if aid in aa_ids:
+                errors.append(f"evac.json: duplicate assemblyArea id '{aid}'")
+            aa_ids.add(aid)
+
+            if not aname:
+                errors.append(f"evac.json: assemblyArea '{aid}' missing name")
+            if anid not in node_ids:
+                errors.append(f"evac.json: assemblyArea '{aid}' references nonexistent outdoor node '{anid}'")
+            else:
+                aa_node_ids.append(anid)
+
+            if not isinstance(cap, int) or cap <= 0:
+                errors.append(f"evac.json: assemblyArea '{aid}' must have positive integer capacity (got {cap})")
+            else:
+                total_capacity += cap
+
+        covered_buildings = set()
+        valid_exit_nodes = []
+        for idx, be in enumerate(building_exits):
+            bid = be.get("buildingId", "")
+            ex_nid = be.get("nodeId", "")
+            if bid not in indoor_exits_by_building:
+                errors.append(f"evac.json: buildingExits[{idx}] references unknown indoor building '{bid}'")
+                continue
+            if ex_nid not in indoor_exits_by_building[bid]:
+                errors.append(f"evac.json: buildingExits[{idx}] nodeId '{ex_nid}' is not an exit node of '{bid}'")
+                continue
+            covered_buildings.add(bid)
+            valid_exit_nodes.append(ex_nid)
+
+        missing_buildings = set(indoor_exits_by_building.keys()) - covered_buildings
+        if missing_buildings:
+            errors.append(f"evac.json: buildingExits missing indoor buildings: {sorted(missing_buildings)}")
+
+        # Check every assembly area is reachable from every building exit through the unified indoor+outdoor graph
+        unreachable_pairs = 0
+        for ex_nid in valid_exit_nodes:
+            seen = {ex_nid}
+            q = deque([ex_nid])
+            while q:
+                cur = q.popleft()
+                for nb in unified_adj.get(cur, []):
+                    if nb not in seen:
+                        seen.add(nb)
+                        q.append(nb)
+            for anid in aa_node_ids:
+                if anid not in seen:
+                    unreachable_pairs += 1
+                    errors.append(f"evac.json: assembly node '{anid}' unreachable from building exit '{ex_nid}'")
+
+        evac_summary = (
+            f"  - Assembly Areas: {len(assembly_areas)} (Total capacity: {total_capacity})\n"
+            f"  - Building Exits: {len(building_exits)} across {len(covered_buildings)} indoor buildings\n"
+            f"  - Cross-Graph Reachability (Exit -> Indoor-Outdoor 3m Link -> Assembly): "
+            f"{len(valid_exit_nodes) * len(aa_node_ids) - unreachable_pairs}/{len(valid_exit_nodes) * len(aa_node_ids)} pairs reachable"
+        )
+    else:
+        errors.append("evac.json: file not found in data/evac.json")
+
     # Print Validation Report
     print("--- Outdoor Validation Report ---")
     print(f"Total Nodes: {len(nodes)}")
@@ -336,6 +432,10 @@ def validate(graph_path="data/graph.json"):
         for line in indoor_summaries:
             print(line)
 
+    if evac_summary:
+        print("\n--- Evacuation Validation Report (data/evac.json) ---")
+        print(evac_summary)
+
     if warnings:
         print(f"\nWarnings ({len(warnings)}):")
         for w in warnings:
@@ -347,7 +447,7 @@ def validate(graph_path="data/graph.json"):
             print(f"  [ERROR] {e}")
         return False
 
-    print("\nResult: PASSED. All outdoor and indoor datasets strictly conform to contracts.md.")
+    print("\nResult: PASSED. All outdoor, indoor, and evacuation datasets strictly conform to contracts.md.")
     return True
 
 
