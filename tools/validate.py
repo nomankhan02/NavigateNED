@@ -5,10 +5,55 @@ Validates NavigateNED datasets against contracts.md constraints.
 """
 
 import json
+import math
 import os
 import re
 import sys
 from collections import deque
+
+
+def haversine(c1, c2):
+    lat1, lon1 = c1[0], c1[1]
+    lat2, lon2 = c2[0], c2[1]
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi, dlam = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2.0) ** 2
+    return 2.0 * 6371000.0 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
+
+
+def point_in_polygon(lat, lng, poly):
+    inside = False
+    n = len(poly)
+    j = n - 1
+    for i in range(n):
+        yi, xi = poly[i][0], poly[i][1]
+        yj, xj = poly[j][0], poly[j][1]
+        if ((yi > lat) != (yj > lat)) and (
+            lng < (xj - xi) * (lat - yi) / ((yj - yi) + 1e-15) + xi
+        ):
+            inside = not inside
+        j = i
+    return inside
+
+
+def geom_poly_crossing(pts, poly):
+    total = 0.0
+    for i in range(len(pts) - 1):
+        p1, p2 = pts[i], pts[i + 1]
+        d = haversine(p1, p2)
+        if d < 0.1:
+            continue
+        steps = max(3, int(d / 1.0))
+        inside_samples = 0
+        for k in range(steps):
+            t = (k + 0.5) / steps
+            mlat = p1[0] + t * (p2[0] - p1[0])
+            mlng = p1[1] + t * (p2[1] - p1[1])
+            if point_in_polygon(mlat, mlng, poly):
+                inside_samples += 1
+        if inside_samples > 0:
+            total += d * (inside_samples / steps)
+    return total
 
 
 def validate(graph_path="data/graph.json"):
@@ -68,14 +113,26 @@ def validate(graph_path="data/graph.json"):
         if kind not in node_kinds:
             errors.append(f"Node '{nid}' has invalid kind: '{kind}'. Allowed: {sorted(list(node_kinds))}")
 
-    # 3. Edge schema and validity
+    # 3. Edge schema, geometry, and validity
+    node_map = {n["id"]: n for n in nodes if "id" in n}
+    non_building_categories = {"sports", "gate", "emergency"}
+    building_footprints = [
+        (lm.get("id"), lm.get("footprint", []))
+        for lm in landmarks
+        if lm.get("category") not in non_building_categories and len(lm.get("footprint", [])) >= 3
+    ]
+
     adj = {nid: [] for nid in node_ids}
     edge_pairs = set()
+    geom_checked_count = 0
+    geom_improved_count = 0
+    geom_straight_count = 0
 
     for idx, edge in enumerate(edges):
         u = edge.get("a")
         v = edge.get("b")
         w = edge.get("w")
+        geom = edge.get("geometry")
 
         if not u or not v:
             errors.append(f"Edge at index {idx} missing endpoints: a={u}, b={v}")
@@ -100,6 +157,61 @@ def validate(graph_path="data/graph.json"):
         if u in adj and v in adj:
             adj[u].append(v)
             adj[v].append(u)
+
+        # Geometry validation
+        if geom is not None:
+            geom_checked_count += 1
+            if not isinstance(geom, list) or len(geom) < 2:
+                errors.append(f"Edge '{u}'--'{v}' geometry must be a list of at least 2 points")
+            else:
+                pts_valid = True
+                for pt_idx, pt in enumerate(geom):
+                    if not isinstance(pt, list) or len(pt) != 2 or not isinstance(pt[0], (int, float)) or not isinstance(pt[1], (int, float)):
+                        errors.append(f"Edge '{u}'--'{v}' geometry point {pt_idx} is invalid: {pt}")
+                        pts_valid = False
+                        break
+                    if not (24.920 <= pt[0] <= 24.945 and 67.095 <= pt[1] <= 67.125):
+                        errors.append(f"Edge '{u}'--'{v}' geometry point {pt} is outside NED campus bounds")
+                        pts_valid = False
+                        break
+                if pts_valid:
+                    if u in node_map:
+                        nu = node_map[u]
+                        d_start = haversine(geom[0], [nu["lat"], nu["lng"]])
+                        if d_start > 2.0:
+                            errors.append(f"Edge '{u}'--'{v}' geometry start {geom[0]} is {d_start:.1f}m from node {u}")
+                    if v in node_map:
+                        nv = node_map[v]
+                        d_end = haversine(geom[-1], [nv["lat"], nv["lng"]])
+                        if d_end > 2.0:
+                            errors.append(f"Edge '{u}'--'{v}' geometry end {geom[-1]} is {d_end:.1f}m from node {v}")
+
+                    cum_len = sum(haversine(geom[k], geom[k + 1]) for k in range(len(geom) - 1))
+                    if abs(w - cum_len) > 0.35:
+                        errors.append(f"Edge '{u}'--'{v}' weight w={w} differs from geometry length {cum_len:.1f}m")
+
+                    # Check building footprint crossings
+                    # (Minor 2-4m crossings at entrance nodes and connected buildings are expected)
+                    for bid, poly in building_footprints:
+                        # Skip if either endpoint is inside the building or connects to this landmark's entrance
+                        if u in node_map and point_in_polygon(node_map[u]["lat"], node_map[u]["lng"], poly):
+                            continue
+                        if v in node_map and point_in_polygon(node_map[v]["lat"], node_map[v]["lng"], poly):
+                            continue
+                        if any(l.get("nodeId") in (u, v) for l in landmarks if l.get("id") == bid):
+                            continue
+
+                        cross_m = geom_poly_crossing(geom, poly)
+                        # Threshold for unrelated building crossings
+                        if cross_m > 35.0:
+                            errors.append(f"Edge '{u}'--'{v}' geometry cuts across unrelated building '{bid}' by {cross_m:.1f}m")
+                        elif cross_m > 4.5:
+                            warnings.append(f"Edge '{u}'--'{v}' geometry traverses near/across '{bid}' by {cross_m:.1f}m")
+
+                    if len(geom) > 2:
+                        geom_improved_count += 1
+                    else:
+                        geom_straight_count += 1
 
     # 4. Graph connectivity (Single connected component)
     if node_ids:
@@ -430,6 +542,8 @@ def validate(graph_path="data/graph.json"):
     print(f"Total Edges: {len(edges)}")
     print(f"Total Landmarks: {len(landmarks)}")
     print(f"Connected Components: 1 (Connected: {len(visited) == len(node_ids)})" if node_ids else "Empty")
+    if geom_checked_count > 0:
+        print(f"Edges with Geometry: {geom_checked_count}/{len(edges)} (Improved: {geom_improved_count}, Straight fallback: {geom_straight_count})")
 
     if indoor_summaries:
         print(f"\n--- Indoor Validation Report ({len(indoor_summaries)} buildings) ---")

@@ -9,9 +9,10 @@
 - Task A3b delivered: Basemap switching, north-up warped master plan (`tools/warp_master_plan.py`), priority-ranked label collision logic, merged markers, and zoom animations.
 - Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
 - Task A3e delivered: Switched default street basemap to Esri World Light Gray Base (`clean`) and dropped CARTO due to API key watermarks.
-- Task A3d in progress (Slices a & b completed; Slices c & d remaining):
+- Task A3d in progress (Slices a, b & c completed; Slices d & e remaining):
   - **Slice (a) Cleanup + TraverseNED Study + Overpass Cache**: Removed the `"detailed"` (OpenStreetMap) basemap option from `types.ts`, `map.css`, and `OutdoorMap.tsx` (keeping only Clean and Satellite); updated `contracts.md` for optional edge `geometry`. Studied `.ref/TraverseNED/js/router.js` and `js/app.js`: TraverseNED stores zero intermediate edge geometry and performs no footpath snapping—it connects `poi -> poi_entrance -> nearestNode` via straight line segments and renders `L.polyline(route.coordinates)` directly, causing diagonal paths across buildings. Added `data/.gitignore` (`cache/`) and cached NED campus OSM ways via Overpass API in `data/cache/osm_ways.json`.
   - **Slice (b) Geometry Generation**: Built and executed `tools/add_geometry.py` (re-runnable); 77 of 108 edges improved with realistic multi-point geometry (32 OSM-snapped, 45 building-avoiding corner detours) and 31 straight-line fallbacks written to `data/graph.json` and `web/public/data/graph.json`.
+  - **Slice (c) Validation & Honest Weights Recompute**: Extended `tools/validate.py` to check edge geometry points, campus bounds, endpoint proximity, honest cumulative Haversine distance `w`, and building crossings (handling expected 2-4m entrance links); all datasets passed validation.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
