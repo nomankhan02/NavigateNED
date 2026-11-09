@@ -13,9 +13,12 @@
 - **CSS**: Pure vanilla CSS variables for tokens (`tokens.css`), scoped CSS modules for components, standard CSS resets.
 
 ## Git & Workflow Rules
-- Work directly on `main`, one member at a time. Run `git pull` before starting.
-- Agents never run git commands (no add, commit, push, pull, merge). At the end of each task, print a one-line suggested commit message and the list of changed files. The user commits and pushes.
-- Never force push.
+- Work directly on `main`, one member at a time.
+- Agents may run git add, commit, pull and push, but only after the task's build/tests pass.
+- Before starting a task and before every push: git pull. If a merge conflict appears, STOP and ask the user. Never resolve conflicts alone.
+- Stage only files inside your owned folders (plus memory.md and repo_map.md). Never use `git add .` at the repo root. Never commit .env, keys, .ref/, or build outputs.
+- Never force push, reset --hard, rebase, or delete branches.
+- One commit per finished slice, with a clear one-line message. Never push failing builds.
 
 ## Token & Agent Efficiency Rules
 - Read markdown documentation files first before acting.

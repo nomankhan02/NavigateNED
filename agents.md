@@ -6,7 +6,7 @@ Every task executed by an agent or human contributor must strictly follow these 
 2. **Plan**: Formulate a plan in $\le 5$ concise bullet points.
 3. **Execution**: Make the smallest verifiable change strictly inside your owned folders.
 4. **Validation**: Test the change (build, unit tests, static export).
-5. **Record & Hand off**: Update memory.md and repo_map.md, then print a suggested one-line commit message and the changed files. Never run git commands; the user commits and pushes.
+5. **Record & Commit**: Update memory.md and repo_map.md, then commit and push per the Git rules.
 
 ## Ownership Matrix
 
