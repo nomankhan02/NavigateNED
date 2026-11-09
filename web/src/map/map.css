@@ -16,11 +16,11 @@
   --map-edge-walkway: #6b8276;
   --map-edge-covered: #3d6352;
 
-  --map-landmark-fill: rgba(20, 82, 62, 0.16);
+  --map-landmark-fill: #185a44;
   --map-landmark-stroke: #185a44;
-  --map-landmark-hover-fill: rgba(20, 82, 62, 0.32);
+  --map-landmark-hover-fill: #0d3d2d;
   --map-landmark-hover-stroke: #0d3d2d;
-  --map-landmark-selected-fill: rgba(184, 93, 25, 0.34);
+  --map-landmark-selected-fill: #d97706;
   --map-landmark-selected-stroke: #b85d19;
 
   --map-marker-entrance: #166534;
@@ -31,7 +31,7 @@
   --map-route-stroke: #b85d19;
   --map-route-casing: #fff9f2;
   --map-user-dot: #0284c7;
-  --map-user-accuracy: rgba(2, 132, 199, 0.18);
+  --map-user-accuracy: #0284c7;
 
   --map-evac-blocked: #b91c1c;
   --map-evac-blocked-bg: #fef2f2;
@@ -62,6 +62,8 @@
 }
 
 .ned-leaflet-viewport {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   background-color: var(--map-bg);
@@ -299,3 +301,4 @@ svg.leaflet-zoom-animated {
     transition: none !important;
   }
 }
+

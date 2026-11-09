@@ -116,10 +116,14 @@ export function OutdoorMap({
 
       leafletRef.current = L;
 
-      const origin: [number, number] = graph?.meta?.origin || [24.9322, 67.1133];
+      const origin: [number, number] = [24.93165, 67.11315];
+      const isCompact = containerRef.current.clientWidth > 0 && containerRef.current.clientWidth < 560;
+      const initialZoom = isCompact ? 16 : 17;
+      setZoomLevel(initialZoom);
+
       const map = L.map(containerRef.current, {
         center: origin,
-        zoom: 17,
+        zoom: initialZoom,
         minZoom: 15,
         maxZoom: 20,
         maxBounds: DEFAULT_MAX_BOUNDS,
@@ -130,8 +134,8 @@ export function OutdoorMap({
       });
 
       mapRef.current = map;
-      canvasRendererRef.current = L.canvas({ padding: 0.5 });
-      svgRendererRef.current = L.svg({ padding: 0.5 });
+      canvasRendererRef.current = L.canvas({ padding: 0.5 }).addTo(map);
+      svgRendererRef.current = L.svg({ padding: 0.5 }).addTo(map);
 
       // Custom Affine 4-Corner Master Plan Image Layer
       const corners: MasterPlanCorners =
@@ -149,13 +153,13 @@ export function OutdoorMap({
             div.style.top = "0";
             div.style.left = "0";
             div.style.pointerEvents = "none";
-            div.style.zIndex = "220";
+            div.style.zIndex = "1";
 
             const img = L.DomUtil.create("img", "", div) as HTMLImageElement;
             img.style.position = "absolute";
             img.style.transformOrigin = "0 0";
             img.style.clipPath = "inset(4% 4% 22% 4% round 12px)";
-            img.style.opacity = "0.9";
+            img.style.opacity = "0.88";
             img.alt = "NED University Master Plan";
 
             img.onload = () => {
@@ -166,7 +170,7 @@ export function OutdoorMap({
             this._container = div;
             this._img = img;
           }
-          mapInstance.getPanes().overlayPane.appendChild(this._container);
+          mapInstance.getPanes().tilePane.appendChild(this._container);
           mapInstance.on("zoom viewreset move zoomanim", this._reset, this);
           if (this._img.complete) {
             this._reset();
@@ -221,12 +225,30 @@ export function OutdoorMap({
       });
 
       setIsReady(true);
+      requestAnimationFrame(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      });
     }
 
     initLeaflet();
 
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+    }
+
     return () => {
       cancelled = true;
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -319,7 +341,7 @@ export function OutdoorMap({
         fillColor: isSelected
           ? "var(--map-landmark-selected-fill)"
           : "var(--map-landmark-fill)",
-        fillOpacity: isSelected ? 0.95 : 0.85,
+        fillOpacity: isSelected ? 0.36 : 0.18,
       };
 
       const poly = L.polygon(lm.footprint, baseStyle);
@@ -329,7 +351,7 @@ export function OutdoorMap({
           poly.setStyle({
             weight: 2.2,
             fillColor: "var(--map-landmark-hover-fill)",
-            fillOpacity: 0.95,
+            fillOpacity: 0.32,
             color: "var(--map-landmark-hover-stroke)",
           });
         }
@@ -349,8 +371,24 @@ export function OutdoorMap({
       poly.addTo(fpGroup);
     }
 
-    // Zoom-dependent non-overlapping short labels
+    // Zoom-dependent non-overlapping short labels + Gate/Assembly collision registration
     const placedBoxes: Array<[number, number, number, number]> = [];
+
+    // Pre-register Gate and Assembly badge bounding boxes so landmark labels never overlap them
+    for (const n of graph.nodes) {
+      if (n.kind === "gate" || n.kind === "assembly") {
+        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
+        const badgeW = n.kind === "assembly" ? 86 : 58;
+        const badgeH = 22;
+        placedBoxes.push([
+          pt.x - badgeW / 2,
+          pt.y - badgeH / 2,
+          pt.x + badgeW / 2,
+          pt.y + badgeH / 2,
+        ]);
+      }
+    }
+
     const sortedLandmarks = [...graph.landmarks].sort((a, b) => {
       if (a.id === selectedLandmarkId) return -1;
       if (b.id === selectedLandmarkId) return 1;
@@ -404,8 +442,21 @@ export function OutdoorMap({
     }
 
     // (c) Entrance, Gate & Assembly-Area Markers (unified 1.75px stroke SVG icons)
+    const markerBoxes: Array<[number, number, number, number]> = [];
     for (const n of graph.nodes) {
       if (n.kind === "gate") {
+        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
+        const box: [number, number, number, number] = [pt.x - 28, pt.y - 11, pt.x + 28, pt.y + 11];
+        if (
+          markerBoxes.some(
+            ([x0, y0, x1, y1]) =>
+              box[0] < x1 + 2 && box[2] > x0 - 2 && box[1] < y1 + 2 && box[3] > y0 - 2
+          )
+        ) {
+          continue;
+        }
+        markerBoxes.push(box);
+
         const gateHtml = `
           <div class="ned-map-marker" title="Campus Gate (${n.id})">
             <span class="ned-marker-badge ned-marker-badge--gate">
@@ -421,6 +472,18 @@ export function OutdoorMap({
           interactive: false,
         }).addTo(mkGroup);
       } else if (n.kind === "assembly") {
+        const pt = map.latLngToContainerPoint([n.lat, n.lng]);
+        const box: [number, number, number, number] = [pt.x - 42, pt.y - 11, pt.x + 42, pt.y + 11];
+        if (
+          markerBoxes.some(
+            ([x0, y0, x1, y1]) =>
+              box[0] < x1 + 2 && box[2] > x0 - 2 && box[1] < y1 + 2 && box[3] > y0 - 2
+          )
+        ) {
+          continue;
+        }
+        markerBoxes.push(box);
+
         const assemblyHtml = `
           <div class="ned-map-marker" title="Assembly Area (${n.id})">
             <span class="ned-marker-badge ned-marker-badge--assembly">
@@ -499,7 +562,7 @@ export function OutdoorMap({
     const endPt = coords[coords.length - 1];
 
     const startHtml = `
-      <div class="ned-map-marker" title="Route Start">
+      <div class="ned-map-marker" style="transform: translate(-50%, 60%);" title="Route Start">
         <span class="ned-marker-badge" style="background: var(--map-landmark-stroke);">
           <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="10" r="6"/>
@@ -514,7 +577,7 @@ export function OutdoorMap({
     }).addTo(rtGroup);
 
     const endHtml = `
-      <div class="ned-map-marker" title="Route Destination">
+      <div class="ned-map-marker" style="transform: translate(-50%, -145%);" title="Route Destination">
         <span class="ned-marker-badge" style="background: var(--map-route-stroke);">
           <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 17V4l11 4-11 4"/>
@@ -577,7 +640,7 @@ export function OutdoorMap({
       color: "var(--map-user-dot)",
       weight: 1.5,
       fillColor: "var(--map-user-accuracy)",
-      fillOpacity: 0.85,
+      fillOpacity: 0.18,
       interactive: false,
     }).addTo(usrGroup);
 
@@ -698,7 +761,7 @@ export function OutdoorMap({
         const endCoord = coords[coords.length - 1];
 
         const evacStartHtml = `
-          <div class="ned-map-marker" title="Evacuation Exit (${assign.from})">
+          <div class="ned-map-marker" style="transform: translate(-115%, -50%);" title="Evacuation Exit (${assign.from})">
             <span class="ned-marker-badge ned-marker-badge--evac-start">
               <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 10h12M11 5l5 5-5 5"/>
@@ -712,7 +775,7 @@ export function OutdoorMap({
         }).addTo(evGroup);
 
         const evacEndHtml = `
-          <div class="ned-map-marker" title="Assigned Assembly (${assign.to})">
+          <div class="ned-map-marker" style="transform: translate(-50%, -145%);" title="Assigned Assembly (${assign.assemblyId})">
             <span class="ned-marker-badge ned-marker-badge--evac-end">
               <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 11l3 3 7-7"/>
@@ -751,13 +814,13 @@ export function OutdoorMap({
       const vSet = new Set<string>();
       const fSet = new Set<string>();
       for (const ev of trace) {
-        if (ev.op === "visit") {
-          vSet.add(ev.nodeId);
-          fSet.delete(ev.nodeId);
-        } else if (!vSet.has(ev.nodeId)) {
-          fSet.add(ev.nodeId);
+        if (ev.type === "visit") {
+          vSet.add(ev.node);
+          fSet.delete(ev.node);
+        } else if (!vSet.has(ev.node)) {
+          fSet.add(ev.node);
         }
-        activeNodeId = ev.nodeId;
+        activeNodeId = ev.node;
       }
       visitedNodeIds = Array.from(vSet);
       frontierNodeIds = Array.from(fSet);

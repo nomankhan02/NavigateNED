@@ -111,3 +111,4 @@ export interface OutdoorMapProps {
   evacuation?: EvacuationOverlayData | null;
   trace?: TraceEvent[] | TraceReplayState | null;
 }
+
