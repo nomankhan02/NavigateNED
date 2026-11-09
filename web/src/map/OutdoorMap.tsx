@@ -2,6 +2,13 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import "@/map/map.css";
+import {
+  buildNodeLookup,
+  getDebugGraphEdgeCoordinates,
+  getEdgeCoordinatesBetween,
+  getPathCoordinates,
+  getTraceSegments,
+} from "./geometry";
 import type {
   BasemapMode,
   CampusLandmark,
@@ -398,30 +405,20 @@ export function OutdoorMap({
     const nodeFill = resolveMapVar(rootEl, "--map-text-inverse", "#f7faf8");
     const nodeStroke = resolveMapVar(rootEl, "--map-border-strong", "#5c7468");
 
-    const nodeLookup = new Map<string, OutdoorNode>();
-    for (const n of graph.nodes) {
-      nodeLookup.set(n.id, n);
-    }
+    const nodeLookup = buildNodeLookup(graph.nodes);
 
     for (const edge of graph.edges) {
-      const na = nodeLookup.get(edge.a);
-      const nb = nodeLookup.get(edge.b);
-      if (!na || !nb) continue;
+      const pts = getDebugGraphEdgeCoordinates(edge, nodeLookup);
+      if (!pts || pts.length < 2) continue;
 
-      L.polyline(
-        [
-          [na.lat, na.lng],
-          [nb.lat, nb.lng],
-        ],
-        {
-          renderer,
-          color: edge.covered ? coveredColor : walkwayColor,
-          weight: edge.covered ? 2.4 : 1.7,
-          opacity: 0.78,
-          dashArray: edge.covered ? undefined : "4 3",
-          interactive: false,
-        }
-      ).addTo(group);
+      L.polyline(pts, {
+        renderer,
+        color: edge.covered ? coveredColor : walkwayColor,
+        weight: edge.covered ? 2.4 : 1.7,
+        opacity: 0.78,
+        dashArray: edge.covered ? undefined : "4 3",
+        interactive: false,
+      }).addTo(group);
     }
 
     for (const n of graph.nodes) {
@@ -845,16 +842,8 @@ export function OutdoorMap({
     rtGroup.clearLayers();
     if (!route || route.length < 2) return;
 
-    const nodeLookup = new Map<string, OutdoorNode>();
-    for (const n of graph.nodes) {
-      nodeLookup.set(n.id, n);
-    }
-
-    const coords: [number, number][] = [];
-    for (const nodeId of route) {
-      const node = nodeLookup.get(nodeId);
-      if (node) coords.push([node.lat, node.lng]);
-    }
+    const nodeLookup = buildNodeLookup(graph.nodes);
+    const coords = getPathCoordinates(route, graph.edges, nodeLookup);
     if (coords.length < 2) return;
 
     // Casing line underneath for contrast
@@ -989,22 +978,13 @@ export function OutdoorMap({
     evGroup.clearLayers();
     if (!evacuation) return;
 
-    const nodeLookup = new Map<string, OutdoorNode>();
-    for (const n of graph.nodes) {
-      nodeLookup.set(n.id, n);
-    }
+    const nodeLookup = buildNodeLookup(graph.nodes);
 
     // Blocked edges as hatched hazard lines
     if (evacuation.blockedEdges) {
       for (const [aId, bId] of evacuation.blockedEdges) {
-        const na = nodeLookup.get(aId);
-        const nb = nodeLookup.get(bId);
-        if (!na || !nb) continue;
-
-        const pts: [number, number][] = [
-          [na.lat, na.lng],
-          [nb.lat, nb.lng],
-        ];
+        const pts = getEdgeCoordinatesBetween(graph.edges, aId, bId, nodeLookup);
+        if (!pts || pts.length < 2) continue;
 
         L.polyline(pts, {
           renderer: svgRenderer,
@@ -1051,11 +1031,7 @@ export function OutdoorMap({
     // Assignment paths with start/end markers
     if (evacuation.assignments) {
       for (const assign of evacuation.assignments) {
-        const coords: [number, number][] = [];
-        for (const nid of assign.path) {
-          const n = nodeLookup.get(nid);
-          if (n) coords.push([n.lat, n.lng]);
-        }
+        const coords = getPathCoordinates(assign.path, graph.edges, nodeLookup);
         if (coords.length < 2) continue;
 
         L.polyline(coords, {
@@ -1128,10 +1104,7 @@ export function OutdoorMap({
     trGroup.clearLayers();
     if (!trace) return;
 
-    const nodeLookup = new Map<string, OutdoorNode>();
-    for (const n of graph.nodes) {
-      nodeLookup.set(n.id, n);
-    }
+    const nodeLookup = buildNodeLookup(graph.nodes);
 
     let visitedNodeIds: string[] = [];
     let frontierNodeIds: string[] = [];
@@ -1155,6 +1128,25 @@ export function OutdoorMap({
       visitedNodeIds = trace.visitedNodeIds;
       frontierNodeIds = trace.frontierNodeIds;
       activeNodeId = trace.activeNodeId;
+    }
+
+    // Draw visited trail polylines along graph edges between consecutive visited nodes
+    const traceSegments = getTraceSegments(
+      visitedNodeIds,
+      graph.edges,
+      nodeLookup
+    );
+    for (const seg of traceSegments) {
+      L.polyline(seg, {
+        renderer: svgRenderer,
+        color: "var(--map-trace-visited)",
+        weight: 3.2,
+        opacity: 0.78,
+        dashArray: "6 4",
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: false,
+      }).addTo(trGroup);
     }
 
     // Draw frontier nodes

@@ -50,7 +50,8 @@
 - `web/src/app/%5Fmap-dev/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev`.
 - `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime.
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
-- `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, and all map TypeScript interfaces.
+- `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, and straight-line fallbacks.
+- `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, geometry helpers, and all map TypeScript interfaces.
 - `web/src/map/map.css`: Outdoor map CSS variables (`--map-*`), self-contained Leaflet layout rules, and custom SVG control styles.
 - `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards, and trace replay.
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.

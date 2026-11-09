@@ -9,10 +9,11 @@
 - Task A3b delivered: Basemap switching, north-up warped master plan (`tools/warp_master_plan.py`), priority-ranked label collision logic, merged markers, and zoom animations.
 - Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
 - Task A3e delivered: Switched default street basemap to Esri World Light Gray Base (`clean`) and dropped CARTO due to API key watermarks.
-- Task A3d in progress (Slices a, b & c completed; Slices d & e remaining):
-  - **Slice (a) Cleanup + TraverseNED Study + Overpass Cache**: Removed the `"detailed"` (OpenStreetMap) basemap option from `types.ts`, `map.css`, and `OutdoorMap.tsx` (keeping only Clean and Satellite); updated `contracts.md` for optional edge `geometry`. Studied `.ref/TraverseNED/js/router.js` and `js/app.js`: TraverseNED stores zero intermediate edge geometry and performs no footpath snapping—it connects `poi -> poi_entrance -> nearestNode` via straight line segments and renders `L.polyline(route.coordinates)` directly, causing diagonal paths across buildings. Added `data/.gitignore` (`cache/`) and cached NED campus OSM ways via Overpass API in `data/cache/osm_ways.json`.
-  - **Slice (b) Geometry Generation**: Built and executed `tools/add_geometry.py` (re-runnable); 77 of 108 edges improved with realistic multi-point geometry (32 OSM-snapped, 45 building-avoiding corner detours) and 31 straight-line fallbacks written to `data/graph.json` and `web/public/data/graph.json`.
-  - **Slice (c) Validation & Honest Weights Recompute**: Extended `tools/validate.py` to check edge geometry points, campus bounds, endpoint proximity, honest cumulative Haversine distance `w`, and building crossings (handling expected 2-4m entrance links); all datasets passed validation.
+- Task A3d delivered: Footpath geometries, honest edge weights, validation, and geometry-aware map rendering:
+  - Multi-point realistic geometry on 77/108 edges (32 OSM-snapped, 45 corner detours) and 31 straight-line fallbacks.
+  - Validation checks in `tools/validate.py` for edge geometry, campus bounds, and honest cumulative Haversine weights.
+  - Helper functions in `web/src/map/geometry.ts` resolving edge geometries, orienting segments (reversing for b->a traversals), joining route/evacuation paths, and falling back to straight lines.
+  - `OutdoorMap.tsx` renders routes, trace replay segments, evacuation paths (blocked edges & assignments), and debug graph using `geometry`.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -24,6 +25,14 @@
    - Hook: `const traceReplay = useTraceReplay(routeResult.trace, 1);` exposes `{ isPlaying, currentIndex, totalEvents, speedMultiplier, visitedNodeIds, frontierNodeIds, relaxedNodeIds, activeNodeId, play, pause, toggle, reset, seek, setSpeed }`.
    - Styling: Override `--map-*` CSS variables in global theme tokens (`web/src/map/map.css` provides fallbacks).
    - **Dev Harness Note**: `web/src/app/_map-dev/page.tsx` (and Next.js App Router underscore route forwarder `web/src/app/%5Fmap-dev/page.tsx`) is a temporary verification page added by Member A as an allowed exception; **Member C may freely remove or replace it**.
+5. **Edge Geometry & Honest Weights Note (for Members B & C)**:
+   - **Edge `w` now follows geometry**: Edge weight `w` is the true walking distance in meters (cumulative Haversine sum along multi-point geometry).
+   - **`geometry` is optional display data**: `geometry` is an array of `[lat, lng]` coordinates strictly for rendering curved paths on maps; routing logic in C++ (`core/`) and frontend UI needs only `w` for graph traversal, edge costs, and shortest paths.
+   - **What changed in `data/graph.json`**:
+     - 77 of 108 edges enriched with multi-point `geometry` coordinates (32 snapped to real OSM walkways, 45 avoiding building footprints via perimeter corner waypoints).
+     - 31 edges have 2-point straight-line fallback geometries.
+     - All edge weights `w` recomputed to honest walking distances along their geometry in meters.
+     - Nodes, landmarks, and metadata structure preserved with 100% backward compatibility.
 
 ## Open Tasks
 - [ ] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
