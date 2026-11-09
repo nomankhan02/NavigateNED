@@ -184,10 +184,19 @@ def extract():
         "gate": "gate",
     }
 
-    for l in raw_landmarks:
+    for idx, l in enumerate(raw_landmarks):
         b_id = slugify_building(l)
         raw_cat = (l.get("category") or "services").strip().lower()
         cat = category_map.get(raw_cat, "services")
+
+        # Stable building number from TraverseNED blockNumber, name, or sequential index
+        block_num = str(l.get("blockNumber") or "").strip()
+        if not block_num:
+            m = re.search(r"\((\d+[A-Za-z]?)\)", l.get("name", ""))
+            if m:
+                block_num = m.group(1)
+        if not block_num:
+            block_num = str(idx + 1)
 
         # Fallback bounding box footprint if polygon missing
         footprint = l.get("footprintPolygon")
@@ -223,6 +232,7 @@ def extract():
             "id": b_id,
             "name": l.get("name", ""),
             "short": l.get("shortName") or l.get("name", ""),
+            "number": block_num,
             "nodeId": landmark_entrance_node[l["id"]],
             "category": cat,
             "footprint": [[round(pt[0], 6), round(pt[1], 6)] for pt in footprint],
@@ -244,6 +254,13 @@ def extract():
                 "bottomRight": [24.92677, 67.11141],
             },
         ),
+        "warpedOverlay": {
+            "image": "/map/ned_master_plan_warped.webp",
+            "bounds": [
+                [24.92677, 67.10644],
+                [24.93788, 67.11837],
+            ],
+        },
         "mapOverlay": {
             "image": "/map/ned_master_plan.jpg",
             "corners": raw_meta.get("masterPlanControlCorners", {}),

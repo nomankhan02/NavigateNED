@@ -141,6 +141,10 @@ def validate(graph_path="data/graph.json"):
         if not name or not short:
             errors.append(f"Landmark '{lid}' must provide both 'name' and 'short'")
 
+        num = lm.get("number")
+        if not num:
+            errors.append(f"Landmark '{lid}' must provide a stable building 'number'")
+
         nid = lm.get("nodeId")
         if not nid:
             errors.append(f"Landmark '{lid}' has no 'nodeId'")

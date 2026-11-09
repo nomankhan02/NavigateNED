@@ -24,6 +24,7 @@ export interface CampusLandmark {
   id: string;
   name: string;
   short: string;
+  number?: string;
   nodeId: string;
   category: string;
   footprint: [number, number][];

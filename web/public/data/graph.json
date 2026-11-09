@@ -25,6 +25,19 @@
         67.11141
       ]
     },
+    "warpedOverlay": {
+      "image": "/map/ned_master_plan_warped.webp",
+      "bounds": [
+        [
+          24.92677,
+          67.10644
+        ],
+        [
+          24.93788,
+          67.11837
+        ]
+      ]
+    },
     "mapOverlay": {
       "image": "/map/ned_master_plan.jpg",
       "corners": {
@@ -45,27 +58,6 @@
           67.11141
         ]
       }
-    },
-    "warpedOverlay": {
-      "image": "/map/ned_master_plan_warped.webp",
-      "bounds": [
-        [
-          24.92677,
-          67.10644
-        ],
-        [
-          24.93788,
-          67.11837
-        ]
-      ],
-      "sourceResolution": [
-        1024,
-        733
-      ],
-      "warpedResolution": [
-        2024,
-        2078
-      ]
     }
   },
   "nodes": [
@@ -709,7 +701,7 @@
     {
       "a": "n17",
       "b": "n18",
-      "w": 139,
+      "w": 139.0,
       "oneway": false,
       "covered": false
     },
@@ -765,7 +757,7 @@
     {
       "a": "n24",
       "b": "n25",
-      "w": 63,
+      "w": 63.0,
       "oneway": false,
       "covered": false
     },
@@ -807,7 +799,7 @@
     {
       "a": "n26",
       "b": "n27",
-      "w": 38,
+      "w": 38.0,
       "oneway": false,
       "covered": false
     },
@@ -828,7 +820,7 @@
     {
       "a": "n29",
       "b": "n30",
-      "w": 77,
+      "w": 77.0,
       "oneway": false,
       "covered": false
     },
@@ -849,7 +841,7 @@
     {
       "a": "n13",
       "b": "n31",
-      "w": 50,
+      "w": 50.0,
       "oneway": false,
       "covered": false
     },
@@ -891,7 +883,7 @@
     {
       "a": "n33",
       "b": "n34",
-      "w": 38,
+      "w": 38.0,
       "oneway": false,
       "covered": false
     },
@@ -940,14 +932,14 @@
     {
       "a": "n38",
       "b": "n39",
-      "w": 38,
+      "w": 38.0,
       "oneway": false,
       "covered": false
     },
     {
       "a": "n36",
       "b": "n31",
-      "w": 139,
+      "w": 139.0,
       "oneway": false,
       "covered": false
     },
@@ -1017,7 +1009,7 @@
     {
       "a": "n39",
       "b": "n44",
-      "w": 41,
+      "w": 41.0,
       "oneway": false,
       "covered": false
     },
@@ -1038,7 +1030,7 @@
     {
       "a": "n45",
       "b": "n47",
-      "w": 99,
+      "w": 99.0,
       "oneway": false,
       "covered": false
     },
@@ -1052,7 +1044,7 @@
     {
       "a": "n36",
       "b": "n48",
-      "w": 107,
+      "w": 107.0,
       "oneway": false,
       "covered": false
     },
@@ -1073,7 +1065,7 @@
     {
       "a": "n47",
       "b": "n49",
-      "w": 151,
+      "w": 151.0,
       "oneway": false,
       "covered": false
     },
@@ -1213,7 +1205,7 @@
     {
       "a": "n68",
       "b": "n38",
-      "w": 40,
+      "w": 40.0,
       "oneway": false,
       "covered": false
     },
@@ -1276,7 +1268,7 @@
     {
       "a": "n77",
       "b": "n48",
-      "w": 3,
+      "w": 3.0,
       "oneway": false,
       "covered": false
     },
@@ -1318,7 +1310,7 @@
     {
       "a": "n83",
       "b": "n46",
-      "w": 22,
+      "w": 22.0,
       "oneway": false,
       "covered": false
     },
@@ -1349,6 +1341,7 @@
       "id": "b-banks",
       "name": "Banks (National Bank of Pakistan & Campus Banking)",
       "short": "Banks (NBP)",
+      "number": "1",
       "nodeId": "n50",
       "category": "services",
       "footprint": [
@@ -1374,6 +1367,7 @@
       "id": "b-video-conferencing",
       "name": "Video Conferencing Facility",
       "short": "Video Conferencing",
+      "number": "2",
       "nodeId": "n51",
       "category": "services",
       "footprint": [
@@ -1399,6 +1393,7 @@
       "id": "b-urban-engg",
       "name": "Department of Urban & Infrastructure Engineering",
       "short": "Urban Engg.",
+      "number": "3",
       "nodeId": "n52",
       "category": "academic",
       "footprint": [
@@ -1424,6 +1419,7 @@
       "id": "b-civil-engg",
       "name": "Civil Engineering Dept. (Blocks 4, 4A, 4B)",
       "short": "Civil Engg.",
+      "number": "4",
       "nodeId": "n24",
       "category": "academic",
       "footprint": [
@@ -1449,6 +1445,7 @@
       "id": "b-ced-labs",
       "name": "Labs of Civil Engineering Dept. (Survey & CED Labs)",
       "short": "CED Labs (4A)",
+      "number": "4A",
       "nodeId": "n25",
       "category": "labs",
       "footprint": [
@@ -1474,6 +1471,7 @@
       "id": "b-material-lab",
       "name": "Advanced Material Testing Lab",
       "short": "Material Lab (4B)",
+      "number": "4B",
       "nodeId": "n20",
       "category": "labs",
       "footprint": [
@@ -1499,6 +1497,7 @@
       "id": "b-csit",
       "name": "Depts. of Comp. Sc. & I.T and Maths & Basic Sciences",
       "short": "CSIT & Maths",
+      "number": "5",
       "nodeId": "n21",
       "category": "academic",
       "footprint": [
@@ -1524,6 +1523,7 @@
       "id": "b-csit-labs",
       "name": "Labs of CSIT Dept. & Maths & Basic Sciences",
       "short": "CSIT Labs (5A)",
+      "number": "5A",
       "nodeId": "n22",
       "category": "labs",
       "footprint": [
@@ -1549,6 +1549,7 @@
       "id": "b-courtyard-fountain",
       "name": "Courtyard Fountain",
       "short": "Courtyard Fountain",
+      "number": "6",
       "nodeId": "n28",
       "category": "landmark",
       "footprint": [
@@ -1574,6 +1575,7 @@
       "id": "b-girls-common-room",
       "name": "Girls Common Room",
       "short": "Girls Common Room",
+      "number": "7",
       "nodeId": "n53",
       "category": "services",
       "footprint": [
@@ -1599,6 +1601,7 @@
       "id": "b-it-pvc-office",
       "name": "IT Dept. / PVC (Dev.) Office",
       "short": "IT / PVC Office",
+      "number": "8",
       "nodeId": "n54",
       "category": "administration",
       "footprint": [
@@ -1624,6 +1627,7 @@
       "id": "b-audio-visual",
       "name": "IT Dept. / Audio Visual Centre",
       "short": "Audio Visual (IT)",
+      "number": "9",
       "nodeId": "n55",
       "category": "services",
       "footprint": [
@@ -1649,6 +1653,7 @@
       "id": "b-staff-centre",
       "name": "Staff Centre",
       "short": "Staff Centre",
+      "number": "10",
       "nodeId": "n56",
       "category": "services",
       "footprint": [
@@ -1674,6 +1679,7 @@
       "id": "b-auditorium",
       "name": "Main Auditorium",
       "short": "Auditorium",
+      "number": "11",
       "nodeId": "n57",
       "category": "services",
       "footprint": [
@@ -1699,6 +1705,7 @@
       "id": "b-mechanical-engg",
       "name": "Mechanical Engineering Dept. & Labs (12, 12A)",
       "short": "Mechanical Engg.",
+      "number": "12",
       "nodeId": "n31",
       "category": "academic",
       "footprint": [
@@ -1724,6 +1731,7 @@
       "id": "b-med-labs",
       "name": "Mechanical Engineering Labs (MED Labs)",
       "short": "MED Labs (12A)",
+      "number": "12A",
       "nodeId": "n34",
       "category": "labs",
       "footprint": [
@@ -1749,6 +1757,7 @@
       "id": "b-electrical-engg",
       "name": "Electrical Engineering Dept. & Labs (13, 13A)",
       "short": "Electrical Engg.",
+      "number": "13",
       "nodeId": "n32",
       "category": "academic",
       "footprint": [
@@ -1774,6 +1783,7 @@
       "id": "b-eed-labs",
       "name": "Electrical Engineering Labs (EED Labs)",
       "short": "EED Labs (13A)",
+      "number": "13A",
       "nodeId": "n33",
       "category": "labs",
       "footprint": [
@@ -1799,6 +1809,7 @@
       "id": "b-industrial-engg",
       "name": "Industrial & Manufacturing Engg. Dept. (14, 14A)",
       "short": "Industrial Engg.",
+      "number": "14",
       "nodeId": "n58",
       "category": "academic",
       "footprint": [
@@ -1824,6 +1835,7 @@
       "id": "b-imd-labs",
       "name": "IMD Labs (Industrial & Manufacturing Labs)",
       "short": "IMD Labs (14A)",
+      "number": "14A",
       "nodeId": "n59",
       "category": "labs",
       "footprint": [
@@ -1849,6 +1861,7 @@
       "id": "b-cis-engg",
       "name": "CIS Lecture Hall & Class Rooms (15, 15A CIS Labs)",
       "short": "CIS Engg.",
+      "number": "15",
       "nodeId": "n60",
       "category": "academic",
       "footprint": [
@@ -1874,6 +1887,7 @@
       "id": "b-cis-labs",
       "name": "CIS Engineering Labs",
       "short": "CIS Labs (15A)",
+      "number": "15A",
       "nodeId": "n61",
       "category": "labs",
       "footprint": [
@@ -1899,6 +1913,7 @@
       "id": "b-petroleum-engg",
       "name": "Petroleum Engineering Dept. & Labs (16, 16A)",
       "short": "Petroleum Engg.",
+      "number": "16",
       "nodeId": "n62",
       "category": "academic",
       "footprint": [
@@ -1924,6 +1939,7 @@
       "id": "b-ped-labs",
       "name": "Petroleum Engineering Labs (PED Labs)",
       "short": "PED Labs (16A)",
+      "number": "16A",
       "nodeId": "n63",
       "category": "labs",
       "footprint": [
@@ -1949,6 +1965,7 @@
       "id": "b-textile-engg",
       "name": "Textile Engineering Dept. & Labs (17, 17A)",
       "short": "Textile Engg.",
+      "number": "17",
       "nodeId": "n64",
       "category": "academic",
       "footprint": [
@@ -1974,6 +1991,7 @@
       "id": "b-textile-labs",
       "name": "Textile Engineering Labs",
       "short": "Textile Labs (17A)",
+      "number": "17A",
       "nodeId": "n65",
       "category": "labs",
       "footprint": [
@@ -1999,6 +2017,7 @@
       "id": "b-automotive-engg",
       "name": "Automotive & Marine Engineering Dept.",
       "short": "Automotive Engg.",
+      "number": "18",
       "nodeId": "n66",
       "category": "academic",
       "footprint": [
@@ -2024,6 +2043,7 @@
       "id": "b-electronic-engg",
       "name": "Electronic Engineering Dept. & Labs (19, 19A, 19B)",
       "short": "Electronic Engg.",
+      "number": "19",
       "nodeId": "n67",
       "category": "academic",
       "footprint": [
@@ -2049,6 +2069,7 @@
       "id": "b-electronic-labs",
       "name": "Electronic Engineering Labs",
       "short": "Electronic Labs (19A)",
+      "number": "19A",
       "nodeId": "n41",
       "category": "labs",
       "footprint": [
@@ -2074,6 +2095,7 @@
       "id": "b-telecom-labs",
       "name": "Telecommunications Engineering Labs",
       "short": "Telecom Labs (19B)",
+      "number": "19B",
       "nodeId": "n68",
       "category": "labs",
       "footprint": [
@@ -2099,6 +2121,7 @@
       "id": "b-environmental-engg",
       "name": "Environmental Engineering Dept.",
       "short": "Environmental Engg.",
+      "number": "20",
       "nodeId": "n69",
       "category": "academic",
       "footprint": [
@@ -2124,6 +2147,7 @@
       "id": "b-metallurgy-engg",
       "name": "Metallurgical Engineering Dept.",
       "short": "Metallurgy Engg.",
+      "number": "21",
       "nodeId": "n70",
       "category": "academic",
       "footprint": [
@@ -2149,6 +2173,7 @@
       "id": "b-polymer-engg",
       "name": "Polymer & Petrochemical Engineering Dept.",
       "short": "Polymer Engg.",
+      "number": "22",
       "nodeId": "n49",
       "category": "academic",
       "footprint": [
@@ -2174,6 +2199,7 @@
       "id": "b-materials-engg",
       "name": "Materials Engineering Dept.",
       "short": "Materials Engg.",
+      "number": "23",
       "nodeId": "n71",
       "category": "academic",
       "footprint": [
@@ -2199,6 +2225,7 @@
       "id": "b-chemical-engg",
       "name": "Chemical Engineering Dept.",
       "short": "Chemical Engg.",
+      "number": "24",
       "nodeId": "n72",
       "category": "academic",
       "footprint": [
@@ -2224,6 +2251,7 @@
       "id": "b-admission-centre",
       "name": "Admission Centre",
       "short": "Admission Centre",
+      "number": "25",
       "nodeId": "n9",
       "category": "administration",
       "footprint": [
@@ -2249,6 +2277,7 @@
       "id": "b-food-centre",
       "name": "Food Centre / Main Student Cafeterias",
       "short": "Food Centre",
+      "number": "26",
       "nodeId": "n11",
       "category": "cafeteria",
       "footprint": [
@@ -2274,6 +2303,7 @@
       "id": "b-admin",
       "name": "Administration Block (VC Secretariat & Registrar)",
       "short": "Admin Block",
+      "number": "27",
       "nodeId": "n73",
       "category": "administration",
       "footprint": [
@@ -2299,6 +2329,7 @@
       "id": "b-dean-offices",
       "name": "Dean Offices & Academic Secretariats",
       "short": "Dean Offices",
+      "number": "28",
       "nodeId": "n74",
       "category": "administration",
       "footprint": [
@@ -2324,6 +2355,7 @@
       "id": "b-medical-dept",
       "name": "Medical Department & Campus Clinic",
       "short": "Medical Dept.",
+      "number": "29",
       "nodeId": "n75",
       "category": "emergency",
       "footprint": [
@@ -2349,6 +2381,7 @@
       "id": "b-humanities-dept",
       "name": "Humanities Department",
       "short": "Humanities Dept.",
+      "number": "30",
       "nodeId": "n13",
       "category": "academic",
       "footprint": [
@@ -2374,6 +2407,7 @@
       "id": "b-library",
       "name": "Engr. Abul Kalam Library (Circulation Library)",
       "short": "Central Library",
+      "number": "LIB",
       "nodeId": "n76",
       "category": "library",
       "footprint": [
@@ -2399,6 +2433,7 @@
       "id": "b-main-masjid",
       "name": "Main Campus Masjid",
       "short": "Main Masjid",
+      "number": "MSJ",
       "nodeId": "n77",
       "category": "services",
       "footprint": [
@@ -2424,6 +2459,7 @@
       "id": "b-hpc-centre",
       "name": "High Performance Computing Centre (HPCC)",
       "short": "HPC Centre",
+      "number": "HPC",
       "nodeId": "n78",
       "category": "labs",
       "footprint": [
@@ -2449,6 +2485,7 @@
       "id": "b-central-store",
       "name": "Central Store & Procurement",
       "short": "Central Store",
+      "number": "STR",
       "nodeId": "n79",
       "category": "services",
       "footprint": [
@@ -2474,6 +2511,7 @@
       "id": "b-cricket-ground",
       "name": "NED Cricket Ground",
       "short": "Cricket Ground",
+      "number": "CRK",
       "nodeId": "n80",
       "category": "sports",
       "footprint": [
@@ -2547,6 +2585,7 @@
       "id": "b-soccer-field",
       "name": "Soccer Field & Athletics Track",
       "short": "Soccer Field",
+      "number": "SOC",
       "nodeId": "n81",
       "category": "sports",
       "footprint": [
@@ -2572,6 +2611,7 @@
       "id": "b-gymnasium",
       "name": "Gymnasium & Girls Gymnasium",
       "short": "Gymnasium",
+      "number": "GYM",
       "nodeId": "n8",
       "category": "sports",
       "footprint": [
@@ -2597,6 +2637,7 @@
       "id": "b-squash-tennis",
       "name": "Squash Complex & Tennis Courts",
       "short": "Squash & Tennis",
+      "number": "SQH",
       "nodeId": "n82",
       "category": "sports",
       "footprint": [
@@ -2622,6 +2663,7 @@
       "id": "b-boys-hostel",
       "name": "Boys Hostel & Hostel Student Cafeteria",
       "short": "Boys Hostel",
+      "number": "H-B",
       "nodeId": "n83",
       "category": "hostels",
       "footprint": [
@@ -2647,6 +2689,7 @@
       "id": "b-girls-hostel",
       "name": "Girls Hostel & Bus Shed",
       "short": "Girls Hostel",
+      "number": "H-G",
       "nodeId": "n84",
       "category": "hostels",
       "footprint": [
@@ -2672,6 +2715,7 @@
       "id": "b-sports-cafeteria",
       "name": "Sports Complex Cafeteria",
       "short": "Sports Cafeteria",
+      "number": "CAF",
       "nodeId": "n85",
       "category": "cafeteria",
       "footprint": [
@@ -2697,6 +2741,7 @@
       "id": "b-hostel-cafeteria",
       "name": "Hostel Student Cafeteria",
       "short": "Hostel Cafeteria",
+      "number": "MCF",
       "nodeId": "n86",
       "category": "cafeteria",
       "footprint": [
@@ -2722,6 +2767,7 @@
       "id": "b-main-gate",
       "name": "Main Gate (University Road Admissions Entrance)",
       "short": "Main Gate (G1)",
+      "number": "G1",
       "nodeId": "n1",
       "category": "gate",
       "footprint": [
@@ -2747,6 +2793,7 @@
       "id": "b-bank-gate",
       "name": "Bank & Sports Gate (University Road Entrance)",
       "short": "Bank Gate (G2)",
+      "number": "G2",
       "nodeId": "n2",
       "category": "gate",
       "footprint": [

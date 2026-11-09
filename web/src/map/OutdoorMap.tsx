@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import "@/map/map.css";
 import type {
   BasemapMode,
@@ -52,6 +52,60 @@ const TIER1_ADMIN_LIBRARY_IDS = new Set([
   "b-csit",
   "b-admission-centre",
 ]);
+
+const CATEGORY_TITLES: Record<string, string> = {
+  academic: "Academic Departments",
+  labs: "Engineering Laboratories",
+  administration: "Administration & Secretariats",
+  library: "Central Library",
+  services: "Campus Services & Facilities",
+  sports: "Sports & Athletics",
+  cafeteria: "Cafeterias & Food",
+  hostels: "Student Hostels",
+  gate: "Gates & Entrances",
+  landmark: "Campus Landmarks",
+  emergency: "Emergency & Safe Zones",
+};
+
+const CATEGORY_ORDER = [
+  "academic",
+  "labs",
+  "administration",
+  "library",
+  "services",
+  "sports",
+  "cafeteria",
+  "hostels",
+  "gate",
+  "landmark",
+  "emergency",
+];
+
+function preloadCampusTiles(zoom = 17) {
+  if (typeof window === "undefined") return;
+  const toTile = (lat: number, lng: number, z: number): [number, number] => {
+    const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z));
+    const latRad = (lat * Math.PI) / 180;
+    const y = Math.floor(
+      ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
+        Math.pow(2, z)
+    );
+    return [x, y];
+  };
+
+  const [minX, maxY] = toTile(24.92677, 67.10644, zoom);
+  const [maxX, minY] = toTile(24.93788, 67.11837, zoom);
+  const subdomains = ["a", "b", "c", "d"];
+  let sub = 0;
+  for (let x = Math.min(minX, maxX); x <= Math.max(minX, maxX); x++) {
+    for (let y = Math.min(minY, maxY); y <= Math.max(minY, maxY); y++) {
+      const s = subdomains[sub % subdomains.length];
+      sub++;
+      const img = new window.Image();
+      img.src = `https://${s}.basemaps.cartocdn.com/light_nolabels/${zoom}/${x}/${y}.png`;
+    }
+  }
+}
 
 function haversineMeters(a: [number, number], b: [number, number]): number {
   const R = 6371000;
@@ -170,9 +224,17 @@ export function OutdoorMap({
   const [basemapMode, setBasemapMode] = useState<BasemapMode>("street");
   const [showMasterPlan, setShowMasterPlan] = useState(false);
   const [masterPlanOpacity, setMasterPlanOpacity] = useState(0.8);
+  const [isKeyOpen, setIsKeyOpen] = useState(false);
+  const [keySearch, setKeySearch] = useState("");
 
   const labelItemsRef = useRef<
-    Array<{ lm: CampusLandmark; center: [number, number]; el: HTMLDivElement }>
+    Array<{
+      lm: CampusLandmark;
+      center: [number, number];
+      el: HTMLDivElement;
+      badgeEl: HTMLSpanElement;
+      nameEl: HTMLSpanElement;
+    }>
   >([]);
   const fixedBadgesRef = useRef<
     Array<{ lat: number; lng: number; w: number; h: number }>
@@ -216,14 +278,16 @@ export function OutdoorMap({
 
       mapRef.current = map;
 
-      // Basemap 1 (Default): Clear light street/ground map (OpenStreetMap)
+      // Basemap 1 (Default): CARTO light tiles without labels
       const streetTiles = L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
         {
-          subdomains: ["a", "b", "c"],
+          subdomains: "abcd",
           maxZoom: 20,
           maxNativeZoom: 19,
           keepBuffer: 4,
+          updateWhenIdle: false,
+          updateWhenZooming: false,
         }
       );
 
@@ -234,12 +298,17 @@ export function OutdoorMap({
           maxZoom: 20,
           maxNativeZoom: 19,
           keepBuffer: 4,
+          updateWhenIdle: false,
+          updateWhenZooming: false,
         }
       );
 
       streetTileLayerRef.current = streetTiles;
       satelliteTileLayerRef.current = satelliteTiles;
       streetTiles.addTo(map);
+
+      // Preload tiles around campus at zoom 17
+      preloadCampusTiles(17);
 
       canvasRendererRef.current = L.canvas({ padding: 0.5 }).addTo(map);
       svgRendererRef.current = L.svg({ padding: 0.5 }).addTo(map);
@@ -527,6 +596,8 @@ export function OutdoorMap({
       lm: CampusLandmark;
       center: [number, number];
       el: HTMLDivElement;
+      badgeEl: HTMLSpanElement;
+      nameEl: HTMLSpanElement;
     }> = [];
 
     for (const lm of graph.landmarks) {
@@ -534,7 +605,17 @@ export function OutdoorMap({
       const center = getPolygonCenter(lm.footprint);
       const el = document.createElement("div");
       el.className = "ned-landmark-label";
-      el.textContent = lm.short;
+
+      const badgeEl = document.createElement("span");
+      badgeEl.className = "ned-landmark-badge";
+      badgeEl.textContent = lm.number || lm.short;
+
+      const nameEl = document.createElement("span");
+      nameEl.className = "ned-landmark-name";
+      nameEl.textContent = lm.name;
+
+      el.appendChild(badgeEl);
+      el.appendChild(nameEl);
 
       const icon = L.divIcon({
         className: "",
@@ -543,7 +624,7 @@ export function OutdoorMap({
       });
 
       L.marker(center, { icon, interactive: false }).addTo(lblGroup);
-      items.push({ lm, center, el });
+      items.push({ lm, center, el, badgeEl, nameEl });
     }
 
     labelItemsRef.current = items;
@@ -569,6 +650,13 @@ export function OutdoorMap({
       const vw = containerRef.current?.clientWidth || 1000;
       const vh = containerRef.current?.clientHeight || 680;
       const isCompactViewport = vw < 520;
+
+      // Top-left Campus Key button / panel
+      if (isKeyOpen && vw >= 640) {
+        placedBoxes.push([0, 0, 350, vh]);
+      } else {
+        placedBoxes.push([0, 0, 130, 48]);
+      }
 
       // Top-right Layer Switcher pill
       placedBoxes.push([Math.max(0, vw - 196), 0, vw, 78]);
@@ -629,10 +717,13 @@ export function OutdoorMap({
       });
 
       for (const item of ranked) {
-        const { lm, center, el } = item;
+        const { lm, center, el, badgeEl, nameEl } = item;
         const isSelected = lm.id === selectedLandmarkId;
         const isHovered = lm.id === hoveredLandmarkId;
         const isFocused = isSelected || isHovered;
+        const isOnRoute =
+          activeRouteNodes.has(lm.nodeId) ||
+          Boolean(route && lm.nodeId && route.includes(lm.nodeId));
         const priority = getLandmarkPriority(
           lm,
           selectedLandmarkId,
@@ -642,7 +733,7 @@ export function OutdoorMap({
 
         // Minimum zoom filter by priority tier
         let eligible = true;
-        if (!isFocused) {
+        if (!isFocused && !isOnRoute) {
           if (zoomLevel < 16 && priority < 85) eligible = false;
           else if (zoomLevel === 16 && priority < 55) eligible = false;
           else if (zoomLevel === 17 && priority < 40 && lm.category === "labs") {
@@ -650,12 +741,25 @@ export function OutdoorMap({
           }
         }
 
-        let text = getLandmarkLabelText(lm, zoomLevel, isFocused);
-        if (isCompactViewport && text.length > 26) {
-          text = lm.short;
+        // Show only badge at zoomed out & mid zoom (< 18) unless focused or on route
+        const showFullName = isFocused || isOnRoute || zoomLevel >= 18;
+
+        const numText = lm.number || lm.short;
+        if (badgeEl.textContent !== numText) {
+          badgeEl.textContent = numText;
         }
-        if (el.textContent !== text) {
-          el.textContent = text;
+
+        if (showFullName) {
+          nameEl.style.display = "";
+          const fullName =
+            isCompactViewport && lm.name.length > 28 ? lm.short : lm.name;
+          if (nameEl.textContent !== fullName) {
+            nameEl.textContent = fullName;
+          }
+          el.classList.remove("ned-landmark-label--badge-only");
+        } else {
+          nameEl.style.display = "none";
+          el.classList.add("ned-landmark-label--badge-only");
         }
 
         el.classList.toggle("ned-landmark-label--selected", isSelected);
@@ -667,8 +771,12 @@ export function OutdoorMap({
         }
 
         const pt = map.latLngToContainerPoint(center);
-        const estW = Math.max(44, text.length * 6.4 + 14);
-        const estH = 20;
+        const estW = showFullName
+          ? Math.max(26, numText.length * 7.5 + 8) +
+            (nameEl.textContent || "").length * 6.4 +
+            16
+          : Math.max(22, numText.length * 7.5 + 10);
+        const estH = 22;
         const box: [number, number, number, number] = [
           pt.x - estW / 2,
           pt.y - estH / 2,
@@ -718,6 +826,7 @@ export function OutdoorMap({
     hoveredLandmarkId,
     route,
     evacuation,
+    isKeyOpen,
   ]);
 
   // 4. Layer (d): Route polyline from node IDs with animated draw-on effect
@@ -1147,9 +1256,271 @@ export function OutdoorMap({
     }
   }, [graph]);
 
+  const filteredLandmarks = useMemo(() => {
+    if (!graph?.landmarks) return [];
+    const q = keySearch.trim().toLowerCase();
+    if (!q) return graph.landmarks;
+    return graph.landmarks.filter((lm) => {
+      const numMatch = lm.number ? lm.number.toLowerCase().includes(q) : false;
+      const nameMatch = lm.name.toLowerCase().includes(q);
+      const shortMatch = lm.short.toLowerCase().includes(q);
+      const catMatch = lm.category ? lm.category.toLowerCase().includes(q) : false;
+      return numMatch || nameMatch || shortMatch || catMatch;
+    });
+  }, [graph?.landmarks, keySearch]);
+
+  const groupedLandmarks = useMemo(() => {
+    const groups: Array<{ category: string; title: string; items: CampusLandmark[] }> = [];
+    const catMap = new Map<string, CampusLandmark[]>();
+
+    for (const lm of filteredLandmarks) {
+      const cat = (lm.category || "services").toLowerCase();
+      if (!catMap.has(cat)) catMap.set(cat, []);
+      catMap.get(cat)!.push(lm);
+    }
+
+    for (const cat of CATEGORY_ORDER) {
+      const items = catMap.get(cat);
+      if (items && items.length > 0) {
+        const sorted = [...items].sort((a, b) => {
+          const na = a.number || a.short;
+          const nb = b.number || b.short;
+          return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
+        });
+        groups.push({
+          category: cat,
+          title: CATEGORY_TITLES[cat] || cat,
+          items: sorted,
+        });
+      }
+    }
+
+    for (const [cat, items] of catMap.entries()) {
+      if (!CATEGORY_ORDER.includes(cat) && items.length > 0) {
+        const sorted = [...items].sort((a, b) => {
+          const na = a.number || a.short;
+          const nb = b.number || b.short;
+          return na.localeCompare(nb, undefined, { numeric: true, sensitivity: "base" });
+        });
+        groups.push({
+          category: cat,
+          title: CATEGORY_TITLES[cat] || cat,
+          items: sorted,
+        });
+      }
+    }
+
+    return groups;
+  }, [filteredLandmarks]);
+
+  const handleSelectLandmarkFromKey = useCallback(
+    (lm: CampusLandmark) => {
+      if (containerRef.current && containerRef.current.clientWidth < 640) {
+        setIsKeyOpen(false);
+      }
+
+      if (mapRef.current) {
+        let targetCoord: [number, number] | null = null;
+        if (lm.footprint && lm.footprint.length >= 3) {
+          targetCoord = getPolygonCenter(lm.footprint);
+        } else if (lm.nodeId && graph?.nodes) {
+          const n = graph.nodes.find((node) => node.id === lm.nodeId);
+          if (n) targetCoord = [n.lat, n.lng];
+        }
+        if (targetCoord) {
+          mapRef.current.flyTo(targetCoord, 18, { animate: true, duration: 0.75 });
+        }
+      }
+
+      onLandmarkClickRef.current?.(lm.id, lm);
+    },
+    [graph]
+  );
+
   return (
     <div className="ned-outdoor-map-root" data-basemap={basemapMode}>
       <div ref={containerRef} className="ned-leaflet-viewport" />
+
+      {/* Campus Key / Directory Toggle Button */}
+      <button
+        type="button"
+        className={`ned-key-toggle-btn ${isKeyOpen ? "ned-key-toggle-btn--active" : ""}`}
+        onClick={() => setIsKeyOpen((prev) => !prev)}
+        aria-label={isKeyOpen ? "Close campus key" : "Open campus key"}
+        aria-expanded={isKeyOpen}
+        title="Campus Directory & Building Key"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 5a2 2 0 012-2h11v14H5a2 2 0 00-2 2V5z" />
+          <path d="M7 6h7M7 10h7M7 14h4" />
+        </svg>
+        <span>Campus Key</span>
+        {isKeyOpen && (
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ marginLeft: "2px" }}
+          >
+            <line x1="15" y1="5" x2="5" y2="15" />
+            <line x1="5" y1="5" x2="15" y2="15" />
+          </svg>
+        )}
+      </button>
+
+      {/* Collapsible Key Panel (Desktop Side Panel / Mobile Bottom Drawer) */}
+      {isKeyOpen && (
+        <aside
+          className="ned-key-panel"
+          role="region"
+          aria-label="Campus Building Directory"
+        >
+          {/* Mobile Drawer drag handle */}
+          <div className="ned-key-drawer-handle" aria-hidden="true" />
+
+          {/* Header */}
+          <div className="ned-key-header">
+            <div className="ned-key-title-group">
+              <h2 className="ned-key-title">Campus Key</h2>
+              <span className="ned-key-badge-count">
+                {filteredLandmarks.length} buildings
+              </span>
+            </div>
+            <button
+              type="button"
+              className="ned-key-close-btn"
+              onClick={() => setIsKeyOpen(false)}
+              aria-label="Close campus key"
+              title="Close key"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="15" y1="5" x2="5" y2="15" />
+                <line x1="5" y1="5" x2="15" y2="15" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="ned-key-search-wrapper">
+            <div className="ned-key-search-box">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="9" r="6" />
+                <line x1="13.5" y1="13.5" x2="18" y2="18" />
+              </svg>
+              <input
+                type="search"
+                className="ned-key-search-input"
+                placeholder="Search number, name, department..."
+                value={keySearch}
+                onChange={(e) => setKeySearch(e.target.value)}
+                aria-label="Search campus buildings by number or name"
+              />
+              {keySearch.length > 0 && (
+                <button
+                  type="button"
+                  className="ned-key-clear-btn"
+                  onClick={() => setKeySearch("")}
+                  aria-label="Clear search"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="15" y1="5" x2="5" y2="15" />
+                    <line x1="5" y1="5" x2="15" y2="15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Grouped Building List */}
+          <div className="ned-key-list" role="list">
+            {groupedLandmarks.length === 0 ? (
+              <div className="ned-key-empty">No campus buildings match "{keySearch}"</div>
+            ) : (
+              groupedLandmarks.map((group) => (
+                <div key={group.category} className="ned-key-category-group" role="group" aria-label={group.title}>
+                  <div className="ned-key-category-header">{group.title}</div>
+                  {group.items.map((lm) => {
+                    const isSelected = lm.id === selectedLandmarkId;
+                    return (
+                      <button
+                        key={lm.id}
+                        type="button"
+                        className={`ned-key-item ${isSelected ? "ned-key-item--selected" : ""}`}
+                        onClick={() => handleSelectLandmarkFromKey(lm)}
+                        aria-pressed={isSelected}
+                      >
+                        <span className="ned-key-item-number">
+                          {lm.number || lm.short}
+                        </span>
+                        <div className="ned-key-item-info">
+                          <span className="ned-key-item-name">{lm.name}</span>
+                          <span className="ned-key-item-short">{lm.short}</span>
+                        </div>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="ned-key-item-arrow"
+                          aria-hidden="true"
+                        >
+                          <polyline points="7 4 13 10 7 16" />
+                        </svg>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+      )}
 
       {/* Custom Hand-Drawn SVG Basemap & Master-Plan Layer Switcher */}
       <div
@@ -1323,9 +1694,41 @@ export function OutdoorMap({
       {/* Required Tile Attributions */}
       <div className="ned-map-attribution" aria-label="Map tile attribution">
         {basemapMode === "satellite" ? (
-          <span>&copy; Esri World Imagery &bull; OpenStreetMap &bull; NED GIS</span>
+          <span>
+            &copy;{" "}
+            <a href="https://www.esri.com/" target="_blank" rel="noreferrer">
+              Esri
+            </a>{" "}
+            &bull; &copy;{" "}
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+            >
+              OpenStreetMap
+            </a>{" "}
+            &bull; NED GIS
+          </span>
         ) : (
-          <span>&copy; OpenStreetMap contributors &bull; Esri &bull; NED GIS</span>
+          <span>
+            &copy;{" "}
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+            >
+              OpenStreetMap
+            </a>{" "}
+            contributors &copy;{" "}
+            <a
+              href="https://carto.com/attributions"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CARTO
+            </a>{" "}
+            &bull; NED GIS
+          </span>
         )}
       </div>
 

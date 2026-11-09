@@ -116,14 +116,21 @@
 .leaflet-tile {
   filter: inherit;
   visibility: hidden;
+  background-color: #f2ede5;
 }
 
 .leaflet-tile-loaded {
   visibility: inherit;
 }
 
-.ned-outdoor-map-root[data-basemap="street"] .leaflet-tile-pane .leaflet-tile {
-  filter: saturate(0.68) brightness(1.03) contrast(0.96);
+.ned-outdoor-map-root[data-basemap="street"] .ned-leaflet-viewport,
+.ned-outdoor-map-root[data-basemap="street"] .leaflet-tile {
+  background-color: #f2ede5;
+}
+
+.ned-outdoor-map-root[data-basemap="satellite"] .ned-leaflet-viewport,
+.ned-outdoor-map-root[data-basemap="satellite"] .leaflet-tile {
+  background-color: #101c15;
 }
 
 .leaflet-tile-container {
@@ -185,20 +192,55 @@ img.leaflet-zoom-animated {
 .ned-landmark-label {
   position: absolute;
   transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: var(--map-surface-card);
   color: var(--map-text-primary);
   border: 1px solid var(--map-border-strong);
-  border-radius: 4px;
-  padding: 2px 6px;
+  border-radius: 999px;
+  padding: 2px 7px 2px 3px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.25;
   white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(18, 31, 25, 0.14);
+  box-shadow: 0 1px 4px rgba(18, 31, 25, 0.16);
   pointer-events: none;
   opacity: 0;
   transition: opacity 200ms ease, transform 160ms ease;
+  z-index: 25;
+}
+
+.ned-landmark-label--badge-only {
+  padding: 2px 4px;
+  min-width: 22px;
+  justify-content: center;
+}
+
+.ned-landmark-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--map-landmark-stroke, #185a44);
+  color: var(--map-text-inverse, #ffffff);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.ned-landmark-name {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--map-text-primary);
+  letter-spacing: 0.01em;
 }
 
 .ned-landmark-label--visible {
@@ -218,6 +260,15 @@ img.leaflet-zoom-animated {
   color: var(--map-text-inverse);
   border-color: var(--map-text-primary);
   z-index: 30;
+}
+
+.ned-landmark-label--selected .ned-landmark-badge {
+  background: var(--map-surface-elevated);
+  color: var(--map-landmark-selected-stroke);
+}
+
+.ned-landmark-label--selected .ned-landmark-name {
+  color: var(--map-text-inverse);
 }
 
 /* Custom SVG markers (entrance, gate, assembly, highlight, user, evacuation) */
@@ -479,6 +530,333 @@ img.leaflet-zoom-animated {
   }
 }
 
+/* Campus Key toggle button */
+.ned-key-toggle-btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--map-surface-card);
+  color: var(--map-text-primary);
+  border: 1px solid var(--map-border-strong);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--map-shadow);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.ned-key-toggle-btn:hover {
+  background: var(--map-surface-elevated);
+  border-color: var(--map-landmark-stroke);
+  transform: translateY(-1px);
+}
+
+.ned-key-toggle-btn--active {
+  background: var(--map-landmark-stroke);
+  color: var(--map-text-inverse);
+  border-color: var(--map-landmark-stroke);
+}
+
+.ned-key-toggle-btn--active:hover {
+  background: var(--map-landmark-hover-stroke);
+  color: var(--map-text-inverse);
+}
+
+/* Campus Key Panel (Desktop Side Panel / Mobile Bottom Drawer) */
+.ned-key-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  bottom: 12px;
+  width: 330px;
+  max-width: calc(100% - 24px);
+  z-index: 850;
+  background: var(--map-surface-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--map-border-strong);
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(18, 31, 25, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: nedKeySlideInLeft 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nedKeySlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ned-key-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--map-border);
+  background: var(--map-surface-elevated);
+}
+
+.ned-key-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ned-key-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--map-text-primary);
+  margin: 0;
+}
+
+.ned-key-badge-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--map-bg);
+  color: var(--map-text-secondary);
+  border-radius: 999px;
+}
+
+.ned-key-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--map-text-secondary);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.ned-key-close-btn:hover {
+  background: var(--map-bg);
+  color: var(--map-text-primary);
+}
+
+.ned-key-search-wrapper {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--map-border);
+  background: var(--map-surface-card);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ned-key-search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--map-surface-elevated);
+  border: 1px solid var(--map-border);
+  border-radius: 6px;
+  color: var(--map-text-secondary);
+}
+
+.ned-key-search-box:focus-within {
+  border-color: var(--map-landmark-stroke);
+  box-shadow: 0 0 0 2px rgba(24, 90, 68, 0.15);
+}
+
+.ned-key-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--map-text-primary);
+  outline: none;
+}
+
+.ned-key-search-input::placeholder {
+  color: var(--map-text-secondary);
+  opacity: 0.75;
+}
+
+.ned-key-clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--map-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+}
+
+.ned-key-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ned-key-category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ned-key-category-header {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--map-text-secondary);
+  padding: 4px 6px 2px;
+}
+
+.ned-key-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ned-key-item:hover {
+  background: var(--map-surface-elevated);
+  border-color: var(--map-border);
+  transform: translateX(2px);
+}
+
+.ned-key-item--selected {
+  background: var(--map-surface-elevated);
+  border-color: var(--map-landmark-stroke);
+  box-shadow: 0 1px 4px rgba(24, 90, 68, 0.16);
+}
+
+.ned-key-item-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--map-landmark-stroke);
+  color: var(--map-text-inverse);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ned-key-item--selected .ned-key-item-number {
+  background: var(--map-landmark-selected-stroke);
+}
+
+.ned-key-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ned-key-item-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--map-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ned-key-item-short {
+  font-size: 10px;
+  color: var(--map-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ned-key-item-arrow {
+  color: var(--map-text-secondary);
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.ned-key-item:hover .ned-key-item-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.ned-key-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--map-text-secondary);
+}
+
+/* Mobile Bottom Drawer styles (< 640px) */
+@media (max-width: 640px) {
+  .ned-key-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 72vh;
+    border-radius: 14px 14px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+    animation: nedKeySlideInBottom 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes nedKeySlideInBottom {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ned-key-drawer-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--map-border-strong);
+    margin: 8px auto 2px;
+    opacity: 0.6;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ned-route-animated-path {
     animation: none !important;
@@ -487,8 +865,13 @@ img.leaflet-zoom-animated {
   .ned-landmark-label,
   .ned-map-marker,
   .ned-map-ctrl-btn,
-  .ned-layer-btn {
+  .ned-layer-btn,
+  .ned-key-toggle-btn,
+  .ned-key-panel,
+  .ned-key-item,
+  .ned-key-item-arrow {
     transition: none !important;
+    animation: none !important;
   }
   .leaflet-zoom-anim .leaflet-zoom-animated {
     transition: none !important;
