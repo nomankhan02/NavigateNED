@@ -68,7 +68,7 @@ export default function MapDevHarnessPage() {
   );
   const [lastClickCoord, setLastClickCoord] = useState<string>("None");
 
-  const [showGraph, setShowGraph] = useState<boolean>(true);
+  const [showGraph, setShowGraph] = useState<boolean>(false);
   const [showRoute, setShowRoute] = useState<boolean>(true);
   const [showEvac, setShowEvac] = useState<boolean>(true);
   const [showUserLoc, setShowUserLoc] = useState<boolean>(true);

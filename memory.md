@@ -5,7 +5,8 @@
 - Task A1 delivered: Outdoor campus graph (`data/graph.json`, 86 nodes, 108 edges, 55 landmarks) + master plan image (`web/public/map/ned_master_plan.jpg`).
 - Task A2a delivered: Indoor floor plans generated via `tools/generate_indoor.py` for 6 buildings in `data/indoor/` and visually verified via PNG floor previews.
 - Task A2b delivered: Emergency evacuation dataset generated via `tools/generate_evac.py` in `data/evac.json` (7 assembly areas, 12 building exits across all 6 indoor buildings) and validated via `tools/validate.py`.
-- Task A3 delivered: Client-only `OutdoorMap` component (`web/src/map/OutdoorMap.tsx`), `useTraceReplay` hook (`web/src/map/useTraceReplay.ts`), CSS token stylesheet (`web/src/map/map.css`), and barrel exports (`web/src/map/index.ts`), verified with `next build` and Playwright phone (`390x844`) & desktop (`1440x900`) screenshots (`tools/previews/map_dev_phone.png`, `tools/previews/map_dev_desktop.png`).
+- Task A3 delivered: Client-only `OutdoorMap` component (`web/src/map/OutdoorMap.tsx`), `useTraceReplay` hook (`web/src/map/useTraceReplay.ts`), CSS token stylesheet (`web/src/map/map.css`), and barrel exports (`web/src/map/index.ts`).
+- Task A3b Slice (a) complete: Added switchable Street (OpenStreetMap) and Satellite (Esri World Imagery) base layers (defaulting to Street), required attributions, and a custom hand-drawn SVG layer switcher with Master Plan toggle/opacity control; verified road/building alignment at zoom 17–18 on both basemaps (`tools/previews/align_street_z17.png`, `tools/previews/align_satellite_z17.png`, `tools/previews/align_satellite_z18.png`).
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.

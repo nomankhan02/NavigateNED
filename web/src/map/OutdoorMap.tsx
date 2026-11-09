@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import "@/map/map.css";
 import type {
+  BasemapMode,
   CampusLandmark,
   MasterPlanCorners,
   OutdoorMapProps,
@@ -73,7 +74,7 @@ export function OutdoorMap({
   selectedLandmarkId = null,
   onLandmarkClick,
   onMapClick,
-  showGraph = true,
+  showGraph = false,
   userLocation = null,
   evacuation = null,
   trace = null,
@@ -83,6 +84,10 @@ export function OutdoorMap({
   const leafletRef = useRef<any>(null);
   const canvasRendererRef = useRef<any>(null);
   const svgRendererRef = useRef<any>(null);
+
+  const streetTileLayerRef = useRef<any>(null);
+  const satelliteTileLayerRef = useRef<any>(null);
+  const masterPlanLayerRef = useRef<any>(null);
 
   const graphLayerRef = useRef<any>(null);
   const footprintLayerRef = useRef<any>(null);
@@ -96,6 +101,9 @@ export function OutdoorMap({
 
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
+  const [basemapMode, setBasemapMode] = useState<BasemapMode>("street");
+  const [showMasterPlan, setShowMasterPlan] = useState(false);
+  const [masterPlanOpacity, setMasterPlanOpacity] = useState(0.8);
 
   const onLandmarkClickRef = useRef(onLandmarkClick);
   onLandmarkClickRef.current = onLandmarkClick;
@@ -103,7 +111,7 @@ export function OutdoorMap({
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
-  // 1. Initialize Leaflet on client only + Affine Master Plan Image Overlay
+  // 1. Initialize Leaflet on client only + Basemaps
   useEffect(() => {
     let cancelled = false;
 
@@ -134,75 +142,108 @@ export function OutdoorMap({
       });
 
       mapRef.current = map;
+
+      // Basemap 1 (Default): Clear light street/ground map (OpenStreetMap)
+      const streetTiles = L.tileLayer(
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 20,
+          maxNativeZoom: 19,
+        }
+      );
+
+      // Basemap 2: Satellite (Esri World Imagery)
+      const satelliteTiles = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 20,
+          maxNativeZoom: 19,
+        }
+      );
+
+      streetTileLayerRef.current = streetTiles;
+      satelliteTileLayerRef.current = satelliteTiles;
+      streetTiles.addTo(map);
+
       canvasRendererRef.current = L.canvas({ padding: 0.5 }).addTo(map);
       svgRendererRef.current = L.svg({ padding: 0.5 }).addTo(map);
 
-      // Custom Affine 4-Corner Master Plan Image Layer
-      const corners: MasterPlanCorners =
-        graph?.meta?.masterPlanControlCorners ||
-        graph?.meta?.mapOverlay?.corners ||
-        DEFAULT_CORNERS;
-      const imageUrl = graph?.meta?.mapOverlay?.image || "/map/ned_master_plan.jpg";
+      // Master-Plan Image Overlay (warped L.imageOverlay if bounds present, fallback to affine corners until Slice b)
+      if (graph?.meta?.warpedOverlay?.bounds) {
+        masterPlanLayerRef.current = L.imageOverlay(
+          graph.meta.warpedOverlay.image,
+          graph.meta.warpedOverlay.bounds,
+          { opacity: 0.8, interactive: false }
+        );
+      } else {
+        const corners: MasterPlanCorners =
+          graph?.meta?.masterPlanControlCorners ||
+          graph?.meta?.mapOverlay?.corners ||
+          DEFAULT_CORNERS;
+        const imageUrl = graph?.meta?.mapOverlay?.image || "/map/ned_master_plan.jpg";
 
-      const AffineMasterPlanOverlay = L.Layer.extend({
-        onAdd: function (mapInstance: any) {
-          this._map = mapInstance;
-          if (!this._container) {
-            const div = L.DomUtil.create("div", "leaflet-image-layer");
-            div.style.position = "absolute";
-            div.style.top = "0";
-            div.style.left = "0";
-            div.style.pointerEvents = "none";
-            div.style.zIndex = "1";
+        const AffineMasterPlanOverlay = L.Layer.extend({
+          onAdd: function (mapInstance: any) {
+            this._map = mapInstance;
+            if (!this._container) {
+              const div = L.DomUtil.create("div", "leaflet-image-layer");
+              div.style.position = "absolute";
+              div.style.top = "0";
+              div.style.left = "0";
+              div.style.pointerEvents = "none";
+              div.style.zIndex = "5";
 
-            const img = L.DomUtil.create("img", "", div) as HTMLImageElement;
-            img.style.position = "absolute";
-            img.style.transformOrigin = "0 0";
-            img.style.clipPath = "inset(4% 4% 22% 4% round 12px)";
-            img.style.opacity = "0.88";
-            img.alt = "NED University Master Plan";
+              const img = L.DomUtil.create("img", "", div) as HTMLImageElement;
+              img.style.position = "absolute";
+              img.style.transformOrigin = "0 0";
+              img.style.clipPath = "inset(4% 4% 22% 4% round 12px)";
+              img.style.opacity = "0.8";
+              img.alt = "NED University Master Plan";
 
-            img.onload = () => {
-              if (this._map) this._reset();
-            };
-            img.src = imageUrl;
+              img.onload = () => {
+                if (this._map) this._reset();
+              };
+              img.src = imageUrl;
 
-            this._container = div;
-            this._img = img;
-          }
-          mapInstance.getPanes().tilePane.appendChild(this._container);
-          mapInstance.on("zoom viewreset move zoomanim", this._reset, this);
-          if (this._img.complete) {
-            this._reset();
-          }
-        },
-        onRemove: function (mapInstance: any) {
-          mapInstance.off("zoom viewreset move zoomanim", this._reset, this);
-          if (this._container && this._container.parentNode) {
-            this._container.parentNode.removeChild(this._container);
-          }
-        },
-        _reset: function () {
-          if (!this._map || !this._img) return;
-          const W = this._img.naturalWidth || 1000;
-          const H = this._img.naturalHeight || 1000;
-          const pTL = this._map.latLngToLayerPoint(corners.topLeft);
-          const pTR = this._map.latLngToLayerPoint(corners.topRight);
-          const pBL = this._map.latLngToLayerPoint(corners.bottomLeft);
+              this._container = div;
+              this._img = img;
+            }
+            mapInstance.getPanes().tilePane.appendChild(this._container);
+            mapInstance.on("zoom viewreset move zoomanim", this._reset, this);
+            if (this._img.complete) {
+              this._reset();
+            }
+          },
+          onRemove: function (mapInstance: any) {
+            mapInstance.off("zoom viewreset move zoomanim", this._reset, this);
+            if (this._container && this._container.parentNode) {
+              this._container.parentNode.removeChild(this._container);
+            }
+          },
+          setOpacity: function (val: number) {
+            if (this._img) this._img.style.opacity = String(val);
+          },
+          _reset: function () {
+            if (!this._map || !this._img) return;
+            const W = this._img.naturalWidth || 1000;
+            const H = this._img.naturalHeight || 1000;
+            const pTL = this._map.latLngToLayerPoint(corners.topLeft);
+            const pTR = this._map.latLngToLayerPoint(corners.topRight);
+            const pBL = this._map.latLngToLayerPoint(corners.bottomLeft);
 
-          const a = (pTR.x - pTL.x) / W;
-          const b = (pTR.y - pTL.y) / W;
-          const c = (pBL.x - pTL.x) / H;
-          const d = (pBL.y - pTL.y) / H;
+            const a = (pTR.x - pTL.x) / W;
+            const b = (pTR.y - pTL.y) / W;
+            const c = (pBL.x - pTL.x) / H;
+            const d = (pBL.y - pTL.y) / H;
 
-          this._img.style.width = `${W}px`;
-          this._img.style.height = `${H}px`;
-          this._img.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${pTL.x}, ${pTL.y})`;
-        },
-      });
+            this._img.style.width = `${W}px`;
+            this._img.style.height = `${H}px`;
+            this._img.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${pTL.x}, ${pTL.y})`;
+          },
+        });
 
-      const masterOverlay = new AffineMasterPlanOverlay();
-      masterOverlay.addTo(map);
+        masterPlanLayerRef.current = new AffineMasterPlanOverlay();
+      }
 
       graphLayerRef.current = L.layerGroup().addTo(map);
       footprintLayerRef.current = L.layerGroup().addTo(map);
@@ -890,6 +931,38 @@ export function OutdoorMap({
     }
   }, [isReady, graph, trace, zoomLevel]);
 
+  // 9. Switchable Basemaps (Street vs Satellite)
+  useEffect(() => {
+    const map = mapRef.current;
+    const streetLayer = streetTileLayerRef.current;
+    const satLayer = satelliteTileLayerRef.current;
+    if (!isReady || !map || !streetLayer || !satLayer) return;
+
+    if (basemapMode === "satellite") {
+      if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+      if (!map.hasLayer(satLayer)) satLayer.addTo(map);
+    } else {
+      if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
+      if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+    }
+  }, [isReady, basemapMode]);
+
+  // 10. Master-Plan Overlay Toggle & Opacity Control
+  useEffect(() => {
+    const map = mapRef.current;
+    const mpLayer = masterPlanLayerRef.current;
+    if (!isReady || !map || !mpLayer) return;
+
+    if (showMasterPlan) {
+      if (!map.hasLayer(mpLayer)) mpLayer.addTo(map);
+      if (typeof mpLayer.setOpacity === "function") {
+        mpLayer.setOpacity(masterPlanOpacity);
+      }
+    } else {
+      if (map.hasLayer(mpLayer)) map.removeLayer(mpLayer);
+    }
+  }, [isReady, showMasterPlan, masterPlanOpacity]);
+
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) mapRef.current.zoomIn();
   }, []);
@@ -900,14 +973,113 @@ export function OutdoorMap({
 
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
-      const origin: [number, number] = graph?.meta?.origin || [24.9322, 67.1133];
+      const origin: [number, number] = graph?.meta?.origin || [24.9318, 67.1132];
       mapRef.current.setView(origin, 17, { animate: true });
     }
   }, [graph]);
 
   return (
-    <div className="ned-outdoor-map-root">
+    <div className="ned-outdoor-map-root" data-basemap={basemapMode}>
       <div ref={containerRef} className="ned-leaflet-viewport" />
+
+      {/* Custom Hand-Drawn SVG Basemap & Master-Plan Layer Switcher */}
+      <div
+        className="ned-layer-switcher"
+        role="region"
+        aria-label="Basemap and overlay switcher"
+      >
+        <div className="ned-layer-switcher-row" role="group" aria-label="Base map mode">
+          <button
+            type="button"
+            className={`ned-layer-btn ${
+              basemapMode === "street" ? "ned-layer-btn--active" : ""
+            }`}
+            onClick={() => setBasemapMode("street")}
+            aria-pressed={basemapMode === "street"}
+            title="Clear Street & Ground Map"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="2,5 8,3 12,5 18,3 18,15 12,17 8,15 2,17" />
+              <line x1="8" y1="3" x2="8" y2="15" />
+              <line x1="12" y1="5" x2="12" y2="17" />
+            </svg>
+            Street
+          </button>
+
+          <button
+            type="button"
+            className={`ned-layer-btn ${
+              basemapMode === "satellite" ? "ned-layer-btn--active" : ""
+            }`}
+            onClick={() => setBasemapMode("satellite")}
+            aria-pressed={basemapMode === "satellite"}
+            title="Esri World Imagery Satellite"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="10" cy="10" r="7" />
+              <ellipse cx="10" cy="10" rx="3" ry="7" />
+              <line x1="3" y1="10" x2="17" y2="10" />
+            </svg>
+            Satellite
+          </button>
+        </div>
+
+        <div className="ned-masterplan-row">
+          <label className="ned-masterplan-toggle" title="Toggle NED Master Plan overlay">
+            <input
+              type="checkbox"
+              checked={showMasterPlan}
+              onChange={(e) => setShowMasterPlan(e.target.checked)}
+            />
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="10,3 18,7 10,11 2,7" />
+              <polyline points="2,11 10,15 18,11" />
+              <polyline points="2,14.5 10,18.5 18,14.5" />
+            </svg>
+            Master Plan
+          </label>
+          {showMasterPlan && (
+            <input
+              type="range"
+              className="ned-opacity-slider"
+              min={0.15}
+              max={1}
+              step={0.05}
+              value={masterPlanOpacity}
+              onChange={(e) => setMasterPlanOpacity(Number(e.target.value))}
+              aria-label="Master plan overlay opacity"
+              title={`Master plan opacity: ${Math.round(masterPlanOpacity * 100)}%`}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Custom Hand-Drawn SVG Zoom & Recenter Controls */}
       <div className="ned-map-controls" role="group" aria-label="Map navigation controls">
@@ -977,6 +1149,15 @@ export function OutdoorMap({
             <line x1="16" y1="10" x2="18" y2="10" />
           </svg>
         </button>
+      </div>
+
+      {/* Required Tile Attributions */}
+      <div className="ned-map-attribution" aria-label="Map tile attribution">
+        {basemapMode === "satellite" ? (
+          <span>&copy; Esri World Imagery &bull; OpenStreetMap &bull; NED GIS</span>
+        ) : (
+          <span>&copy; OpenStreetMap contributors &bull; Esri &bull; NED GIS</span>
+        )}
       </div>
 
       {/* Architectural Map Legend Pill */}

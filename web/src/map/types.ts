@@ -36,6 +36,15 @@ export interface MasterPlanCorners {
   bottomRight: [number, number];
 }
 
+export type BasemapMode = "street" | "satellite";
+
+export interface WarpedMasterPlanOverlay {
+  image: string;
+  bounds: [[number, number], [number, number]];
+  sourceResolution?: [number, number];
+  warpedResolution?: [number, number];
+}
+
 export interface CampusGraphMeta {
   version: string;
   origin: [number, number];
@@ -46,6 +55,7 @@ export interface CampusGraphMeta {
     image: string;
     corners: MasterPlanCorners;
   };
+  warpedOverlay?: WarpedMasterPlanOverlay;
 }
 
 export interface CampusGraph {

@@ -99,7 +99,38 @@
   -webkit-user-drag: none;
 }
 
-.leaflet-Interactive {
+.leaflet-tile::selection {
+  background: transparent;
+}
+
+.leaflet-safari .leaflet-tile {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.leaflet-safari .leaflet-tile-container {
+  width: 1600px;
+  height: 1600px;
+  -webkit-transform-origin: 0 0;
+}
+
+.leaflet-tile {
+  filter: inherit;
+  visibility: hidden;
+}
+
+.leaflet-tile-loaded {
+  visibility: inherit;
+}
+
+.ned-outdoor-map-root[data-basemap="street"] .leaflet-tile-pane .leaflet-tile {
+  filter: saturate(0.68) brightness(1.03) contrast(0.96);
+}
+
+.leaflet-tile-container {
+  pointer-events: none;
+}
+
+.leaflet-interactive {
   cursor: pointer;
 }
 
@@ -128,6 +159,24 @@
 
 svg.leaflet-zoom-animated {
   will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+}
+
+.leaflet-pan-anim .leaflet-tile,
+.leaflet-zoom-anim .leaflet-tile {
+  transition: none;
+}
+
+.leaflet-fade-anim .leaflet-tile {
+  will-change: opacity;
+}
+
+.leaflet-fade-anim .leaflet-tile-loaded {
+  transition: opacity 0.2s linear;
+  opacity: 1;
 }
 
 /* Landmark label tags rendered on map */
@@ -290,6 +339,108 @@ svg.leaflet-zoom-animated {
   display: inline-block;
 }
 
+/* Custom Basemap & Master-Plan Layer Switcher (hand-drawn SVG, top-right) */
+.ned-layer-switcher {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--map-surface-card);
+  border: 1px solid var(--map-border-strong);
+  border-radius: 7px;
+  padding: 6px;
+  box-shadow: var(--map-shadow);
+}
+
+.ned-layer-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ned-layer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--map-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.ned-layer-btn:hover {
+  background: var(--map-surface-elevated);
+  border-color: var(--map-border);
+}
+
+.ned-layer-btn--active {
+  background: var(--map-landmark-stroke);
+  color: var(--map-text-inverse);
+  border-color: var(--map-landmark-stroke);
+}
+
+.ned-layer-btn--active:hover {
+  background: var(--map-landmark-hover-stroke);
+  color: var(--map-text-inverse);
+}
+
+.ned-masterplan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--map-border);
+  font-size: 11px;
+  color: var(--map-text-secondary);
+}
+
+.ned-masterplan-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--map-text-primary);
+  cursor: pointer;
+}
+
+.ned-opacity-slider {
+  width: 68px;
+  height: 4px;
+  cursor: pointer;
+  accent-color: var(--map-landmark-stroke);
+}
+
+/* Required Basemap Attribution Pill */
+.ned-map-attribution {
+  position: absolute;
+  right: 58px;
+  bottom: 14px;
+  z-index: 800;
+  padding: 3px 8px;
+  background: var(--map-surface-card);
+  border: 1px solid var(--map-border);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--map-text-secondary);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.ned-map-attribution a {
+  color: var(--map-text-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ned-route-animated-path {
     animation: none !important;
@@ -297,7 +448,11 @@ svg.leaflet-zoom-animated {
   }
   .ned-landmark-label,
   .ned-map-marker,
-  .ned-map-ctrl-btn {
+  .ned-map-ctrl-btn,
+  .ned-layer-btn {
+    transition: none !important;
+  }
+  .leaflet-zoom-anim .leaflet-zoom-animated {
     transition: none !important;
   }
 }
