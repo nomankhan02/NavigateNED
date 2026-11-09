@@ -122,6 +122,7 @@ def validate(graph_path="data/graph.json"):
     # 5. Landmark schema and entrance node constraints
     landmark_id_pattern = re.compile(r"^b-[a-z0-9-]+$")
     landmark_ids = set()
+    landmark_outdoor_node = {}
 
     for idx, lm in enumerate(landmarks):
         lid = lm.get("id")
@@ -145,17 +146,195 @@ def validate(graph_path="data/graph.json"):
             errors.append(f"Landmark '{lid}' has no 'nodeId'")
         elif nid not in node_ids:
             errors.append(f"Landmark '{lid}' references nonexistent entrance node '{nid}'")
+        else:
+            landmark_outdoor_node[lid] = nid
 
         fp = lm.get("footprint")
         if not fp or not isinstance(fp, list) or len(fp) < 3:
             errors.append(f"Landmark '{lid}' must provide a closed footprint polygon (>= 3 points)")
 
+    # 6. Indoor buildings validation (data/indoor/*.json)
+    indoor_dir = os.path.join(os.path.dirname(graph_path), "indoor")
+    indoor_summaries = []
+    if os.path.isdir(indoor_dir):
+        indoor_files = sorted(f for f in os.listdir(indoor_dir) if f.endswith(".json"))
+        for fname in indoor_files:
+            fpath = os.path.join(indoor_dir, fname)
+            with open(fpath, "r", encoding="utf-8") as f:
+                try:
+                    ind = json.load(f)
+                except Exception as e:
+                    errors.append(f"{fname}: Invalid JSON ({e})")
+                    continue
+
+            bid = ind.get("id")
+            lmid = ind.get("landmarkId")
+            if not bid or bid != lmid:
+                errors.append(f"{fname}: 'id' ({bid}) must match 'landmarkId' ({lmid})")
+            if bid not in landmark_outdoor_node:
+                errors.append(f"{fname}: landmarkId '{bid}' not found in data/graph.json")
+                continue
+
+            outdoor_target = landmark_outdoor_node[bid]
+            ind_meta = ind.get("meta", {})
+            if ind_meta.get("demo") is not True:
+                errors.append(f"{fname}: meta.demo must be true")
+
+            in_nodes = ind.get("nodes", [])
+            in_edges = ind.get("edges", [])
+            in_rooms = ind.get("rooms", [])
+            floors = ind.get("floors", [])
+            floor_levels = {fl.get("level") for fl in floors}
+
+            in_node_map = {}
+            entrances = []
+            exits = []
+            room_nodes = set()
+            valid_types = {"corridor", "room", "stairs", "lift", "entrance", "exit"}
+
+            for n in in_nodes:
+                nid = n.get("id", "")
+                if not nid.startswith(f"{bid}:"):
+                    errors.append(f"{fname}: node id '{nid}' does not start with '{bid}:'")
+                if nid in in_node_map:
+                    errors.append(f"{fname}: duplicate indoor node id '{nid}'")
+                in_node_map[nid] = n
+                ntype = n.get("type")
+                if ntype not in valid_types:
+                    errors.append(f"{fname}: invalid node type '{ntype}' on '{nid}'")
+                if n.get("floor") not in floor_levels:
+                    errors.append(f"{fname}: node '{nid}' references invalid floor {n.get('floor')}")
+                if ntype == "entrance":
+                    entrances.append(nid)
+                elif ntype == "exit":
+                    exits.append(nid)
+                elif ntype == "room":
+                    room_nodes.add(nid)
+                    if not n.get("name"):
+                        errors.append(f"{fname}: room node '{nid}' missing realistic name")
+
+            if len(entrances) != 1:
+                errors.append(f"{fname}: expected exactly 1 entrance node, found {len(entrances)}")
+            if len(exits) < 1:
+                errors.append(f"{fname}: expected at least 1 exit node, found {len(exits)}")
+
+            ent_id = entrances[0] if entrances else None
+
+            # Build adjacency lists (all edges vs accessible-only edges)
+            adj_all = {nid: [] for nid in in_node_map}
+            adj_acc = {nid: [] for nid in in_node_map}
+            has_outdoor_link = False
+
+            for e in in_edges:
+                u, v = e.get("a"), e.get("b")
+                kind = e.get("kind")
+                w = e.get("w")
+                acc = e.get("accessible")
+
+                if kind not in {"walk", "stairs", "lift"}:
+                    errors.append(f"{fname}: invalid edge kind '{kind}' ({u}--{v})")
+                if not isinstance(acc, bool):
+                    errors.append(f"{fname}: edge ({u}--{v}) missing boolean 'accessible'")
+
+                if kind == "stairs":
+                    if w != 10 or acc is not False:
+                        errors.append(f"{fname}: stairs edge ({u}--{v}) must have w=10 and accessible=false (got w={w}, accessible={acc})")
+                elif kind == "lift":
+                    if w != 15 or acc is not True:
+                        errors.append(f"{fname}: lift edge ({u}--{v}) must have w=15 and accessible=true (got w={w}, accessible={acc})")
+
+                # Check outdoor link
+                if {u, v} == {ent_id, outdoor_target}:
+                    if w == 3.0 and kind == "walk" and acc is True:
+                        has_outdoor_link = True
+                    else:
+                        errors.append(f"{fname}: outdoor link ({u}--{v}) must have w=3.0, kind='walk', accessible=true")
+                    continue
+
+                if u not in in_node_map or v not in in_node_map:
+                    errors.append(f"{fname}: edge ({u}--{v}) references unknown indoor node")
+                    continue
+
+                adj_all[u].append(v)
+                adj_all[v].append(u)
+                if acc is True:
+                    adj_acc[u].append(v)
+                    adj_acc[v].append(u)
+
+            if not has_outdoor_link:
+                errors.append(f"{fname}: entrance '{ent_id}' not linked to outdoor node '{outdoor_target}' by 3m edge")
+
+            # Reachability (all edges & accessible-only edges)
+            def bfs_reach(start, graph_adj):
+                if not start or start not in graph_adj:
+                    return set()
+                seen = {start}
+                q = deque([start])
+                while q:
+                    cur = q.popleft()
+                    for nb in graph_adj[cur]:
+                        if nb not in seen:
+                            seen.add(nb)
+                            q.append(nb)
+                return seen
+
+            reached_all = bfs_reach(ent_id, adj_all)
+            reached_acc = bfs_reach(ent_id, adj_acc)
+
+            if len(reached_all) != len(in_node_map):
+                errors.append(f"{fname}: {len(in_node_map) - len(reached_all)} indoor nodes unreachable from entrance")
+
+            unreached_rooms_acc = room_nodes - reached_acc
+            if unreached_rooms_acc:
+                errors.append(f"{fname}: {len(unreached_rooms_acc)} rooms unreachable via accessible-only edges: {sorted(unreached_rooms_acc)[:3]}")
+
+            # Room rect validation & non-overlapping check per floor
+            rooms_by_floor = {fl: [] for fl in floor_levels}
+            seen_room_ids = set()
+            for r in in_rooms:
+                rnid = r.get("nodeId")
+                rect = r.get("rect")
+                if rnid not in room_nodes:
+                    errors.append(f"{fname}: room entry '{rnid}' does not reference a valid room node")
+                    continue
+                seen_room_ids.add(rnid)
+                if not isinstance(rect, list) or len(rect) != 4 or any(d <= 0 for d in rect[2:]):
+                    errors.append(f"{fname}: room '{rnid}' has invalid rect {rect}")
+                    continue
+                fl = in_node_map[rnid]["floor"]
+                rooms_by_floor[fl].append((rnid, rect))
+
+            if seen_room_ids != room_nodes:
+                errors.append(f"{fname}: mismatch between room nodes ({len(room_nodes)}) and rooms list ({len(seen_room_ids)})")
+
+            overlap_count = 0
+            for fl, rlist in rooms_by_floor.items():
+                for i in range(len(rlist)):
+                    id1, (x1, y1, w1, h1) = rlist[i]
+                    for j in range(i + 1, len(rlist)):
+                        id2, (x2, y2, w2, h2) = rlist[j]
+                        if x1 < x2 + w2 and x1 + w1 > x2 and y1 < y2 + h2 and y1 + h1 > y2:
+                            overlap_count += 1
+                            errors.append(f"{fname} (Floor {fl}): overlapping rooms '{id1}' and '{id2}'")
+
+            indoor_summaries.append(
+                f"  - {bid} ({ind_meta.get('template')}): {len(floors)} floors, "
+                f"{len(in_nodes)} nodes, {len(in_rooms)} rooms, "
+                f"outdoor={outdoor_target} (3m), reachable={len(reached_all)}/{len(in_node_map)}, "
+                f"accessible_rooms={len(room_nodes - unreached_rooms_acc)}/{len(room_nodes)}, overlaps={overlap_count}"
+            )
+
     # Print Validation Report
-    print("--- Validation Report ---")
+    print("--- Outdoor Validation Report ---")
     print(f"Total Nodes: {len(nodes)}")
     print(f"Total Edges: {len(edges)}")
     print(f"Total Landmarks: {len(landmarks)}")
     print(f"Connected Components: 1 (Connected: {len(visited) == len(node_ids)})" if node_ids else "Empty")
+
+    if indoor_summaries:
+        print(f"\n--- Indoor Validation Report ({len(indoor_summaries)} buildings) ---")
+        for line in indoor_summaries:
+            print(line)
 
     if warnings:
         print(f"\nWarnings ({len(warnings)}):")
@@ -168,7 +347,7 @@ def validate(graph_path="data/graph.json"):
             print(f"  [ERROR] {e}")
         return False
 
-    print("\nResult: PASSED. graph.json strictly conforms to contracts.md.")
+    print("\nResult: PASSED. All outdoor and indoor datasets strictly conform to contracts.md.")
     return True
 
 

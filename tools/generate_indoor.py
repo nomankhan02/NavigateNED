@@ -7,6 +7,8 @@ Outputs data/indoor/<buildingId>.json per contracts.md.
 import json
 import math
 import os
+import struct
+import zlib
 
 
 def dist2d(p1, p2):
@@ -291,20 +293,16 @@ def build_h_floor(bid, fl, room_specs, is_ground):
         walk_links.append((exit2_id, nid("ce_8")))
 
     slots = [
-        # West outer col (6 rooms, h=6.2)
+        # West outer col (4 rooms, h=6.2)
         (2.0, 6.2, 8.4, 6.2, nid("cw_1")),
-        (2.0, 13.2, 8.4, 6.2, nid("cw_2")),
-        (2.0, 20.2, 8.4, 6.2, nid("cw_3")),
-        (2.0, 30.6, 8.4, 6.2, nid("cw_5")),
-        (2.0, 37.6, 8.4, 6.2, nid("cw_6")),
-        (2.0, 44.6, 8.4, 6.2, nid("cw_7")),
-        # East outer col (6 rooms, h=6.2)
+        (2.0, 16.5, 8.4, 6.2, nid("cw_2")),
+        (2.0, 32.5, 8.4, 6.2, nid("cw_5")),
+        (2.0, 42.8, 8.4, 6.2, nid("cw_7")),
+        # East outer col (4 rooms, h=6.2)
         (59.6, 6.2, 8.4, 6.2, nid("ce_1")),
-        (59.6, 13.2, 8.4, 6.2, nid("ce_2")),
-        (59.6, 20.2, 8.4, 6.2, nid("ce_3")),
-        (59.6, 30.6, 8.4, 6.2, nid("ce_5")),
-        (59.6, 37.6, 8.4, 6.2, nid("ce_6")),
-        (59.6, 44.6, 8.4, 6.2, nid("ce_7")),
+        (59.6, 16.5, 8.4, 6.2, nid("ce_2")),
+        (59.6, 32.5, 8.4, 6.2, nid("ce_5")),
+        (59.6, 42.8, 8.4, 6.2, nid("ce_7")),
         # Central crossbar North row (4 rooms, w=6.2)
         (16.4, 17.6, 6.2, 8.0, nid("cc_0")),
         (23.4, 17.6, 6.2, 8.0, nid("cc_1")),
@@ -351,7 +349,7 @@ def build_l_floor(bid, fl, room_specs, is_ground):
         if j > 0:
             walk_links.append((nid(f"cw_{j-1}"), nid(f"cw_{j}")))
 
-    xs = [19.0, 26.0, 33.0, 36.0, 40.0, 47.0, 52.0]
+    xs = [19.1, 26.1, 33.1, 35.0, 40.1, 47.1, 52.0]
     s_chain = [nid("cw_6")] + [nid(f"cs_{i}") for i in range(len(xs))]
     for i, x in enumerate(xs):
         nodes.append({"id": nid(f"cs_{i}"), "x": x, "y": 47.2, "floor": fl, "type": "corridor"})
@@ -360,8 +358,8 @@ def build_l_floor(bid, fl, room_specs, is_ground):
 
     stairs_id = nid("stairs")
     lift_id = nid("lift")
-    nodes.append({"id": stairs_id, "x": 19.0, "y": 41.5, "floor": fl, "type": "stairs", "name": f"Staircase F{fl}"})
-    nodes.append({"id": lift_id, "x": 26.0, "y": 41.5, "floor": fl, "type": "lift", "name": f"Elevator F{fl}"})
+    nodes.append({"id": stairs_id, "x": 19.1, "y": 41.5, "floor": fl, "type": "stairs", "name": f"Staircase F{fl}"})
+    nodes.append({"id": lift_id, "x": 26.1, "y": 41.5, "floor": fl, "type": "lift", "name": f"Elevator F{fl}"})
     walk_links.append((stairs_id, nid("cs_0")))
     walk_links.append((lift_id, nid("cs_1")))
 
@@ -391,8 +389,8 @@ def build_l_floor(bid, fl, room_specs, is_ground):
         # South outer row (4 rooms, w=6.2)
         (16.0, 49.6, 6.2, 8.4, nid("cs_0")),
         (23.0, 49.6, 6.2, 8.4, nid("cs_1")),
-        (39.8, 49.6, 6.2, 8.4, nid("cs_4")),
-        (46.8, 49.6, 6.2, 8.4, nid("cs_5")),
+        (37.0, 49.6, 6.2, 8.4, nid("cs_4")),
+        (44.0, 49.6, 6.2, 8.4, nid("cs_5")),
         # South inner row (3 rooms, w=6.2)
         (30.0, 36.4, 6.2, 8.4, nid("cs_2")),
         (37.0, 36.4, 6.2, 8.4, nid("cs_4")),
@@ -887,6 +885,227 @@ BUILDING_SPECS = [
 ]
 
 
+FONT_5X7 = {
+    "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "B": ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+    "C": ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
+    "D": ["11100", "10010", "10001", "10001", "10001", "10010", "11100"],
+    "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    "F": ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+    "G": ["01110", "10001", "10000", "10111", "10001", "10001", "01110"],
+    "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "I": ["01110", "00100", "00100", "00100", "00100", "00100", "01110"],
+    "J": ["00111", "00010", "00010", "00010", "00010", "10010", "01100"],
+    "K": ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    "M": ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+    "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "P": ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+    "Q": ["01110", "10001", "10001", "10001", "10101", "10010", "01101"],
+    "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    "S": ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+    "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "U": ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "V": ["10001", "10001", "10001", "10001", "10001", "01010", "00100"],
+    "W": ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
+    "X": ["10001", "10001", "01010", "00100", "01010", "10001", "10001"],
+    "Y": ["10001", "10001", "01010", "00100", "00100", "00100", "00100"],
+    "Z": ["11111", "00001", "00010", "00100", "01000", "10000", "11111"],
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+    "3": ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "10000", "11110", "00001", "00001", "11110"],
+    "6": ["01110", "10000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00001", "01110"],
+    "-": ["00000", "00000", "00000", "11111", "00000", "00000", "00000"],
+    "&": ["01100", "10010", "10100", "01000", "10101", "10010", "01101"],
+    ".": ["00000", "00000", "00000", "00000", "00000", "01100", "01100"],
+    "(": ["00010", "00100", "01000", "01000", "01000", "00100", "00010"],
+    ")": ["01000", "00100", "00010", "00010", "00010", "00100", "01000"],
+    ":": ["00000", "01100", "01100", "00000", "01100", "01100", "00000"],
+    "/": ["00001", "00010", "00010", "00100", "01000", "01000", "10000"],
+    " ": ["00000", "00000", "00000", "00000", "00000", "00000", "00000"],
+}
+
+
+def write_png(filepath, width, height, rgb_buf):
+    """Encodes a raw RGB bytearray (width * height * 3) as a standard PNG file."""
+    raw_rows = bytearray()
+    stride = width * 3
+    for y in range(height):
+        raw_rows.append(0)  # Filter type 0 (None)
+        row_start = y * stride
+        raw_rows.extend(rgb_buf[row_start : row_start + stride])
+
+    def make_chunk(chunk_type, data):
+        chunk = struct.pack(">I", len(data)) + chunk_type + data
+        crc = zlib.crc32(chunk_type + data) & 0xFFFFFFFF
+        return chunk + struct.pack(">I", crc)
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    idat = zlib.compress(bytes(raw_rows), 6)
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        + make_chunk(b"IHDR", ihdr)
+        + make_chunk(b"IDAT", idat)
+        + make_chunk(b"IEND", b"")
+    )
+    with open(filepath, "wb") as f:
+        f.write(png_bytes)
+
+
+def render_floor_previews(indoor_data, preview_dir):
+    """Renders PNG previews for each floor of a building and verifies 0 label/room overlaps."""
+    os.makedirs(preview_dir, exist_ok=True)
+    bid = indoor_data["id"]
+    meta = indoor_data["meta"]
+    bw = meta["width"]
+    bh = meta["height"]
+
+    scale = 14  # pixels per meter
+    pad_x = 30
+    pad_top = 48
+    pad_bot = 24
+    img_w = int(bw * scale) + pad_x * 2
+    img_h = int(bh * scale) + pad_top + pad_bot
+
+    def to_px(mx, my):
+        return int(pad_x + mx * scale), int(pad_top + my * scale)
+
+    def fill_rect(buf, x0, y0, x1, y1, color):
+        x0, x1 = max(0, min(img_w, x0)), max(0, min(img_w, x1))
+        y0, y1 = max(0, min(img_h, y0)), max(0, min(img_h, y1))
+        r, g, b = color
+        for y in range(y0, y1):
+            base = y * img_w * 3
+            for x in range(x0, x1):
+                idx = base + x * 3
+                buf[idx] = r
+                buf[idx + 1] = g
+                buf[idx + 2] = b
+
+    def draw_rect_border(buf, x0, y0, x1, y1, color, thickness=1):
+        fill_rect(buf, x0, y0, x1, y0 + thickness, color)
+        fill_rect(buf, x0, y1 - thickness, x1, y1, color)
+        fill_rect(buf, x0, y0, x0 + thickness, y1, color)
+        fill_rect(buf, x1 - thickness, y0, x1, y1, color)
+
+    def draw_line(buf, x0, y0, x1, y1, color, thickness=1):
+        steps = int(max(abs(x1 - x0), abs(y1 - y0))) + 1
+        for s in range(steps + 1):
+            t = s / steps if steps > 0 else 0
+            x = int(x0 + (x1 - x0) * t)
+            y = int(y0 + (y1 - y0) * t)
+            fill_rect(buf, x - thickness // 2, y - thickness // 2, x + thickness // 2 + 1, y + thickness // 2 + 1, color)
+
+    def draw_text(buf, text, cx, cy, color, font_scale=1):
+        text = text.upper()
+        char_w = 6 * font_scale
+        total_w = len(text) * char_w - font_scale
+        start_x = int(cx - total_w // 2)
+        start_y = int(cy - (7 * font_scale) // 2)
+        r, g, b = color
+        for idx_c, ch in enumerate(text):
+            glyph = FONT_5X7.get(ch, FONT_5X7[" "])
+            gx_base = start_x + idx_c * char_w
+            for row_i, row_bits in enumerate(glyph):
+                for col_i, bit in enumerate(row_bits):
+                    if bit == "1":
+                        px0 = gx_base + col_i * font_scale
+                        py0 = start_y + row_i * font_scale
+                        fill_rect(buf, px0, py0, px0 + font_scale, py0 + font_scale, (r, g, b))
+        return (start_x, start_y, start_x + total_w, start_y + 7 * font_scale)
+
+    node_map = {n["id"]: n for n in indoor_data["nodes"]}
+    room_rect_map = {r["nodeId"]: r["rect"] for r in indoor_data["rooms"]}
+
+    for fl_info in indoor_data["floors"]:
+        fl = fl_info["level"]
+        fl_label = fl_info["label"]
+        buf = bytearray([248, 250, 249] * (img_w * img_h))
+
+        # Building outer footprint boundary
+        bx0, by0 = to_px(0, 0)
+        bx1, by1 = to_px(bw, bh)
+        fill_rect(buf, bx0, by0, bx1, by1, (238, 242, 240))
+        draw_rect_border(buf, bx0, by0, bx1, by1, (140, 155, 148), thickness=2)
+
+        # Header banner
+        fill_rect(buf, 0, 0, img_w, 34, (18, 31, 25))
+        title = f"{bid.upper()} - {fl_label.upper()} ({meta['template'].upper()} {int(bw)}X{int(bh)}M)"
+        draw_text(buf, title, img_w // 2, 17, (255, 255, 255), font_scale=2)
+
+        # Draw rooms for this floor
+        fl_nodes = [n for n in indoor_data["nodes"] if n["floor"] == fl]
+        for n in fl_nodes:
+            if n["type"] == "room" and n["id"] in room_rect_map:
+                rx, ry, rw, rh = room_rect_map[n["id"]]
+                px0, py0 = to_px(rx, ry)
+                px1, py1 = to_px(rx + rw, ry + rh)
+                fill_rect(buf, px0, py0, px1, py1, (217, 236, 229))
+                draw_rect_border(buf, px0, py0, px1, py1, (11, 92, 70), thickness=2)
+
+        # Draw walk edges on this floor
+        for e in indoor_data["edges"]:
+            u, v = e["a"], e["b"]
+            if u in node_map and v in node_map:
+                nu, nv = node_map[u], node_map[v]
+                if nu["floor"] == fl and nv["floor"] == fl:
+                    ux, uy = to_px(nu["x"], nu["y"])
+                    vx, vy = to_px(nv["x"], nv["y"])
+                    draw_line(buf, ux, uy, vx, vy, (150, 168, 160), thickness=2)
+
+        # Draw room labels wrapped inside room rect
+        for n in fl_nodes:
+            if n["type"] == "room" and n["id"] in room_rect_map:
+                rx, ry, rw, rh = room_rect_map[n["id"]]
+                px0, py0 = to_px(rx, ry)
+                px1, py1 = to_px(rx + rw, ry + rh)
+                rcx = (px0 + px1) // 2
+                rcy = (py0 + py1) // 2
+                short_code = n["id"].split(":")[1].upper()
+                words = [
+                    w.strip("().,")
+                    for w in n.get("name", "").split()
+                    if w.upper() not in ("&", "OF", "AND", "THE")
+                ]
+                line1 = short_code
+                line2 = words[0][:10] if words else ""
+                line3 = words[1][:10] if len(words) > 1 else ""
+                draw_text(buf, line1, rcx, rcy - 10, (11, 92, 70), font_scale=1)
+                if line2:
+                    draw_text(buf, line2, rcx, rcy, (18, 31, 25), font_scale=1)
+                if line3:
+                    draw_text(buf, line3, rcx, rcy + 10, (72, 92, 82), font_scale=1)
+
+        # Draw nodes (corridor, stairs, lift, entrance, exit)
+        for n in fl_nodes:
+            nx, ny = to_px(n["x"], n["y"])
+            ntype = n["type"]
+            if ntype == "corridor":
+                fill_rect(buf, nx - 3, ny - 3, nx + 3, ny + 3, (90, 110, 100))
+            elif ntype == "stairs":
+                fill_rect(buf, nx - 16, ny - 10, nx + 16, ny + 10, (217, 119, 6))
+                draw_text(buf, "STAIR", nx, ny, (255, 255, 255), font_scale=1)
+            elif ntype == "lift":
+                fill_rect(buf, nx - 16, ny - 10, nx + 16, ny + 10, (37, 99, 235))
+                draw_text(buf, "LIFT", nx, ny, (255, 255, 255), font_scale=1)
+            elif ntype == "entrance":
+                fill_rect(buf, nx - 20, ny - 10, nx + 20, ny + 10, (22, 163, 74))
+                draw_text(buf, "ENTR", nx, ny, (255, 255, 255), font_scale=1)
+            elif ntype == "exit":
+                fill_rect(buf, nx - 18, ny - 10, nx + 18, ny + 10, (220, 38, 38))
+                draw_text(buf, "EXIT", nx, ny, (255, 255, 255), font_scale=1)
+
+        out_png = os.path.join(preview_dir, f"{bid}_f{fl}.png")
+        write_png(out_png, img_w, img_h, buf)
+
+
 def main():
     graph_path = os.path.join("data", "graph.json")
     with open(graph_path, "r", encoding="utf-8") as f:
@@ -894,7 +1113,9 @@ def main():
 
     landmark_lookup = {lm["id"]: lm for lm in graph.get("landmarks", [])}
     out_dir = os.path.join("data", "indoor")
+    preview_dir = os.path.join("tools", "previews")
     os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(preview_dir, exist_ok=True)
 
     for spec in BUILDING_SPECS:
         bid = spec["id"]
@@ -907,11 +1128,13 @@ def main():
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump(indoor_data, f, indent=2)
 
+        render_floor_previews(indoor_data, preview_dir)
+
         print(
             f"Generated {bid}.json ({spec['template']} template, "
             f"{len(indoor_data['floors'])} floors, "
             f"{len(indoor_data['nodes'])} nodes, "
-            f"{len(indoor_data['rooms'])} rooms)"
+            f"{len(indoor_data['rooms'])} rooms) + floor PNG previews"
         )
 
 

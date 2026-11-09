@@ -21,9 +21,17 @@
 - `data/graph.json`: Georeferenced campus road network (86 nodes, 108 edges, 55 landmarks).
 - `data/sample/graph.json`: 4-node sample graph for scaffolding and WASM bridge verification.
 - `data/indoor/`: Directory for indoor building floor navigation data.
+- `data/indoor/b-admin.json`: Admin Block indoor graph (ring 70x44m, 3 floors, 54 rooms).
+- `data/indoor/b-auditorium.json`: Main Auditorium indoor graph (U 70x50m, 2 floors, 26 rooms).
+- `data/indoor/b-csit.json`: CSIT & Maths indoor graph (ring 70x44m, 3 floors, 48 rooms).
+- `data/indoor/b-csit-labs.json`: CSIT Labs (5A) indoor graph (U 70x50m, 2 floors, 32 rooms).
+- `data/indoor/b-dean-offices.json`: Dean Offices indoor graph (L 60x60m, 2 floors, 32 rooms).
+- `data/indoor/b-library.json`: Central Library indoor graph (H 70x56m, 3 floors, 48 rooms).
 - `tools/`: Utility scripts for data processing and map extraction.
+- `tools/.gitignore`: Git ignore rule excluding generated floor preview PNGs (`previews/`).
 - `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
-- `tools/validate.py`: Schema and graph topology validation tool checking contracts.md.
+- `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.
+- `tools/validate.py`: Schema and graph topology validation tool checking outdoor and indoor contracts.
 - `web/`: Next.js 15 App Router static export frontend.
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
