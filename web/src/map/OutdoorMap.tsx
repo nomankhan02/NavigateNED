@@ -15,8 +15,8 @@ const DEFAULT_WARPED_BOUNDS: [[number, number], [number, number]] = [
 ];
 
 const DEFAULT_MAX_BOUNDS: [[number, number], [number, number]] = [
-  [24.9255, 67.1045],
-  [24.9395, 67.1215],
+  [24.918, 67.094],
+  [24.946, 67.132],
 ];
 
 const MAJOR_LANDMARK_IDS = new Set([
@@ -218,10 +218,12 @@ export function OutdoorMap({
 
       // Basemap 1 (Default): Clear light street/ground map (OpenStreetMap)
       const streetTiles = L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
+          subdomains: ["a", "b", "c"],
           maxZoom: 20,
           maxNativeZoom: 19,
+          keepBuffer: 4,
         }
       );
 
@@ -231,6 +233,7 @@ export function OutdoorMap({
         {
           maxZoom: 20,
           maxNativeZoom: 19,
+          keepBuffer: 4,
         }
       );
 
@@ -561,8 +564,20 @@ export function OutdoorMap({
         activeRouteNodes.add(route[route.length - 1]);
       }
 
-      // Seed collision rectangles with merged GATE, SAFE ZONE, and route/evacuation endpoint badges
+      // Seed collision rectangles with HUD controls, merged GATE, SAFE ZONE, and route/evacuation endpoint badges
       const placedBoxes: Array<[number, number, number, number]> = [];
+      const vw = containerRef.current?.clientWidth || 1000;
+      const vh = containerRef.current?.clientHeight || 680;
+      const isCompactViewport = vw < 520;
+
+      // Top-right Layer Switcher pill
+      placedBoxes.push([Math.max(0, vw - 196), 0, vw, 78]);
+      // Bottom-right Zoom & Recenter buttons
+      placedBoxes.push([Math.max(0, vw - 58), Math.max(0, vh - 140), vw, vh]);
+      // Bottom-left Legend & Attribution pills
+      placedBoxes.push([0, Math.max(0, vh - 72), Math.min(vw, 240), vh]);
+      placedBoxes.push([Math.max(0, vw - 310), Math.max(0, vh - 36), vw, vh]);
+
       for (const b of fixedBadgesRef.current) {
         const pt = map.latLngToContainerPoint([b.lat, b.lng]);
         placedBoxes.push([
@@ -635,7 +650,10 @@ export function OutdoorMap({
           }
         }
 
-        const text = getLandmarkLabelText(lm, zoomLevel, isFocused);
+        let text = getLandmarkLabelText(lm, zoomLevel, isFocused);
+        if (isCompactViewport && text.length > 26) {
+          text = lm.short;
+        }
         if (el.textContent !== text) {
           el.textContent = text;
         }
@@ -660,15 +678,24 @@ export function OutdoorMap({
 
         let collides = false;
         if (!isFocused) {
-          for (const [x0, y0, x1, y1] of placedBoxes) {
-            if (
-              box[0] < x1 + 5 &&
-              box[2] > x0 - 5 &&
-              box[1] < y1 + 4 &&
-              box[3] > y0 - 4
-            ) {
-              collides = true;
-              break;
+          if (
+            box[0] < 6 ||
+            box[2] > vw - 6 ||
+            box[1] < 6 ||
+            box[3] > vh - 6
+          ) {
+            collides = true;
+          } else {
+            for (const [x0, y0, x1, y1] of placedBoxes) {
+              if (
+                box[0] < x1 + 5 &&
+                box[2] > x0 - 5 &&
+                box[1] < y1 + 4 &&
+                box[3] > y0 - 4
+              ) {
+                collides = true;
+                break;
+              }
             }
           }
         }

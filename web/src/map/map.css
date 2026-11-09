@@ -157,7 +157,9 @@
   transform-origin: 0 0;
 }
 
-svg.leaflet-zoom-animated {
+svg.leaflet-zoom-animated,
+canvas.leaflet-zoom-animated,
+img.leaflet-zoom-animated {
   will-change: transform;
 }
 
@@ -452,6 +454,29 @@ svg.leaflet-zoom-animated {
   color: var(--map-text-primary);
   text-decoration: none;
   font-weight: 500;
+}
+
+@media (max-width: 520px) {
+  .ned-map-hud {
+    left: 10px;
+    bottom: 36px;
+    padding: 4px 8px;
+    gap: 8px;
+  }
+  .ned-map-attribution {
+    left: 10px;
+    right: 54px;
+    bottom: 8px;
+    font-size: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ned-layer-switcher {
+    right: 10px;
+    left: auto;
+    top: 10px;
+    padding: 5px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,12 +34,14 @@
 - `tools/generate_evac.py`: Re-runnable emergency evacuation assembly areas and building exits generator.
 - `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.
 - `tools/validate.py`: Schema and graph topology validation tool checking outdoor, indoor, and evacuation contracts.
+- `tools/warp_master_plan.py`: Re-runnable Pillow/NumPy script warping `ned_master_plan.jpg` into a north-up georeferenced RGBA WebP and updating `graph.json` `meta.warpedOverlay`.
 - `web/`: Next.js 15 App Router static export frontend.
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
 - `web/next.config.ts`: Next.js config with static export and cache headers.
 - `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.
-- `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay image.
+- `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay source image.
+- `web/public/map/ned_master_plan_warped.webp`: North-up georeferenced RGBA WebP master plan overlay for `L.imageOverlay(bounds)`.
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
 - `web/src/app/layout.tsx`: Root layout document with baseline styling.
 - `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
@@ -49,7 +51,7 @@
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
 - `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, and all map TypeScript interfaces.
 - `web/src/map/map.css`: Outdoor map CSS variables (`--map-*`), self-contained Leaflet layout rules, and custom SVG control styles.
-- `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with 4-corner affine master plan overlay, canvas walkway graph, landmarks, animated route, evacuation hazard lines, and trace replay.
+- `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards, and trace replay.
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.
 - `web/src/map/useTraceReplay.ts`: React hook driving play/pause/speed/seek state over `trace[]` algorithm events.
 - `web/src/ui/`: Reusable accessible UI components (owned by Member C).
