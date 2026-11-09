@@ -1,0 +1,1297 @@
+{
+  "id": "b-auditorium",
+  "name": "Main Auditorium",
+  "landmarkId": "b-auditorium",
+  "meta": {
+    "demo": true,
+    "template": "U",
+    "width": 70.0,
+    "height": 50.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor Balcony"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-auditorium:f0_cw_0",
+      "x": 11.8,
+      "y": 8.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_0",
+      "x": 58.2,
+      "y": 8.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cw_1",
+      "x": 11.8,
+      "y": 11.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_1",
+      "x": 58.2,
+      "y": 11.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cw_2",
+      "x": 11.8,
+      "y": 18.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_2",
+      "x": 58.2,
+      "y": 18.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cw_3",
+      "x": 11.8,
+      "y": 25.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_3",
+      "x": 58.2,
+      "y": 25.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cw_4",
+      "x": 11.8,
+      "y": 32.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_4",
+      "x": 58.2,
+      "y": 32.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cw_5",
+      "x": 11.8,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_ce_5",
+      "x": 58.2,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_0",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_1",
+      "x": 24.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_2",
+      "x": 31.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_3",
+      "x": 35.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_4",
+      "x": 39.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_5",
+      "x": 46.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_cs_6",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f0_stairs",
+      "x": 24.0,
+      "y": 33.0,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-auditorium:f0_lift",
+      "x": 46.0,
+      "y": 33.0,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-auditorium:ent",
+      "x": 35.0,
+      "y": 47.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-auditorium:exit_w",
+      "x": 11.8,
+      "y": 2.5,
+      "floor": 0,
+      "type": "exit",
+      "name": "West Wing Emergency Exit"
+    },
+    {
+      "id": "b-auditorium:exit_e",
+      "x": 58.2,
+      "y": 2.5,
+      "floor": 0,
+      "type": "exit",
+      "name": "East Wing Emergency Exit"
+    },
+    {
+      "id": "b-auditorium:g01",
+      "x": 35.0,
+      "y": 18.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Main Auditorium Bowl & Stage"
+    },
+    {
+      "id": "b-auditorium:g02",
+      "x": 5.7,
+      "y": 11.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Green Room West (Performers)"
+    },
+    {
+      "id": "b-auditorium:g03",
+      "x": 5.7,
+      "y": 18.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Stage Equipment & Props Bay"
+    },
+    {
+      "id": "b-auditorium:g04",
+      "x": 5.7,
+      "y": 25.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Acoustic & Sound Rack Room"
+    },
+    {
+      "id": "b-auditorium:g05",
+      "x": 5.7,
+      "y": 32.5,
+      "floor": 0,
+      "type": "room",
+      "name": "VIP Reception Lounge"
+    },
+    {
+      "id": "b-auditorium:g06",
+      "x": 64.3,
+      "y": 11.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Green Room East (Speakers)"
+    },
+    {
+      "id": "b-auditorium:g07",
+      "x": 64.3,
+      "y": 18.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Backstage Dressing Room"
+    },
+    {
+      "id": "b-auditorium:g08",
+      "x": 64.3,
+      "y": 25.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Electrical Dimmer & HVAC Room"
+    },
+    {
+      "id": "b-auditorium:g09",
+      "x": 64.3,
+      "y": 32.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Press & Media Briefing Room"
+    },
+    {
+      "id": "b-auditorium:g10",
+      "x": 17.5,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Box Office & Registration"
+    },
+    {
+      "id": "b-auditorium:g11",
+      "x": 24.3,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Cloakroom & Ushers Desk"
+    },
+    {
+      "id": "b-auditorium:g12",
+      "x": 45.7,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Event Coordinator Office"
+    },
+    {
+      "id": "b-auditorium:g13",
+      "x": 52.5,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Refreshment & Catering Pantry"
+    },
+    {
+      "id": "b-auditorium:f1_cw_0",
+      "x": 11.8,
+      "y": 8.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_0",
+      "x": 58.2,
+      "y": 8.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cw_1",
+      "x": 11.8,
+      "y": 11.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_1",
+      "x": 58.2,
+      "y": 11.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cw_2",
+      "x": 11.8,
+      "y": 18.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_2",
+      "x": 58.2,
+      "y": 18.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cw_3",
+      "x": 11.8,
+      "y": 25.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_3",
+      "x": 58.2,
+      "y": 25.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cw_4",
+      "x": 11.8,
+      "y": 32.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_4",
+      "x": 58.2,
+      "y": 32.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cw_5",
+      "x": 11.8,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_ce_5",
+      "x": 58.2,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_0",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_1",
+      "x": 24.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_2",
+      "x": 31.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_3",
+      "x": 35.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_4",
+      "x": 39.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_5",
+      "x": 46.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_cs_6",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-auditorium:f1_stairs",
+      "x": 24.0,
+      "y": 33.0,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-auditorium:f1_lift",
+      "x": 46.0,
+      "y": 33.0,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-auditorium:101",
+      "x": 35.0,
+      "y": 18.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Upper Balcony Seating Tier"
+    },
+    {
+      "id": "b-auditorium:102",
+      "x": 5.7,
+      "y": 11.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Main Projection & Laser Booth"
+    },
+    {
+      "id": "b-auditorium:103",
+      "x": 5.7,
+      "y": 18.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Digital Sound Mixing Console"
+    },
+    {
+      "id": "b-auditorium:104",
+      "x": 5.7,
+      "y": 25.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Stage Lighting Control Rig"
+    },
+    {
+      "id": "b-auditorium:105",
+      "x": 5.7,
+      "y": 32.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Live Streaming & Broadcast Studio"
+    },
+    {
+      "id": "b-auditorium:106",
+      "x": 64.3,
+      "y": 11.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Translation & Interpreter Booth"
+    },
+    {
+      "id": "b-auditorium:107",
+      "x": 64.3,
+      "y": 18.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Balcony Lounge West"
+    },
+    {
+      "id": "b-auditorium:108",
+      "x": 64.3,
+      "y": 25.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Balcony Lounge East"
+    },
+    {
+      "id": "b-auditorium:109",
+      "x": 64.3,
+      "y": 32.5,
+      "floor": 1,
+      "type": "room",
+      "name": "AV Archive & Recording Library"
+    },
+    {
+      "id": "b-auditorium:110",
+      "x": 17.5,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Technical Director Office"
+    },
+    {
+      "id": "b-auditorium:111",
+      "x": 24.3,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Rigging & Catwalk Access Bay"
+    },
+    {
+      "id": "b-auditorium:112",
+      "x": 45.7,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Emergency Generator Control"
+    },
+    {
+      "id": "b-auditorium:113",
+      "x": 52.5,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "VIP Balcony Viewing Box"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-auditorium:f0_cw_0",
+      "b": "b-auditorium:f0_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_ce_0",
+      "b": "b-auditorium:f0_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cw_1",
+      "b": "b-auditorium:f0_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_ce_1",
+      "b": "b-auditorium:f0_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cw_2",
+      "b": "b-auditorium:f0_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_ce_2",
+      "b": "b-auditorium:f0_ce_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cw_3",
+      "b": "b-auditorium:f0_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_ce_3",
+      "b": "b-auditorium:f0_ce_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cw_4",
+      "b": "b-auditorium:f0_cw_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_ce_4",
+      "b": "b-auditorium:f0_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cw_5",
+      "b": "b-auditorium:f0_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_0",
+      "b": "b-auditorium:f0_cs_1",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_1",
+      "b": "b-auditorium:f0_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_2",
+      "b": "b-auditorium:f0_cs_3",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_3",
+      "b": "b-auditorium:f0_cs_4",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_4",
+      "b": "b-auditorium:f0_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_5",
+      "b": "b-auditorium:f0_cs_6",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_cs_6",
+      "b": "b-auditorium:f0_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_stairs",
+      "b": "b-auditorium:f0_cs_1",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_lift",
+      "b": "b-auditorium:f0_cs_5",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:ent",
+      "b": "b-auditorium:f0_cs_3",
+      "kind": "walk",
+      "w": 9.3,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:exit_w",
+      "b": "b-auditorium:f0_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:exit_e",
+      "b": "b-auditorium:f0_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g01",
+      "b": "b-auditorium:f0_cs_3",
+      "kind": "walk",
+      "w": 19.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g02",
+      "b": "b-auditorium:f0_cw_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g03",
+      "b": "b-auditorium:f0_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g04",
+      "b": "b-auditorium:f0_cw_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g05",
+      "b": "b-auditorium:f0_cw_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g06",
+      "b": "b-auditorium:f0_ce_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g07",
+      "b": "b-auditorium:f0_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g08",
+      "b": "b-auditorium:f0_ce_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g09",
+      "b": "b-auditorium:f0_ce_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g10",
+      "b": "b-auditorium:f0_cs_0",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g11",
+      "b": "b-auditorium:f0_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g12",
+      "b": "b-auditorium:f0_cs_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:g13",
+      "b": "b-auditorium:f0_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_0",
+      "b": "b-auditorium:f1_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_ce_0",
+      "b": "b-auditorium:f1_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_1",
+      "b": "b-auditorium:f1_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_ce_1",
+      "b": "b-auditorium:f1_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_2",
+      "b": "b-auditorium:f1_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_ce_2",
+      "b": "b-auditorium:f1_ce_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_3",
+      "b": "b-auditorium:f1_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_ce_3",
+      "b": "b-auditorium:f1_ce_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_4",
+      "b": "b-auditorium:f1_cw_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_ce_4",
+      "b": "b-auditorium:f1_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cw_5",
+      "b": "b-auditorium:f1_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_0",
+      "b": "b-auditorium:f1_cs_1",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_1",
+      "b": "b-auditorium:f1_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_2",
+      "b": "b-auditorium:f1_cs_3",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_3",
+      "b": "b-auditorium:f1_cs_4",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_4",
+      "b": "b-auditorium:f1_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_5",
+      "b": "b-auditorium:f1_cs_6",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_cs_6",
+      "b": "b-auditorium:f1_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_stairs",
+      "b": "b-auditorium:f1_cs_1",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f1_lift",
+      "b": "b-auditorium:f1_cs_5",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:101",
+      "b": "b-auditorium:f1_cs_3",
+      "kind": "walk",
+      "w": 19.7,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:102",
+      "b": "b-auditorium:f1_cw_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:103",
+      "b": "b-auditorium:f1_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:104",
+      "b": "b-auditorium:f1_cw_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:105",
+      "b": "b-auditorium:f1_cw_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:106",
+      "b": "b-auditorium:f1_ce_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:107",
+      "b": "b-auditorium:f1_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:108",
+      "b": "b-auditorium:f1_ce_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:109",
+      "b": "b-auditorium:f1_ce_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:110",
+      "b": "b-auditorium:f1_cs_0",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:111",
+      "b": "b-auditorium:f1_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:112",
+      "b": "b-auditorium:f1_cs_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:113",
+      "b": "b-auditorium:f1_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:f0_stairs",
+      "b": "b-auditorium:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-auditorium:f0_lift",
+      "b": "b-auditorium:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-auditorium:ent",
+      "b": "n57",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-auditorium:g01",
+      "rect": [
+        25.0,
+        8.0,
+        20.0,
+        21.0
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g02",
+      "rect": [
+        1.8,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g03",
+      "rect": [
+        1.8,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g04",
+      "rect": [
+        1.8,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g05",
+      "rect": [
+        1.8,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g06",
+      "rect": [
+        60.4,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g07",
+      "rect": [
+        60.4,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g08",
+      "rect": [
+        60.4,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g09",
+      "rect": [
+        60.4,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g10",
+      "rect": [
+        14.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g11",
+      "rect": [
+        21.2,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g12",
+      "rect": [
+        42.6,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:g13",
+      "rect": [
+        49.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:101",
+      "rect": [
+        25.0,
+        8.0,
+        20.0,
+        21.0
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:102",
+      "rect": [
+        1.8,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:103",
+      "rect": [
+        1.8,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:104",
+      "rect": [
+        1.8,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:105",
+      "rect": [
+        1.8,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:106",
+      "rect": [
+        60.4,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:107",
+      "rect": [
+        60.4,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:108",
+      "rect": [
+        60.4,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:109",
+      "rect": [
+        60.4,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:110",
+      "rect": [
+        14.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:111",
+      "rect": [
+        21.2,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:112",
+      "rect": [
+        42.6,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-auditorium:113",
+      "rect": [
+        49.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    }
+  ]
+}
