@@ -30,6 +30,7 @@
 - `data/indoor/b-library.json`: Central Library indoor graph (H 70x56m, 3 floors, 48 rooms).
 - `tools/`: Utility scripts for data processing and map extraction.
 - `tools/.gitignore`: Git ignore rule excluding generated floor preview PNGs (`previews/`).
+- `tools/add_geometry.py`: Re-runnable footpath geometry and honest edge weight generator snapping to OSM ways and building exterior perimeters.
 - `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
 - `tools/generate_evac.py`: Re-runnable emergency evacuation assembly areas and building exits generator.
 - `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.
