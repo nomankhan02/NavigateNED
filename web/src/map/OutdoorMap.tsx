@@ -56,22 +56,39 @@ function getPolygonCenter(ring: [number, number][]): [number, number] {
   return [latSum / ring.length, lngSum / ring.length];
 }
 
+function resolveMapVar(
+  el: HTMLElement | null,
+  varName: string,
+  fallback: string
+): string {
+  if (!el || typeof window === "undefined") return fallback;
+  const val = window.getComputedStyle(el).getPropertyValue(varName).trim();
+  return val || fallback;
+}
+
 export function OutdoorMap({
   graph,
+  route,
+  highlightedNodeIds,
   selectedLandmarkId = null,
   onLandmarkClick,
   onMapClick,
   showGraph = true,
+  userLocation = null,
 }: OutdoorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
   const canvasRendererRef = useRef<any>(null);
+  const svgRendererRef = useRef<any>(null);
 
   const graphLayerRef = useRef<any>(null);
   const footprintLayerRef = useRef<any>(null);
   const markerLayerRef = useRef<any>(null);
   const labelLayerRef = useRef<any>(null);
+  const routeLayerRef = useRef<any>(null);
+  const highlightLayerRef = useRef<any>(null);
+  const userLayerRef = useRef<any>(null);
 
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
@@ -105,11 +122,12 @@ export function OutdoorMap({
         maxBoundsViscosity: 0.9,
         zoomControl: false,
         attributionControl: false,
-        preferCanvas: true,
+        preferCanvas: false,
       });
 
       mapRef.current = map;
       canvasRendererRef.current = L.canvas({ padding: 0.5 });
+      svgRendererRef.current = L.svg({ padding: 0.5 });
 
       // Custom Affine 4-Corner Master Plan Image Layer
       const corners: MasterPlanCorners =
@@ -180,6 +198,9 @@ export function OutdoorMap({
 
       graphLayerRef.current = L.layerGroup().addTo(map);
       footprintLayerRef.current = L.layerGroup().addTo(map);
+      routeLayerRef.current = L.layerGroup().addTo(map);
+      highlightLayerRef.current = L.layerGroup().addTo(map);
+      userLayerRef.current = L.layerGroup().addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
       labelLayerRef.current = L.layerGroup().addTo(map);
 
@@ -217,6 +238,12 @@ export function OutdoorMap({
     group.clearLayers();
     if (!showGraph) return;
 
+    const rootEl = containerRef.current;
+    const walkwayColor = resolveMapVar(rootEl, "--map-edge-walkway", "#6b8276");
+    const coveredColor = resolveMapVar(rootEl, "--map-edge-covered", "#3d6352");
+    const nodeFill = resolveMapVar(rootEl, "--map-text-inverse", "#f7faf8");
+    const nodeStroke = resolveMapVar(rootEl, "--map-border-strong", "#5c7468");
+
     const nodeLookup = new Map<string, OutdoorNode>();
     for (const n of graph.nodes) {
       nodeLookup.set(n.id, n);
@@ -234,7 +261,7 @@ export function OutdoorMap({
         ],
         {
           renderer,
-          color: edge.covered ? "#3d6352" : "#5e7569",
+          color: edge.covered ? coveredColor : walkwayColor,
           weight: edge.covered ? 2.4 : 1.7,
           opacity: 0.78,
           dashArray: edge.covered ? undefined : "4 3",
@@ -248,8 +275,8 @@ export function OutdoorMap({
         L.circleMarker([n.lat, n.lng], {
           renderer,
           radius: 2.2,
-          color: "#4a6155",
-          fillColor: "#f7faf8",
+          color: nodeStroke,
+          fillColor: nodeFill,
           fillOpacity: 0.9,
           weight: 1,
           interactive: false,
@@ -264,6 +291,7 @@ export function OutdoorMap({
     const fpGroup = footprintLayerRef.current;
     const mkGroup = markerLayerRef.current;
     const lblGroup = labelLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
     const map = mapRef.current;
     if (!isReady || !L || !fpGroup || !mkGroup || !lblGroup || !map || !graph) return;
 
@@ -277,10 +305,15 @@ export function OutdoorMap({
       const isSelected = selectedLandmarkId === lm.id;
 
       const baseStyle = {
-        color: isSelected ? "#b85d19" : "#185a44",
+        renderer: svgRenderer,
+        color: isSelected
+          ? "var(--map-landmark-selected-stroke)"
+          : "var(--map-landmark-stroke)",
         weight: isSelected ? 2.5 : 1.5,
-        fillColor: isSelected ? "#d97706" : "#185a44",
-        fillOpacity: isSelected ? 0.36 : 0.18,
+        fillColor: isSelected
+          ? "var(--map-landmark-selected-fill)"
+          : "var(--map-landmark-fill)",
+        fillOpacity: isSelected ? 0.95 : 0.85,
       };
 
       const poly = L.polygon(lm.footprint, baseStyle);
@@ -289,8 +322,9 @@ export function OutdoorMap({
         if (selectedLandmarkId !== lm.id) {
           poly.setStyle({
             weight: 2.2,
-            fillOpacity: 0.32,
-            color: "#0d3d2d",
+            fillColor: "var(--map-landmark-hover-fill)",
+            fillOpacity: 0.95,
+            color: "var(--map-landmark-hover-stroke)",
           });
         }
       });
@@ -399,7 +433,7 @@ export function OutdoorMap({
         const entHtml = `
           <div class="ned-map-marker" title="Building Entrance (${n.id})">
             <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="5" fill="#166534" stroke="#ffffff" stroke-width="1.75"/>
+              <circle cx="10" cy="10" r="5" fill="var(--map-marker-entrance)" stroke="var(--map-surface-elevated)" stroke-width="1.75"/>
             </svg>
           </div>`;
         L.marker([n.lat, n.lng], {
@@ -409,6 +443,150 @@ export function OutdoorMap({
       }
     }
   }, [isReady, graph, selectedLandmarkId, zoomLevel]);
+
+  // 4. Layer (d): Route polyline from node IDs with animated draw-on effect
+  useEffect(() => {
+    const L = leafletRef.current;
+    const rtGroup = routeLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    if (!isReady || !L || !rtGroup || !svgRenderer || !graph) return;
+
+    rtGroup.clearLayers();
+    if (!route || route.length < 2) return;
+
+    const nodeLookup = new Map<string, OutdoorNode>();
+    for (const n of graph.nodes) {
+      nodeLookup.set(n.id, n);
+    }
+
+    const coords: [number, number][] = [];
+    for (const nodeId of route) {
+      const node = nodeLookup.get(nodeId);
+      if (node) coords.push([node.lat, node.lng]);
+    }
+    if (coords.length < 2) return;
+
+    // Casing line underneath for contrast
+    L.polyline(coords, {
+      renderer: svgRenderer,
+      color: "var(--map-route-casing)",
+      weight: 8.5,
+      opacity: 0.95,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(rtGroup);
+
+    // Animated foreground stroke
+    L.polyline(coords, {
+      renderer: svgRenderer,
+      color: "var(--map-route-stroke)",
+      weight: 4.8,
+      opacity: 1,
+      lineCap: "round",
+      lineJoin: "round",
+      className: "ned-route-animated-path",
+      interactive: false,
+    }).addTo(rtGroup);
+
+    const startPt = coords[0];
+    const endPt = coords[coords.length - 1];
+
+    const startHtml = `
+      <div class="ned-map-marker" title="Route Start">
+        <span class="ned-marker-badge" style="background: var(--map-landmark-stroke);">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="6"/>
+            <circle cx="10" cy="10" r="2"/>
+          </svg>
+          START
+        </span>
+      </div>`;
+    L.marker(startPt, {
+      icon: L.divIcon({ className: "", iconSize: [0, 0], html: startHtml }),
+      interactive: false,
+    }).addTo(rtGroup);
+
+    const endHtml = `
+      <div class="ned-map-marker" title="Route Destination">
+        <span class="ned-marker-badge" style="background: var(--map-route-stroke);">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 17V4l11 4-11 4"/>
+          </svg>
+          END
+        </span>
+      </div>`;
+    L.marker(endPt, {
+      icon: L.divIcon({ className: "", iconSize: [0, 0], html: endHtml }),
+      interactive: false,
+    }).addTo(rtGroup);
+  }, [isReady, graph, route]);
+
+  // 5. Layer (e): Highlighted Node IDs
+  useEffect(() => {
+    const L = leafletRef.current;
+    const hlGroup = highlightLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    if (!isReady || !L || !hlGroup || !svgRenderer || !graph) return;
+
+    hlGroup.clearLayers();
+    if (!highlightedNodeIds || highlightedNodeIds.length === 0) return;
+
+    const nodeLookup = new Map<string, OutdoorNode>();
+    for (const n of graph.nodes) {
+      nodeLookup.set(n.id, n);
+    }
+
+    for (const id of highlightedNodeIds) {
+      const node = nodeLookup.get(id);
+      if (!node) continue;
+
+      L.circleMarker([node.lat, node.lng], {
+        renderer: svgRenderer,
+        radius: 8,
+        color: "var(--map-surface-elevated)",
+        weight: 2,
+        fillColor: "var(--map-marker-highlight)",
+        fillOpacity: 0.92,
+        interactive: false,
+      }).addTo(hlGroup);
+    }
+  }, [isReady, graph, highlightedNodeIds]);
+
+  // 6. Layer (f): User Location Dot with Accuracy Circle
+  useEffect(() => {
+    const L = leafletRef.current;
+    const usrGroup = userLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    if (!isReady || !L || !usrGroup || !svgRenderer) return;
+
+    usrGroup.clearLayers();
+    if (!userLocation) return;
+
+    const { lat, lng, accuracyMeters = 18 } = userLocation;
+
+    L.circle([lat, lng], {
+      renderer: svgRenderer,
+      radius: accuracyMeters,
+      color: "var(--map-user-dot)",
+      weight: 1.5,
+      fillColor: "var(--map-user-accuracy)",
+      fillOpacity: 0.85,
+      interactive: false,
+    }).addTo(usrGroup);
+
+    const userDotHtml = `
+      <div class="ned-map-marker" title="Your Location">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7" fill="var(--map-user-dot)" stroke="var(--map-surface-elevated)" stroke-width="2.2"/>
+          <circle cx="10" cy="10" r="2.2" fill="var(--map-surface-elevated)"/>
+        </svg>
+      </div>`;
+    L.marker([lat, lng], {
+      icon: L.divIcon({ className: "", iconSize: [0, 0], html: userDotHtml }),
+      interactive: false,
+    }).addTo(usrGroup);
+  }, [isReady, userLocation]);
 
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) mapRef.current.zoomIn();
