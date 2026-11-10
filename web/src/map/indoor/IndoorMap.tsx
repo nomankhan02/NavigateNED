@@ -330,6 +330,97 @@ export function IndoorMap({
     return floorNodeLookup.get(userNode) ?? null;
   }, [userNode, floorNodeLookup]);
 
+  // Evacuation data sets
+  const blockedRoomsSet = useMemo(
+    () => new Set(evacuation?.blockedRooms ?? []),
+    [evacuation]
+  );
+
+  const exitNodesSet = useMemo(
+    () => new Set(evacuation?.exitNodes ?? []),
+    [evacuation]
+  );
+
+  const blockedCorridors = useMemo(() => {
+    if (!evacuation?.blockedCorridors) return [];
+    return evacuation.blockedCorridors.filter(([a, b]) => {
+      const na = floorNodeLookup.get(a);
+      const nb = floorNodeLookup.get(b);
+      return Boolean(na && nb);
+    });
+  }, [evacuation, floorNodeLookup]);
+
+  const floorEvacAssignments = useMemo(() => {
+    if (!evacuation?.assignmentPaths) return [];
+    return evacuation.assignmentPaths.map((assign) => ({
+      from: assign.from,
+      exitId: assign.exitId,
+      extracted: extractFloorRoute(
+        assign.path,
+        building?.nodes ?? [],
+        activeFloor
+      ),
+    }));
+  }, [evacuation, building?.nodes, activeFloor]);
+
+  // Trace events state
+  const traceState = useMemo(() => {
+    if (!trace) return null;
+
+    let visitedNodeIds: string[] = [];
+    let frontierNodeIds: string[] = [];
+    let activeNodeId: string | null = null;
+
+    if (Array.isArray(trace)) {
+      const vSet = new Set<string>();
+      const fSet = new Set<string>();
+      for (const ev of trace) {
+        if (ev.type === "visit") {
+          vSet.add(ev.node);
+          fSet.delete(ev.node);
+        } else if (!vSet.has(ev.node)) {
+          fSet.add(ev.node);
+        }
+        activeNodeId = ev.node;
+      }
+      visitedNodeIds = Array.from(vSet);
+      frontierNodeIds = Array.from(fSet);
+    } else {
+      visitedNodeIds = trace.visitedNodeIds;
+      frontierNodeIds = trace.frontierNodeIds;
+      activeNodeId = trace.activeNodeId;
+    }
+
+    const floorVisited = visitedNodeIds
+      .map((id) => floorNodeLookup.get(id))
+      .filter((n): n is IndoorNode => Boolean(n));
+
+    const floorFrontier = frontierNodeIds
+      .map((id) => floorNodeLookup.get(id))
+      .filter((n): n is IndoorNode => Boolean(n));
+
+    const floorActive = activeNodeId ? floorNodeLookup.get(activeNodeId) : null;
+
+    const traceSegments: [number, number][][] = [];
+    for (let i = 0; i < visitedNodeIds.length - 1; i++) {
+      const u = floorNodeLookup.get(visitedNodeIds[i]);
+      const v = floorNodeLookup.get(visitedNodeIds[i + 1]);
+      if (u && v) {
+        traceSegments.push([
+          [u.x, u.y],
+          [v.x, v.y],
+        ]);
+      }
+    }
+
+    return {
+      visitedNodes: floorVisited,
+      frontierNodes: floorFrontier,
+      activeNode: floorActive,
+      traceSegments,
+    };
+  }, [trace, floorNodeLookup]);
+
   return (
     <div
       ref={containerRef}
@@ -511,6 +602,7 @@ export function IndoorMap({
               const node = floorNodeLookup.get(r.nodeId);
               const isSelected = r.nodeId === selectedRoomId;
               const isHighlighted = highlightedSet.has(r.nodeId);
+              const isBlocked = blockedRoomsSet.has(r.nodeId);
 
               return (
                 <g key={`room-${r.nodeId}`}>
@@ -524,7 +616,7 @@ export function IndoorMap({
                       isSelected ? "ned-indoor-room-rect--selected" : ""
                     } ${
                       isHighlighted ? "ned-indoor-room-rect--highlighted" : ""
-                    }`}
+                    } ${isBlocked ? "ned-indoor-room-rect--blocked" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onRoomClick?.(r.nodeId, node);
@@ -627,6 +719,17 @@ export function IndoorMap({
 
                   {n.type === "exit" && (
                     <g>
+                      {exitNodesSet.has(n.id) && (
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3.6"
+                          fill="none"
+                          stroke="var(--map-indoor-exit)"
+                          strokeWidth="0.5"
+                          strokeDasharray="1.2 0.8"
+                        />
+                      )}
                       <circle
                         cx="0"
                         cy="0"
@@ -807,7 +910,195 @@ export function IndoorMap({
             </g>
           )}
 
-          {/* 6. Room Labels */}
+          {/* 6. Evacuation Blocked Corridors */}
+          {blockedCorridors.length > 0 && (
+            <g className="ned-indoor-evac-blocked-corridors">
+              {blockedCorridors.map(([aId, bId], idx) => {
+                const na = floorNodeLookup.get(aId);
+                const nb = floorNodeLookup.get(bId);
+                if (!na || !nb) return null;
+                const midX = (na.x + nb.x) / 2;
+                const midY = (na.y + nb.y) / 2;
+
+                return (
+                  <g key={`blocked-corridor-${idx}`}>
+                    <line
+                      x1={na.x}
+                      y1={na.y}
+                      x2={nb.x}
+                      y2={nb.y}
+                      stroke="var(--map-evac-blocked-bg, #fef2f2)"
+                      strokeWidth={corridorWidth * 0.9}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={na.x}
+                      y1={na.y}
+                      x2={nb.x}
+                      y2={nb.y}
+                      stroke="var(--map-evac-blocked, #b91c1c)"
+                      strokeWidth={1.2}
+                      strokeDasharray="2 1.5"
+                      strokeLinecap="butt"
+                    />
+                    <circle
+                      cx={midX}
+                      cy={midY}
+                      r="1.6"
+                      fill="var(--map-evac-blocked-bg, #fef2f2)"
+                      stroke="var(--map-evac-blocked, #b91c1c)"
+                      strokeWidth="0.4"
+                    />
+                    <line
+                      x1={midX - 0.7}
+                      y1={midY - 0.7}
+                      x2={midX + 0.7}
+                      y2={midY + 0.7}
+                      stroke="var(--map-evac-blocked, #b91c1c)"
+                      strokeWidth="0.35"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={midX + 0.7}
+                      y1={midY - 0.7}
+                      x2={midX - 0.7}
+                      y2={midY + 0.7}
+                      stroke="var(--map-evac-blocked, #b91c1c)"
+                      strokeWidth="0.35"
+                      strokeLinecap="round"
+                    />
+                    <title>Blocked Hazard Corridor</title>
+                  </g>
+                );
+              })}
+            </g>
+          )}
+
+          {/* 7. Evacuation Assignment Paths */}
+          {floorEvacAssignments.length > 0 && (
+            <g className="ned-indoor-evac-assignments">
+              {floorEvacAssignments.map((assign, aIdx) => {
+                return (
+                  <g key={`evac-assign-${aIdx}`}>
+                    {assign.extracted.polylines.map((pts, pIdx) => {
+                      const d = pts
+                        .map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`)
+                        .join(" ");
+                      return (
+                        <g key={`assign-poly-${pIdx}`}>
+                          <path
+                            d={d}
+                            stroke="#ffffff"
+                            strokeWidth={1.7}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <path
+                            d={d}
+                            stroke="var(--map-evac-assign, #15803d)"
+                            strokeWidth={1.0}
+                            strokeDasharray="2.5 1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </g>
+          )}
+
+          {/* 8. Trace Replay Layer */}
+          {traceState && (
+            <g className="ned-indoor-trace-layer">
+              {traceState.traceSegments.map((seg, sIdx) => (
+                <line
+                  key={`trace-seg-${sIdx}`}
+                  x1={seg[0][0]}
+                  y1={seg[0][1]}
+                  x2={seg[1][0]}
+                  y2={seg[1][1]}
+                  stroke="var(--map-trace-visited, #0d9488)"
+                  strokeWidth={0.8}
+                  strokeDasharray="1.5 1"
+                  strokeLinecap="round"
+                />
+              ))}
+
+              {traceState.frontierNodes.map((n) => (
+                <g key={`trace-frontier-${n.id}`}>
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r="1.6"
+                    fill="var(--map-surface-elevated, #ffffff)"
+                    stroke="var(--map-trace-frontier, #d97706)"
+                    strokeWidth="0.45"
+                  />
+                  <title>{`Frontier Node (${n.name ?? n.id})`}</title>
+                </g>
+              ))}
+
+              {traceState.visitedNodes.map((n, orderIdx) => (
+                <g key={`trace-visited-${n.id}`}>
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r="1.7"
+                    fill="var(--map-trace-visited, #0d9488)"
+                    stroke="#ffffff"
+                    strokeWidth="0.4"
+                  />
+                  {scale >= 1.2 && (
+                    <text
+                      x={n.x}
+                      y={n.y - 2.4}
+                      className="ned-indoor-label"
+                      style={{
+                        fontSize: "0.85px",
+                        fill: "var(--map-trace-visited, #0d9488)",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {orderIdx + 1}
+                    </text>
+                  )}
+                  <title>{`Visited Node #${orderIdx + 1}: ${
+                    n.name ?? n.id
+                  }`}</title>
+                </g>
+              ))}
+
+              {traceState.activeNode && (
+                <g>
+                  <circle
+                    cx={traceState.activeNode.x}
+                    cy={traceState.activeNode.y}
+                    r="3.2"
+                    fill="var(--map-trace-active, #be123c)"
+                    className="ned-indoor-user-pulse"
+                  />
+                  <circle
+                    cx={traceState.activeNode.x}
+                    cy={traceState.activeNode.y}
+                    r="1.9"
+                    fill="var(--map-trace-active, #be123c)"
+                    stroke="#ffffff"
+                    strokeWidth="0.4"
+                  />
+                  <title>{`Active Search Node: ${
+                    traceState.activeNode.name ?? traceState.activeNode.id
+                  }`}</title>
+                </g>
+              )}
+            </g>
+          )}
+
+          {/* 9. Room Labels */}
           <g className="ned-indoor-labels-layer">
             {visibleLabels.map((lbl) => {
               return (

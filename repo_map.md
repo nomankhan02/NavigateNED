@@ -49,7 +49,9 @@
 - `web/src/app/layout.tsx`: Root layout document with baseline styling.
 - `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
 - `web/src/app/_map-dev/page.tsx`: Temporary dev harness page verifying `OutdoorMap`, `useTraceReplay`, and evacuation overlays.
+- `web/src/app/_map-dev/indoor/page.tsx`: Temporary dev harness page verifying `IndoorMap` multi-floor rendering, evacuation, and trace replay.
 - `web/src/app/%5Fmap-dev/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev`.
+- `web/src/app/%5Fmap-dev/indoor/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev/indoor`.
 - `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime.
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
 - `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, and straight-line fallbacks.

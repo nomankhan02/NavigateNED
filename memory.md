@@ -10,9 +10,12 @@
 - Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
 - Task A3e delivered: Switched default street basemap to Esri World Light Gray Base (`clean`) and dropped CARTO due to API key watermarks.
 - Task A3d delivered: Footpath geometries, honest edge weights, validation, and geometry-aware map rendering.
-- Task A4 in progress (Slices a & b completed; Slice c remaining):
-  - **Slice (a) Data Sync + SVG Renderer + Floors + Labels**: Created `tools/sync_indoor_public.py` (synced 6 indoor JSONs to `web/public/data/indoor/`), built client-only SVG indoor renderer (`IndoorMap.tsx`) with pan/zoom, corridor strips, room rectangles, hand-drawn stairs/lift/entrance/exit SVG symbols, floor switcher (`floors.tsx`), and priority collision labels (`labels.ts`).
-  - **Slice (b) Routes + Transitions + Markers**: Implemented floor-specific route extraction (`route.ts`), animated route polylines with casing, stair/lift vertical transition badges with clickable floor jumps, start/destination badges, pulsing `userNode` ("I am here") marker, and room selection/highlighting.
+- Task A4 delivered: Client-only SVG `IndoorMap` component, floor switcher, evacuation/trace overlays, and dev harness:
+  - Component suite in `web/src/map/indoor/` (`IndoorMap.tsx`, `floors.tsx`, `labels.ts`, `route.ts`, `types.ts`, `indoor.css`, `index.ts`).
+  - SVG pan/zoom renderer with smooth pointer/touch events, corridor strips, room rectangles, hand-drawn stairs/lift/entrance/exit SVG symbols, and demo model badge (`meta.demo`).
+  - Multi-floor routing with animated strokes, stair/lift vertical transition connector badges (clickable floor switch), and pulsing `userNode` ("I am here") marker.
+  - Evacuation hazard overlays (exit node highlight rings, blocked corridors/rooms, assignment paths) and algorithm trace replay layer (`useTraceReplay`).
+  - Temporary dev verification harness at `web/src/app/_map-dev/indoor/page.tsx` (and `web/src/app/%5Fmap-dev/indoor/page.tsx`).
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -37,9 +40,10 @@
    - Static indoor data: Load from `/data/indoor/<buildingId>.json` (6 buildings: `b-admin`, `b-auditorium`, `b-csit`, `b-csit-labs`, `b-dean-offices`, `b-library`).
    - Props: `<IndoorMap building={building} floor={activeFloor} onFloorChange={(fl) => ...} route={indoorNodeIds} highlightedNodeIds={ids} selectedRoomId={roomId} onRoomClick={(id, node) => ...} userNode={nodeId} evacuation={evacData} trace={traceReplay} />`
    - Styling: Uses standard `--map-*` tokens with fallbacks defined in `web/src/map/indoor/indoor.css`.
+   - **Dev Harness Note**: `web/src/app/_map-dev/indoor/page.tsx` (and Next.js App Router underscore route forwarder `web/src/app/%5Fmap-dev/indoor/page.tsx`) is a temporary verification page added by Member A as an allowed exception; **Member C may freely remove or replace it**.
 
 ## Open Tasks
-- [ ] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
+- [x] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
 - [ ] Member B: Implement C++ DSA routing algorithms in `core/`.
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
