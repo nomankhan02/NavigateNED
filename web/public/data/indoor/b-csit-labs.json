@@ -1,0 +1,1441 @@
+{
+  "id": "b-csit-labs",
+  "name": "Labs of CSIT Dept. & Maths & Basic Sciences",
+  "landmarkId": "b-csit-labs",
+  "meta": {
+    "demo": true,
+    "template": "U",
+    "width": 70.0,
+    "height": 50.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-csit-labs:f0_cw_0",
+      "x": 11.8,
+      "y": 8.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_0",
+      "x": 58.2,
+      "y": 8.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cw_1",
+      "x": 11.8,
+      "y": 11.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_1",
+      "x": 58.2,
+      "y": 11.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cw_2",
+      "x": 11.8,
+      "y": 18.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_2",
+      "x": 58.2,
+      "y": 18.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cw_3",
+      "x": 11.8,
+      "y": 25.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_3",
+      "x": 58.2,
+      "y": 25.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cw_4",
+      "x": 11.8,
+      "y": 32.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_4",
+      "x": 58.2,
+      "y": 32.5,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cw_5",
+      "x": 11.8,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_ce_5",
+      "x": 58.2,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_0",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_1",
+      "x": 24.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_2",
+      "x": 31.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_3",
+      "x": 35.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_4",
+      "x": 39.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_5",
+      "x": 46.0,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_cs_6",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f0_stairs",
+      "x": 24.0,
+      "y": 33.0,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-csit-labs:f0_lift",
+      "x": 46.0,
+      "y": 33.0,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-csit-labs:ent",
+      "x": 35.0,
+      "y": 47.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-csit-labs:exit_w",
+      "x": 11.8,
+      "y": 2.5,
+      "floor": 0,
+      "type": "exit",
+      "name": "West Wing Emergency Exit"
+    },
+    {
+      "id": "b-csit-labs:exit_e",
+      "x": 58.2,
+      "y": 2.5,
+      "floor": 0,
+      "type": "exit",
+      "name": "East Wing Emergency Exit"
+    },
+    {
+      "id": "b-csit-labs:g01",
+      "x": 5.7,
+      "y": 11.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Programming Fundamentals Lab 1"
+    },
+    {
+      "id": "b-csit-labs:g02",
+      "x": 5.7,
+      "y": 18.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Programming Fundamentals Lab 2"
+    },
+    {
+      "id": "b-csit-labs:g03",
+      "x": 5.7,
+      "y": 25.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Object-Oriented Programming Lab"
+    },
+    {
+      "id": "b-csit-labs:g04",
+      "x": 5.7,
+      "y": 32.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Data Structures & Algorithms Lab"
+    },
+    {
+      "id": "b-csit-labs:g05",
+      "x": 64.3,
+      "y": 11.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Database Management Systems Lab"
+    },
+    {
+      "id": "b-csit-labs:g06",
+      "x": 64.3,
+      "y": 18.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Operating Systems & Linux Lab"
+    },
+    {
+      "id": "b-csit-labs:g07",
+      "x": 64.3,
+      "y": 25.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Hardware Maintenance Workshop"
+    },
+    {
+      "id": "b-csit-labs:g08",
+      "x": 64.3,
+      "y": 32.5,
+      "floor": 0,
+      "type": "room",
+      "name": "Network Operations Center"
+    },
+    {
+      "id": "b-csit-labs:g09",
+      "x": 18.0,
+      "y": 13.1,
+      "floor": 0,
+      "type": "room",
+      "name": "Lab Engineers Office West"
+    },
+    {
+      "id": "b-csit-labs:g10",
+      "x": 18.0,
+      "y": 21.1,
+      "floor": 0,
+      "type": "room",
+      "name": "Equipment Store & Inventory"
+    },
+    {
+      "id": "b-csit-labs:g11",
+      "x": 52.0,
+      "y": 13.1,
+      "floor": 0,
+      "type": "room",
+      "name": "Lab Engineers Office East"
+    },
+    {
+      "id": "b-csit-labs:g12",
+      "x": 52.0,
+      "y": 21.1,
+      "floor": 0,
+      "type": "room",
+      "name": "UPS & Power Backup Room"
+    },
+    {
+      "id": "b-csit-labs:g13",
+      "x": 17.5,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Basic Sciences Physics Lab"
+    },
+    {
+      "id": "b-csit-labs:g14",
+      "x": 24.3,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Numerical Computing Lab"
+    },
+    {
+      "id": "b-csit-labs:g15",
+      "x": 45.7,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Technical Support Desk"
+    },
+    {
+      "id": "b-csit-labs:g16",
+      "x": 52.5,
+      "y": 44.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Student Project Testing Bay"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_0",
+      "x": 11.8,
+      "y": 8.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_0",
+      "x": 58.2,
+      "y": 8.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_1",
+      "x": 11.8,
+      "y": 11.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_1",
+      "x": 58.2,
+      "y": 11.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_2",
+      "x": 11.8,
+      "y": 18.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_2",
+      "x": 58.2,
+      "y": 18.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_3",
+      "x": 11.8,
+      "y": 25.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_3",
+      "x": 58.2,
+      "y": 25.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_4",
+      "x": 11.8,
+      "y": 32.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_4",
+      "x": 58.2,
+      "y": 32.5,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cw_5",
+      "x": 11.8,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_ce_5",
+      "x": 58.2,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_0",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_1",
+      "x": 24.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_2",
+      "x": 31.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_3",
+      "x": 35.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_4",
+      "x": 39.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_5",
+      "x": 46.0,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_cs_6",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-csit-labs:f1_stairs",
+      "x": 24.0,
+      "y": 33.0,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-csit-labs:f1_lift",
+      "x": 46.0,
+      "y": 33.0,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-csit-labs:101",
+      "x": 5.7,
+      "y": 11.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Computer Graphics & VR Lab"
+    },
+    {
+      "id": "b-csit-labs:102",
+      "x": 5.7,
+      "y": 18.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Microprocessor & Assembly Lab"
+    },
+    {
+      "id": "b-csit-labs:103",
+      "x": 5.7,
+      "y": 25.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Web & Mobile App Dev Lab"
+    },
+    {
+      "id": "b-csit-labs:104",
+      "x": 5.7,
+      "y": 32.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Distributed Computing Lab"
+    },
+    {
+      "id": "b-csit-labs:105",
+      "x": 64.3,
+      "y": 11.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Information Security Lab"
+    },
+    {
+      "id": "b-csit-labs:106",
+      "x": 64.3,
+      "y": 18.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Parallel Processing Cluster"
+    },
+    {
+      "id": "b-csit-labs:107",
+      "x": 64.3,
+      "y": 25.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Mathematical Simulation Lab 1"
+    },
+    {
+      "id": "b-csit-labs:108",
+      "x": 64.3,
+      "y": 32.5,
+      "floor": 1,
+      "type": "room",
+      "name": "Mathematical Simulation Lab 2"
+    },
+    {
+      "id": "b-csit-labs:109",
+      "x": 18.0,
+      "y": 13.1,
+      "floor": 1,
+      "type": "room",
+      "name": "Hardware Interfacing Studio"
+    },
+    {
+      "id": "b-csit-labs:110",
+      "x": 18.0,
+      "y": 21.1,
+      "floor": 1,
+      "type": "room",
+      "name": "Digital Logic Design Lab"
+    },
+    {
+      "id": "b-csit-labs:111",
+      "x": 52.0,
+      "y": 13.1,
+      "floor": 1,
+      "type": "room",
+      "name": "Software Quality Testing Lab"
+    },
+    {
+      "id": "b-csit-labs:112",
+      "x": 52.0,
+      "y": 21.1,
+      "floor": 1,
+      "type": "room",
+      "name": "Open Source Development Lab"
+    },
+    {
+      "id": "b-csit-labs:113",
+      "x": 17.5,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Lab In-Charge Office"
+    },
+    {
+      "id": "b-csit-labs:114",
+      "x": 24.3,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Server Rack & Patch Room"
+    },
+    {
+      "id": "b-csit-labs:115",
+      "x": 45.7,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "FYP Hardware Fabrication Lab"
+    },
+    {
+      "id": "b-csit-labs:116",
+      "x": 52.5,
+      "y": 44.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Multimedia & Audio Lab"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-csit-labs:f0_cw_0",
+      "b": "b-csit-labs:f0_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_ce_0",
+      "b": "b-csit-labs:f0_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cw_1",
+      "b": "b-csit-labs:f0_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_ce_1",
+      "b": "b-csit-labs:f0_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cw_2",
+      "b": "b-csit-labs:f0_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_ce_2",
+      "b": "b-csit-labs:f0_ce_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cw_3",
+      "b": "b-csit-labs:f0_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_ce_3",
+      "b": "b-csit-labs:f0_ce_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cw_4",
+      "b": "b-csit-labs:f0_cw_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_ce_4",
+      "b": "b-csit-labs:f0_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cw_5",
+      "b": "b-csit-labs:f0_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_0",
+      "b": "b-csit-labs:f0_cs_1",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_1",
+      "b": "b-csit-labs:f0_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_2",
+      "b": "b-csit-labs:f0_cs_3",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_3",
+      "b": "b-csit-labs:f0_cs_4",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_4",
+      "b": "b-csit-labs:f0_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_5",
+      "b": "b-csit-labs:f0_cs_6",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_cs_6",
+      "b": "b-csit-labs:f0_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_stairs",
+      "b": "b-csit-labs:f0_cs_1",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_lift",
+      "b": "b-csit-labs:f0_cs_5",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:ent",
+      "b": "b-csit-labs:f0_cs_3",
+      "kind": "walk",
+      "w": 9.3,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:exit_w",
+      "b": "b-csit-labs:f0_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:exit_e",
+      "b": "b-csit-labs:f0_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g01",
+      "b": "b-csit-labs:f0_cw_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g02",
+      "b": "b-csit-labs:f0_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g03",
+      "b": "b-csit-labs:f0_cw_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g04",
+      "b": "b-csit-labs:f0_cw_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g05",
+      "b": "b-csit-labs:f0_ce_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g06",
+      "b": "b-csit-labs:f0_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g07",
+      "b": "b-csit-labs:f0_ce_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g08",
+      "b": "b-csit-labs:f0_ce_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g09",
+      "b": "b-csit-labs:f0_cw_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g10",
+      "b": "b-csit-labs:f0_cw_2",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g11",
+      "b": "b-csit-labs:f0_ce_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g12",
+      "b": "b-csit-labs:f0_ce_2",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g13",
+      "b": "b-csit-labs:f0_cs_0",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g14",
+      "b": "b-csit-labs:f0_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g15",
+      "b": "b-csit-labs:f0_cs_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:g16",
+      "b": "b-csit-labs:f0_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_0",
+      "b": "b-csit-labs:f1_cw_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_ce_0",
+      "b": "b-csit-labs:f1_ce_1",
+      "kind": "walk",
+      "w": 3.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_1",
+      "b": "b-csit-labs:f1_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_ce_1",
+      "b": "b-csit-labs:f1_ce_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_2",
+      "b": "b-csit-labs:f1_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_ce_2",
+      "b": "b-csit-labs:f1_ce_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_3",
+      "b": "b-csit-labs:f1_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_ce_3",
+      "b": "b-csit-labs:f1_ce_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_4",
+      "b": "b-csit-labs:f1_cw_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_ce_4",
+      "b": "b-csit-labs:f1_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cw_5",
+      "b": "b-csit-labs:f1_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_0",
+      "b": "b-csit-labs:f1_cs_1",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_1",
+      "b": "b-csit-labs:f1_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_2",
+      "b": "b-csit-labs:f1_cs_3",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_3",
+      "b": "b-csit-labs:f1_cs_4",
+      "kind": "walk",
+      "w": 4.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_4",
+      "b": "b-csit-labs:f1_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_5",
+      "b": "b-csit-labs:f1_cs_6",
+      "kind": "walk",
+      "w": 6.5,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_cs_6",
+      "b": "b-csit-labs:f1_ce_5",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_stairs",
+      "b": "b-csit-labs:f1_cs_1",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f1_lift",
+      "b": "b-csit-labs:f1_cs_5",
+      "kind": "walk",
+      "w": 5.2,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:101",
+      "b": "b-csit-labs:f1_cw_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:102",
+      "b": "b-csit-labs:f1_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:103",
+      "b": "b-csit-labs:f1_cw_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:104",
+      "b": "b-csit-labs:f1_cw_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:105",
+      "b": "b-csit-labs:f1_ce_1",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:106",
+      "b": "b-csit-labs:f1_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:107",
+      "b": "b-csit-labs:f1_ce_3",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:108",
+      "b": "b-csit-labs:f1_ce_4",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:109",
+      "b": "b-csit-labs:f1_cw_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:110",
+      "b": "b-csit-labs:f1_cw_2",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:111",
+      "b": "b-csit-labs:f1_ce_1",
+      "kind": "walk",
+      "w": 6.4,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:112",
+      "b": "b-csit-labs:f1_ce_2",
+      "kind": "walk",
+      "w": 6.7,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:113",
+      "b": "b-csit-labs:f1_cs_0",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:114",
+      "b": "b-csit-labs:f1_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:115",
+      "b": "b-csit-labs:f1_cs_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:116",
+      "b": "b-csit-labs:f1_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:f0_stairs",
+      "b": "b-csit-labs:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-csit-labs:f0_lift",
+      "b": "b-csit-labs:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-csit-labs:ent",
+      "b": "n22",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-csit-labs:g01",
+      "rect": [
+        1.8,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g02",
+      "rect": [
+        1.8,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g03",
+      "rect": [
+        1.8,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g04",
+      "rect": [
+        1.8,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g05",
+      "rect": [
+        60.4,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g06",
+      "rect": [
+        60.4,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g07",
+      "rect": [
+        60.4,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g08",
+      "rect": [
+        60.4,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g09",
+      "rect": [
+        14.2,
+        10.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g10",
+      "rect": [
+        14.2,
+        18.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g11",
+      "rect": [
+        48.2,
+        10.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g12",
+      "rect": [
+        48.2,
+        18.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g13",
+      "rect": [
+        14.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g14",
+      "rect": [
+        21.2,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g15",
+      "rect": [
+        42.6,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:g16",
+      "rect": [
+        49.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:101",
+      "rect": [
+        1.8,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:102",
+      "rect": [
+        1.8,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:103",
+      "rect": [
+        1.8,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:104",
+      "rect": [
+        1.8,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:105",
+      "rect": [
+        60.4,
+        8.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:106",
+      "rect": [
+        60.4,
+        15.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:107",
+      "rect": [
+        60.4,
+        22.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:108",
+      "rect": [
+        60.4,
+        29.4,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:109",
+      "rect": [
+        14.2,
+        10.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:110",
+      "rect": [
+        14.2,
+        18.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:111",
+      "rect": [
+        48.2,
+        10.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:112",
+      "rect": [
+        48.2,
+        18.0,
+        7.6,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:113",
+      "rect": [
+        14.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:114",
+      "rect": [
+        21.2,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:115",
+      "rect": [
+        42.6,
+        40.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-csit-labs:116",
+      "rect": [
+        49.4,
+        40.4,
+        6.2,
+        7.6
+      ]
+    }
+  ]
+}

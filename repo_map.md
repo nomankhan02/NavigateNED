@@ -34,6 +34,7 @@
 - `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
 - `tools/generate_evac.py`: Re-runnable emergency evacuation assembly areas and building exits generator.
 - `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.
+- `tools/sync_indoor_public.py`: Re-runnable sync script copying data/indoor/*.json to web/public/data/indoor/.
 - `tools/validate.py`: Schema and graph topology validation tool checking outdoor, indoor, and evacuation contracts.
 - `tools/warp_master_plan.py`: Re-runnable Pillow/NumPy script warping `ned_master_plan.jpg` into a north-up georeferenced RGBA WebP and updating `graph.json` `meta.warpedOverlay`.
 - `web/`: Next.js 15 App Router static export frontend.
@@ -41,6 +42,7 @@
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
 - `web/next.config.ts`: Next.js config with static export and cache headers.
 - `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.
+- `web/public/data/indoor/`: Static public indoor floor plan datasets for client-only loading.
 - `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay source image.
 - `web/public/map/ned_master_plan_warped.webp`: North-up georeferenced RGBA WebP master plan overlay for `L.imageOverlay(bounds)`.
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
@@ -52,6 +54,13 @@
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
 - `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, and straight-line fallbacks.
 - `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, geometry helpers, and all map TypeScript interfaces.
+- `web/src/map/indoor/`: Multi-floor architectural indoor SVG map renderer and components.
+- `web/src/map/indoor/floors.tsx`: Multi-floor state helpers and vertical floor switcher component.
+- `web/src/map/indoor/indoor.css`: Scoped CSS tokens and architectural styling for IndoorMap.
+- `web/src/map/indoor/IndoorMap.tsx`: Client-only SVG multi-floor indoor architectural building viewer.
+- `web/src/map/indoor/labels.ts`: Priority-ranked label collision detection and text formatting.
+- `web/src/map/indoor/route.ts`: Indoor route processing, floor-specific path extraction, and vertical transitions.
+- `web/src/map/indoor/types.ts`: TypeScript contracts for IndoorBuilding, IndoorMapProps, and indoor nodes/edges.
 - `web/src/map/map.css`: Outdoor map CSS variables (`--map-*`), self-contained Leaflet layout rules, and custom SVG control styles.
 - `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards, and trace replay.
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.

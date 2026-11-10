@@ -1,0 +1,1301 @@
+{
+  "id": "b-dean-offices",
+  "name": "Dean Offices & Academic Secretariats",
+  "landmarkId": "b-dean-offices",
+  "meta": {
+    "demo": true,
+    "template": "L",
+    "width": 60.0,
+    "height": 60.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-dean-offices:f0_cw_0",
+      "x": 12.8,
+      "y": 8.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_1",
+      "x": 12.8,
+      "y": 11.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_2",
+      "x": 12.8,
+      "y": 18.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_3",
+      "x": 12.8,
+      "y": 25.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_4",
+      "x": 12.8,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_5",
+      "x": 12.8,
+      "y": 39.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cw_6",
+      "x": 12.8,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_0",
+      "x": 19.1,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_1",
+      "x": 26.1,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_2",
+      "x": 33.1,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_3",
+      "x": 35.0,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_4",
+      "x": 40.1,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_5",
+      "x": 47.1,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_cs_6",
+      "x": 52.0,
+      "y": 47.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f0_stairs",
+      "x": 19.1,
+      "y": 41.5,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-dean-offices:f0_lift",
+      "x": 26.1,
+      "y": 41.5,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-dean-offices:ent",
+      "x": 35.0,
+      "y": 56.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-dean-offices:exit_n",
+      "x": 12.8,
+      "y": 2.5,
+      "floor": 0,
+      "type": "exit",
+      "name": "North Spine Emergency Exit"
+    },
+    {
+      "id": "b-dean-offices:exit_e",
+      "x": 57.0,
+      "y": 47.2,
+      "floor": 0,
+      "type": "exit",
+      "name": "East Wing Emergency Exit"
+    },
+    {
+      "id": "b-dean-offices:g01",
+      "x": 6.2,
+      "y": 11.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean CPL Secretariat"
+    },
+    {
+      "id": "b-dean-offices:g02",
+      "x": 6.2,
+      "y": 18.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean ECE Secretariat"
+    },
+    {
+      "id": "b-dean-offices:g03",
+      "x": 6.2,
+      "y": 25.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean MME Secretariat"
+    },
+    {
+      "id": "b-dean-offices:g04",
+      "x": 6.2,
+      "y": 32.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean ISH Secretariat"
+    },
+    {
+      "id": "b-dean-offices:g05",
+      "x": 6.2,
+      "y": 39.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean CPG Secretariat"
+    },
+    {
+      "id": "b-dean-offices:g06",
+      "x": 19.4,
+      "y": 11.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Dean Architecture & Mgmt"
+    },
+    {
+      "id": "b-dean-offices:g07",
+      "x": 19.4,
+      "y": 18.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Academic Council Reception"
+    },
+    {
+      "id": "b-dean-offices:g08",
+      "x": 19.4,
+      "y": 25.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Undergraduate Academic Desk"
+    },
+    {
+      "id": "b-dean-offices:g09",
+      "x": 19.4,
+      "y": 32.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Postgraduate Studies Desk"
+    },
+    {
+      "id": "b-dean-offices:g10",
+      "x": 19.1,
+      "y": 53.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Faculty Records & Dossiers"
+    },
+    {
+      "id": "b-dean-offices:g11",
+      "x": 26.1,
+      "y": 53.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Notification & Dispatch Room"
+    },
+    {
+      "id": "b-dean-offices:g12",
+      "x": 40.1,
+      "y": 53.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Course Registration Cell"
+    },
+    {
+      "id": "b-dean-offices:g13",
+      "x": 47.1,
+      "y": 53.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Academic Calendar Office"
+    },
+    {
+      "id": "b-dean-offices:g14",
+      "x": 33.1,
+      "y": 40.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Inter-Department Liaison"
+    },
+    {
+      "id": "b-dean-offices:g15",
+      "x": 40.1,
+      "y": 40.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Waiting Lounge & Inquiry"
+    },
+    {
+      "id": "b-dean-offices:g16",
+      "x": 47.1,
+      "y": 40.6,
+      "floor": 0,
+      "type": "room",
+      "name": "Document Archival Room"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_0",
+      "x": 12.8,
+      "y": 8.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_1",
+      "x": 12.8,
+      "y": 11.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_2",
+      "x": 12.8,
+      "y": 18.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_3",
+      "x": 12.8,
+      "y": 25.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_4",
+      "x": 12.8,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_5",
+      "x": 12.8,
+      "y": 39.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cw_6",
+      "x": 12.8,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_0",
+      "x": 19.1,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_1",
+      "x": 26.1,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_2",
+      "x": 33.1,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_3",
+      "x": 35.0,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_4",
+      "x": 40.1,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_5",
+      "x": 47.1,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_cs_6",
+      "x": 52.0,
+      "y": 47.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-dean-offices:f1_stairs",
+      "x": 19.1,
+      "y": 41.5,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-dean-offices:f1_lift",
+      "x": 26.1,
+      "y": 41.5,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-dean-offices:101",
+      "x": 6.2,
+      "y": 11.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Dean CPL Chamber"
+    },
+    {
+      "id": "b-dean-offices:102",
+      "x": 6.2,
+      "y": 18.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Dean ECE Chamber"
+    },
+    {
+      "id": "b-dean-offices:103",
+      "x": 6.2,
+      "y": 25.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Dean MME Chamber"
+    },
+    {
+      "id": "b-dean-offices:104",
+      "x": 6.2,
+      "y": 32.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Dean ISH Chamber"
+    },
+    {
+      "id": "b-dean-offices:105",
+      "x": 6.2,
+      "y": 39.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Quality Enhancement Cell (QEC)"
+    },
+    {
+      "id": "b-dean-offices:106",
+      "x": 19.4,
+      "y": 11.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Director QEC Office"
+    },
+    {
+      "id": "b-dean-offices:107",
+      "x": 19.4,
+      "y": 18.3,
+      "floor": 1,
+      "type": "room",
+      "name": "OBE & Accreditation Cell"
+    },
+    {
+      "id": "b-dean-offices:108",
+      "x": 19.4,
+      "y": 25.3,
+      "floor": 1,
+      "type": "room",
+      "name": "PEC Liaison Office"
+    },
+    {
+      "id": "b-dean-offices:109",
+      "x": 19.4,
+      "y": 32.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Curriculum Review Boardroom"
+    },
+    {
+      "id": "b-dean-offices:110",
+      "x": 19.1,
+      "y": 53.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Board of Faculty Hall A"
+    },
+    {
+      "id": "b-dean-offices:111",
+      "x": 26.1,
+      "y": 53.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Board of Faculty Hall B"
+    },
+    {
+      "id": "b-dean-offices:112",
+      "x": 40.1,
+      "y": 53.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Advanced Studies & Research"
+    },
+    {
+      "id": "b-dean-offices:113",
+      "x": 47.1,
+      "y": 53.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Scholarship & Financial Aid"
+    },
+    {
+      "id": "b-dean-offices:114",
+      "x": 33.1,
+      "y": 40.6,
+      "floor": 1,
+      "type": "room",
+      "name": "International Collaboration"
+    },
+    {
+      "id": "b-dean-offices:115",
+      "x": 40.1,
+      "y": 40.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Deans Committee Lounge"
+    },
+    {
+      "id": "b-dean-offices:116",
+      "x": 47.1,
+      "y": 40.6,
+      "floor": 1,
+      "type": "room",
+      "name": "Academic Audit & Analytics"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-dean-offices:f0_cw_0",
+      "b": "b-dean-offices:f0_cw_1",
+      "kind": "walk",
+      "w": 3.2,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_1",
+      "b": "b-dean-offices:f0_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_2",
+      "b": "b-dean-offices:f0_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_3",
+      "b": "b-dean-offices:f0_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_4",
+      "b": "b-dean-offices:f0_cw_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_5",
+      "b": "b-dean-offices:f0_cw_6",
+      "kind": "walk",
+      "w": 8.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cw_6",
+      "b": "b-dean-offices:f0_cs_0",
+      "kind": "walk",
+      "w": 6.3,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_0",
+      "b": "b-dean-offices:f0_cs_1",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_1",
+      "b": "b-dean-offices:f0_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_2",
+      "b": "b-dean-offices:f0_cs_3",
+      "kind": "walk",
+      "w": 1.9,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_3",
+      "b": "b-dean-offices:f0_cs_4",
+      "kind": "walk",
+      "w": 5.1,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_4",
+      "b": "b-dean-offices:f0_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_cs_5",
+      "b": "b-dean-offices:f0_cs_6",
+      "kind": "walk",
+      "w": 4.9,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_stairs",
+      "b": "b-dean-offices:f0_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_lift",
+      "b": "b-dean-offices:f0_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:ent",
+      "b": "b-dean-offices:f0_cs_3",
+      "kind": "walk",
+      "w": 9.3,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:exit_n",
+      "b": "b-dean-offices:f0_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:exit_e",
+      "b": "b-dean-offices:f0_cs_6",
+      "kind": "walk",
+      "w": 5.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g01",
+      "b": "b-dean-offices:f0_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g02",
+      "b": "b-dean-offices:f0_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g03",
+      "b": "b-dean-offices:f0_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g04",
+      "b": "b-dean-offices:f0_cw_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g05",
+      "b": "b-dean-offices:f0_cw_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g06",
+      "b": "b-dean-offices:f0_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g07",
+      "b": "b-dean-offices:f0_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g08",
+      "b": "b-dean-offices:f0_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g09",
+      "b": "b-dean-offices:f0_cw_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g10",
+      "b": "b-dean-offices:f0_cs_0",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g11",
+      "b": "b-dean-offices:f0_cs_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g12",
+      "b": "b-dean-offices:f0_cs_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g13",
+      "b": "b-dean-offices:f0_cs_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g14",
+      "b": "b-dean-offices:f0_cs_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g15",
+      "b": "b-dean-offices:f0_cs_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:g16",
+      "b": "b-dean-offices:f0_cs_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_0",
+      "b": "b-dean-offices:f1_cw_1",
+      "kind": "walk",
+      "w": 3.2,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_1",
+      "b": "b-dean-offices:f1_cw_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_2",
+      "b": "b-dean-offices:f1_cw_3",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_3",
+      "b": "b-dean-offices:f1_cw_4",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_4",
+      "b": "b-dean-offices:f1_cw_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_5",
+      "b": "b-dean-offices:f1_cw_6",
+      "kind": "walk",
+      "w": 8.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cw_6",
+      "b": "b-dean-offices:f1_cs_0",
+      "kind": "walk",
+      "w": 6.3,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_0",
+      "b": "b-dean-offices:f1_cs_1",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_1",
+      "b": "b-dean-offices:f1_cs_2",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_2",
+      "b": "b-dean-offices:f1_cs_3",
+      "kind": "walk",
+      "w": 1.9,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_3",
+      "b": "b-dean-offices:f1_cs_4",
+      "kind": "walk",
+      "w": 5.1,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_4",
+      "b": "b-dean-offices:f1_cs_5",
+      "kind": "walk",
+      "w": 7.0,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_cs_5",
+      "b": "b-dean-offices:f1_cs_6",
+      "kind": "walk",
+      "w": 4.9,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_stairs",
+      "b": "b-dean-offices:f1_cs_0",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f1_lift",
+      "b": "b-dean-offices:f1_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:101",
+      "b": "b-dean-offices:f1_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:102",
+      "b": "b-dean-offices:f1_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:103",
+      "b": "b-dean-offices:f1_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:104",
+      "b": "b-dean-offices:f1_cw_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:105",
+      "b": "b-dean-offices:f1_cw_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:106",
+      "b": "b-dean-offices:f1_cw_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:107",
+      "b": "b-dean-offices:f1_cw_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:108",
+      "b": "b-dean-offices:f1_cw_3",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:109",
+      "b": "b-dean-offices:f1_cw_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:110",
+      "b": "b-dean-offices:f1_cs_0",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:111",
+      "b": "b-dean-offices:f1_cs_1",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:112",
+      "b": "b-dean-offices:f1_cs_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:113",
+      "b": "b-dean-offices:f1_cs_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:114",
+      "b": "b-dean-offices:f1_cs_2",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:115",
+      "b": "b-dean-offices:f1_cs_4",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:116",
+      "b": "b-dean-offices:f1_cs_5",
+      "kind": "walk",
+      "w": 6.6,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:f0_stairs",
+      "b": "b-dean-offices:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-dean-offices:f0_lift",
+      "b": "b-dean-offices:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-dean-offices:ent",
+      "b": "n74",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-dean-offices:g01",
+      "rect": [
+        2.0,
+        8.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g02",
+      "rect": [
+        2.0,
+        15.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g03",
+      "rect": [
+        2.0,
+        22.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g04",
+      "rect": [
+        2.0,
+        29.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g05",
+      "rect": [
+        2.0,
+        36.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g06",
+      "rect": [
+        15.2,
+        8.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g07",
+      "rect": [
+        15.2,
+        15.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g08",
+      "rect": [
+        15.2,
+        22.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g09",
+      "rect": [
+        15.2,
+        29.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g10",
+      "rect": [
+        16.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g11",
+      "rect": [
+        23.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g12",
+      "rect": [
+        37.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g13",
+      "rect": [
+        44.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g14",
+      "rect": [
+        30.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g15",
+      "rect": [
+        37.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:g16",
+      "rect": [
+        44.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:101",
+      "rect": [
+        2.0,
+        8.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:102",
+      "rect": [
+        2.0,
+        15.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:103",
+      "rect": [
+        2.0,
+        22.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:104",
+      "rect": [
+        2.0,
+        29.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:105",
+      "rect": [
+        2.0,
+        36.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:106",
+      "rect": [
+        15.2,
+        8.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:107",
+      "rect": [
+        15.2,
+        15.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:108",
+      "rect": [
+        15.2,
+        22.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:109",
+      "rect": [
+        15.2,
+        29.2,
+        8.4,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:110",
+      "rect": [
+        16.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:111",
+      "rect": [
+        23.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:112",
+      "rect": [
+        37.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:113",
+      "rect": [
+        44.0,
+        49.6,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:114",
+      "rect": [
+        30.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:115",
+      "rect": [
+        37.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    },
+    {
+      "nodeId": "b-dean-offices:116",
+      "rect": [
+        44.0,
+        36.4,
+        6.2,
+        8.4
+      ]
+    }
+  ]
+}

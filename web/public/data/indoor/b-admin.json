@@ -1,0 +1,2507 @@
+{
+  "id": "b-admin",
+  "name": "Administration Block (VC Secretariat & Registrar)",
+  "landmarkId": "b-admin",
+  "meta": {
+    "demo": true,
+    "template": "ring",
+    "width": 70.0,
+    "height": 44.0,
+    "corridorWidth": 3.6,
+    "roomWidth": 6.2
+  },
+  "floors": [
+    {
+      "level": 0,
+      "label": "Ground Floor"
+    },
+    {
+      "level": 1,
+      "label": "First Floor"
+    },
+    {
+      "level": 2,
+      "label": "Second Floor"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "b-admin:f0_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 0,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f0_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 0,
+      "type": "stairs",
+      "name": "Staircase F0"
+    },
+    {
+      "id": "b-admin:f0_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 0,
+      "type": "lift",
+      "name": "Elevator F0"
+    },
+    {
+      "id": "b-admin:ent",
+      "x": 35.0,
+      "y": 41.5,
+      "floor": 0,
+      "type": "entrance",
+      "name": "Main Entrance"
+    },
+    {
+      "id": "b-admin:exit_nw",
+      "x": 11.8,
+      "y": 1.8,
+      "floor": 0,
+      "type": "exit",
+      "name": "North-West Emergency Exit"
+    },
+    {
+      "id": "b-admin:exit_ne",
+      "x": 58.2,
+      "y": 1.8,
+      "floor": 0,
+      "type": "exit",
+      "name": "North-East Emergency Exit"
+    },
+    {
+      "id": "b-admin:g01",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Registrar Reception & Diary"
+    },
+    {
+      "id": "b-admin:g02",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Establishment Section I"
+    },
+    {
+      "id": "b-admin:g03",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Establishment Section II"
+    },
+    {
+      "id": "b-admin:g04",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Directorate of Finance Counter"
+    },
+    {
+      "id": "b-admin:g05",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Student Fee & Challan Cell"
+    },
+    {
+      "id": "b-admin:g06",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Payroll & Accounts Section"
+    },
+    {
+      "id": "b-admin:g07",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 0,
+      "type": "room",
+      "name": "Controller Student Affairs"
+    },
+    {
+      "id": "b-admin:g08",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Public Relations & Media"
+    },
+    {
+      "id": "b-admin:g09",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 0,
+      "type": "room",
+      "name": "General Administration Desk"
+    },
+    {
+      "id": "b-admin:g10",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 0,
+      "type": "room",
+      "name": "Central Dispatch & Mail"
+    },
+    {
+      "id": "b-admin:g11",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Legal & Litigation Cell"
+    },
+    {
+      "id": "b-admin:g12",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Security & Vigilance Office"
+    },
+    {
+      "id": "b-admin:g13",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Transport & Fleet Office"
+    },
+    {
+      "id": "b-admin:g14",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Estate & Protocol Desk"
+    },
+    {
+      "id": "b-admin:g15",
+      "x": 25.1,
+      "y": 17.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Verification & NOC Counter"
+    },
+    {
+      "id": "b-admin:g16",
+      "x": 44.9,
+      "y": 17.8,
+      "floor": 0,
+      "type": "room",
+      "name": "Pension & Benevolent Fund"
+    },
+    {
+      "id": "b-admin:g17",
+      "x": 25.1,
+      "y": 26.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Visitor Waiting Hall"
+    },
+    {
+      "id": "b-admin:g18",
+      "x": 44.9,
+      "y": 26.2,
+      "floor": 0,
+      "type": "room",
+      "name": "Admin Records Room"
+    },
+    {
+      "id": "b-admin:f1_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 1,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f1_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 1,
+      "type": "stairs",
+      "name": "Staircase F1"
+    },
+    {
+      "id": "b-admin:f1_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 1,
+      "type": "lift",
+      "name": "Elevator F1"
+    },
+    {
+      "id": "b-admin:101",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Registrar Chamber"
+    },
+    {
+      "id": "b-admin:102",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Deputy Registrar Academic"
+    },
+    {
+      "id": "b-admin:103",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Deputy Registrar General"
+    },
+    {
+      "id": "b-admin:104",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Director Finance Chamber"
+    },
+    {
+      "id": "b-admin:105",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Deputy Director Finance"
+    },
+    {
+      "id": "b-admin:106",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Resident Auditor Office"
+    },
+    {
+      "id": "b-admin:107",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Internal Audit Section"
+    },
+    {
+      "id": "b-admin:108",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Budget & Planning Section"
+    },
+    {
+      "id": "b-admin:109",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 1,
+      "type": "room",
+      "name": "Controller of Examinations"
+    },
+    {
+      "id": "b-admin:110",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 1,
+      "type": "room",
+      "name": "Deputy Controller Secrecy"
+    },
+    {
+      "id": "b-admin:111",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Transcript & Degree Cell"
+    },
+    {
+      "id": "b-admin:112",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Tabulation & Results Unit"
+    },
+    {
+      "id": "b-admin:113",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Procurement & Tender Cell"
+    },
+    {
+      "id": "b-admin:114",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Director Works & Services"
+    },
+    {
+      "id": "b-admin:115",
+      "x": 25.1,
+      "y": 17.8,
+      "floor": 1,
+      "type": "room",
+      "name": "Admin Conference Hall"
+    },
+    {
+      "id": "b-admin:116",
+      "x": 44.9,
+      "y": 17.8,
+      "floor": 1,
+      "type": "room",
+      "name": "HR & Selection Board Cell"
+    },
+    {
+      "id": "b-admin:117",
+      "x": 25.1,
+      "y": 26.2,
+      "floor": 1,
+      "type": "room",
+      "name": "IT ERP Support Unit"
+    },
+    {
+      "id": "b-admin:118",
+      "x": 44.9,
+      "y": 26.2,
+      "floor": 1,
+      "type": "room",
+      "name": "Committee Room 101"
+    },
+    {
+      "id": "b-admin:f2_cn_0",
+      "x": 11.8,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_1",
+      "x": 17.5,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_2",
+      "x": 24.3,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_3",
+      "x": 31.1,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_4",
+      "x": 35.0,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_5",
+      "x": 38.9,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_6",
+      "x": 45.7,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_7",
+      "x": 52.5,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cn_8",
+      "x": 58.2,
+      "y": 11.8,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_0",
+      "x": 11.8,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_1",
+      "x": 17.5,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_2",
+      "x": 24.3,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_3",
+      "x": 31.1,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_4",
+      "x": 35.0,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_5",
+      "x": 38.9,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_6",
+      "x": 45.7,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_7",
+      "x": 52.5,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cs_8",
+      "x": 58.2,
+      "y": 32.2,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cw_0",
+      "x": 11.8,
+      "y": 17.3,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_ce_0",
+      "x": 58.2,
+      "y": 17.3,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cw_1",
+      "x": 11.8,
+      "y": 22.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_ce_1",
+      "x": 58.2,
+      "y": 22.0,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_cw_2",
+      "x": 11.8,
+      "y": 26.7,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_ce_2",
+      "x": 58.2,
+      "y": 26.7,
+      "floor": 2,
+      "type": "corridor"
+    },
+    {
+      "id": "b-admin:f2_stairs",
+      "x": 16.5,
+      "y": 22.0,
+      "floor": 2,
+      "type": "stairs",
+      "name": "Staircase F2"
+    },
+    {
+      "id": "b-admin:f2_lift",
+      "x": 53.5,
+      "y": 22.0,
+      "floor": 2,
+      "type": "lift",
+      "name": "Elevator F2"
+    },
+    {
+      "id": "b-admin:201",
+      "x": 17.5,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Vice Chancellor Secretariat"
+    },
+    {
+      "id": "b-admin:202",
+      "x": 24.3,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Vice Chancellor Chamber"
+    },
+    {
+      "id": "b-admin:203",
+      "x": 31.1,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Pro-Vice Chancellor Chamber"
+    },
+    {
+      "id": "b-admin:204",
+      "x": 38.9,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "VC Executive Secretary"
+    },
+    {
+      "id": "b-admin:205",
+      "x": 45.7,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Syndicate Meeting Hall"
+    },
+    {
+      "id": "b-admin:206",
+      "x": 52.5,
+      "y": 5.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Senate Executive Lounge"
+    },
+    {
+      "id": "b-admin:207",
+      "x": 5.7,
+      "y": 17.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Director ORIC Chamber"
+    },
+    {
+      "id": "b-admin:208",
+      "x": 5.7,
+      "y": 26.7,
+      "floor": 2,
+      "type": "room",
+      "name": "University Industrial Linkages"
+    },
+    {
+      "id": "b-admin:209",
+      "x": 64.3,
+      "y": 17.3,
+      "floor": 2,
+      "type": "room",
+      "name": "Strategic Planning Unit"
+    },
+    {
+      "id": "b-admin:210",
+      "x": 64.3,
+      "y": 26.7,
+      "floor": 2,
+      "type": "room",
+      "name": "Executive Protocol Suite"
+    },
+    {
+      "id": "b-admin:211",
+      "x": 17.5,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Chancellor Committee Room"
+    },
+    {
+      "id": "b-admin:212",
+      "x": 24.3,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Endowment Fund Trust Office"
+    },
+    {
+      "id": "b-admin:213",
+      "x": 45.7,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Alumni Relations Directorate"
+    },
+    {
+      "id": "b-admin:214",
+      "x": 52.5,
+      "y": 38.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Legal Advisor Chamber"
+    },
+    {
+      "id": "b-admin:215",
+      "x": 25.1,
+      "y": 17.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Confidential Archives"
+    },
+    {
+      "id": "b-admin:216",
+      "x": 44.9,
+      "y": 17.8,
+      "floor": 2,
+      "type": "room",
+      "name": "Executive Briefing Room"
+    },
+    {
+      "id": "b-admin:217",
+      "x": 25.1,
+      "y": 26.2,
+      "floor": 2,
+      "type": "room",
+      "name": "VIP Waiting Gallery"
+    },
+    {
+      "id": "b-admin:218",
+      "x": 44.9,
+      "y": 26.2,
+      "floor": 2,
+      "type": "room",
+      "name": "Board of Governors Secretariat"
+    }
+  ],
+  "edges": [
+    {
+      "a": "b-admin:f0_cn_0",
+      "b": "b-admin:f0_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_1",
+      "b": "b-admin:f0_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_2",
+      "b": "b-admin:f0_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_3",
+      "b": "b-admin:f0_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_4",
+      "b": "b-admin:f0_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_5",
+      "b": "b-admin:f0_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_6",
+      "b": "b-admin:f0_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_7",
+      "b": "b-admin:f0_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_0",
+      "b": "b-admin:f0_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_1",
+      "b": "b-admin:f0_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_2",
+      "b": "b-admin:f0_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_3",
+      "b": "b-admin:f0_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_4",
+      "b": "b-admin:f0_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_5",
+      "b": "b-admin:f0_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_6",
+      "b": "b-admin:f0_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cs_7",
+      "b": "b-admin:f0_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_0",
+      "b": "b-admin:f0_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cn_8",
+      "b": "b-admin:f0_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cw_0",
+      "b": "b-admin:f0_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_ce_0",
+      "b": "b-admin:f0_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cw_1",
+      "b": "b-admin:f0_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_ce_1",
+      "b": "b-admin:f0_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_cw_2",
+      "b": "b-admin:f0_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_ce_2",
+      "b": "b-admin:f0_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_stairs",
+      "b": "b-admin:f0_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_lift",
+      "b": "b-admin:f0_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:ent",
+      "b": "b-admin:f0_cs_4",
+      "kind": "walk",
+      "w": 9.3,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:exit_nw",
+      "b": "b-admin:f0_cn_0",
+      "kind": "walk",
+      "w": 10.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:exit_ne",
+      "b": "b-admin:f0_cn_8",
+      "kind": "walk",
+      "w": 10.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g01",
+      "b": "b-admin:f0_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g02",
+      "b": "b-admin:f0_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g03",
+      "b": "b-admin:f0_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g04",
+      "b": "b-admin:f0_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g05",
+      "b": "b-admin:f0_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g06",
+      "b": "b-admin:f0_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g07",
+      "b": "b-admin:f0_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g08",
+      "b": "b-admin:f0_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g09",
+      "b": "b-admin:f0_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g10",
+      "b": "b-admin:f0_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g11",
+      "b": "b-admin:f0_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g12",
+      "b": "b-admin:f0_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g13",
+      "b": "b-admin:f0_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g14",
+      "b": "b-admin:f0_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g15",
+      "b": "b-admin:f0_cn_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g16",
+      "b": "b-admin:f0_cn_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g17",
+      "b": "b-admin:f0_cs_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:g18",
+      "b": "b-admin:f0_cs_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_0",
+      "b": "b-admin:f1_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_1",
+      "b": "b-admin:f1_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_2",
+      "b": "b-admin:f1_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_3",
+      "b": "b-admin:f1_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_4",
+      "b": "b-admin:f1_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_5",
+      "b": "b-admin:f1_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_6",
+      "b": "b-admin:f1_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_7",
+      "b": "b-admin:f1_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_0",
+      "b": "b-admin:f1_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_1",
+      "b": "b-admin:f1_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_2",
+      "b": "b-admin:f1_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_3",
+      "b": "b-admin:f1_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_4",
+      "b": "b-admin:f1_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_5",
+      "b": "b-admin:f1_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_6",
+      "b": "b-admin:f1_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cs_7",
+      "b": "b-admin:f1_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_0",
+      "b": "b-admin:f1_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cn_8",
+      "b": "b-admin:f1_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cw_0",
+      "b": "b-admin:f1_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_ce_0",
+      "b": "b-admin:f1_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cw_1",
+      "b": "b-admin:f1_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_ce_1",
+      "b": "b-admin:f1_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_cw_2",
+      "b": "b-admin:f1_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_ce_2",
+      "b": "b-admin:f1_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_stairs",
+      "b": "b-admin:f1_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_lift",
+      "b": "b-admin:f1_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:101",
+      "b": "b-admin:f1_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:102",
+      "b": "b-admin:f1_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:103",
+      "b": "b-admin:f1_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:104",
+      "b": "b-admin:f1_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:105",
+      "b": "b-admin:f1_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:106",
+      "b": "b-admin:f1_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:107",
+      "b": "b-admin:f1_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:108",
+      "b": "b-admin:f1_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:109",
+      "b": "b-admin:f1_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:110",
+      "b": "b-admin:f1_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:111",
+      "b": "b-admin:f1_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:112",
+      "b": "b-admin:f1_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:113",
+      "b": "b-admin:f1_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:114",
+      "b": "b-admin:f1_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:115",
+      "b": "b-admin:f1_cn_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:116",
+      "b": "b-admin:f1_cn_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:117",
+      "b": "b-admin:f1_cs_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:118",
+      "b": "b-admin:f1_cs_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_0",
+      "b": "b-admin:f2_cn_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_1",
+      "b": "b-admin:f2_cn_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_2",
+      "b": "b-admin:f2_cn_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_3",
+      "b": "b-admin:f2_cn_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_4",
+      "b": "b-admin:f2_cn_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_5",
+      "b": "b-admin:f2_cn_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_6",
+      "b": "b-admin:f2_cn_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_7",
+      "b": "b-admin:f2_cn_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_0",
+      "b": "b-admin:f2_cs_1",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_1",
+      "b": "b-admin:f2_cs_2",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_2",
+      "b": "b-admin:f2_cs_3",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_3",
+      "b": "b-admin:f2_cs_4",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_4",
+      "b": "b-admin:f2_cs_5",
+      "kind": "walk",
+      "w": 3.9,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_5",
+      "b": "b-admin:f2_cs_6",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_6",
+      "b": "b-admin:f2_cs_7",
+      "kind": "walk",
+      "w": 6.8,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cs_7",
+      "b": "b-admin:f2_cs_8",
+      "kind": "walk",
+      "w": 5.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_0",
+      "b": "b-admin:f2_cw_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cn_8",
+      "b": "b-admin:f2_ce_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cw_0",
+      "b": "b-admin:f2_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_ce_0",
+      "b": "b-admin:f2_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cw_1",
+      "b": "b-admin:f2_cw_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_ce_1",
+      "b": "b-admin:f2_ce_2",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_cw_2",
+      "b": "b-admin:f2_cs_0",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_ce_2",
+      "b": "b-admin:f2_cs_8",
+      "kind": "walk",
+      "w": 5.5,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_stairs",
+      "b": "b-admin:f2_cw_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f2_lift",
+      "b": "b-admin:f2_ce_1",
+      "kind": "walk",
+      "w": 4.7,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:201",
+      "b": "b-admin:f2_cn_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:202",
+      "b": "b-admin:f2_cn_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:203",
+      "b": "b-admin:f2_cn_3",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:204",
+      "b": "b-admin:f2_cn_5",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:205",
+      "b": "b-admin:f2_cn_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:206",
+      "b": "b-admin:f2_cn_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:207",
+      "b": "b-admin:f2_cw_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:208",
+      "b": "b-admin:f2_cw_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:209",
+      "b": "b-admin:f2_ce_0",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:210",
+      "b": "b-admin:f2_ce_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:211",
+      "b": "b-admin:f2_cs_1",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:212",
+      "b": "b-admin:f2_cs_2",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:213",
+      "b": "b-admin:f2_cs_6",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:214",
+      "b": "b-admin:f2_cs_7",
+      "kind": "walk",
+      "w": 6.0,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:215",
+      "b": "b-admin:f2_cn_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:216",
+      "b": "b-admin:f2_cn_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:217",
+      "b": "b-admin:f2_cs_2",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:218",
+      "b": "b-admin:f2_cs_6",
+      "kind": "walk",
+      "w": 6.1,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f0_stairs",
+      "b": "b-admin:f1_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-admin:f0_lift",
+      "b": "b-admin:f1_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:f1_stairs",
+      "b": "b-admin:f2_stairs",
+      "kind": "stairs",
+      "w": 10,
+      "accessible": false
+    },
+    {
+      "a": "b-admin:f1_lift",
+      "b": "b-admin:f2_lift",
+      "kind": "lift",
+      "w": 15,
+      "accessible": true
+    },
+    {
+      "a": "b-admin:ent",
+      "b": "n73",
+      "kind": "walk",
+      "w": 3.0,
+      "accessible": true
+    }
+  ],
+  "rooms": [
+    {
+      "nodeId": "b-admin:g01",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g02",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g03",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g04",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g05",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g06",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g07",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:g08",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:g09",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:g10",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:g11",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g12",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g13",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g14",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:g15",
+      "rect": [
+        22.0,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:g16",
+      "rect": [
+        41.8,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:g17",
+      "rect": [
+        22.0,
+        22.8,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:g18",
+      "rect": [
+        41.8,
+        22.8,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:101",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:102",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:103",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:104",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:105",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:106",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:107",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:108",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:109",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:110",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:111",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:112",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:113",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:114",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:115",
+      "rect": [
+        22.0,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:116",
+      "rect": [
+        41.8,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:117",
+      "rect": [
+        22.0,
+        22.8,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:118",
+      "rect": [
+        41.8,
+        22.8,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:201",
+      "rect": [
+        14.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:202",
+      "rect": [
+        21.2,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:203",
+      "rect": [
+        28.0,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:204",
+      "rect": [
+        35.8,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:205",
+      "rect": [
+        42.6,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:206",
+      "rect": [
+        49.4,
+        2.0,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:207",
+      "rect": [
+        1.8,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:208",
+      "rect": [
+        1.8,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:209",
+      "rect": [
+        60.4,
+        14.2,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:210",
+      "rect": [
+        60.4,
+        23.6,
+        7.8,
+        6.2
+      ]
+    },
+    {
+      "nodeId": "b-admin:211",
+      "rect": [
+        14.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:212",
+      "rect": [
+        21.2,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:213",
+      "rect": [
+        42.6,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:214",
+      "rect": [
+        49.4,
+        34.4,
+        6.2,
+        7.6
+      ]
+    },
+    {
+      "nodeId": "b-admin:215",
+      "rect": [
+        22.0,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:216",
+      "rect": [
+        41.8,
+        14.4,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:217",
+      "rect": [
+        22.0,
+        22.8,
+        6.2,
+        6.8
+      ]
+    },
+    {
+      "nodeId": "b-admin:218",
+      "rect": [
+        41.8,
+        22.8,
+        6.2,
+        6.8
+      ]
+    }
+  ]
+}

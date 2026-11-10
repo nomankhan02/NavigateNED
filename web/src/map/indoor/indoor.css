@@ -1,0 +1,340 @@
+/* web/src/map/indoor/indoor.css */
+/* IndoorMap architectural floor plan stylesheet with --map-* tokens */
+
+.ned-indoor-root {
+  --map-indoor-bg: var(--map-bg, #e7ece8);
+  --map-indoor-canvas: #f2f6f3;
+  --map-indoor-grid: #e1e9e3;
+  --map-indoor-wall: #263830;
+  --map-indoor-wall-muted: #526b60;
+  --map-indoor-corridor: #e4ece6;
+  --map-indoor-corridor-stroke: #b5c7bc;
+  --map-indoor-room: #ffffff;
+  --map-indoor-room-hover: #eaf3ed;
+  --map-indoor-room-selected: #fef3c7;
+  --map-indoor-room-selected-stroke: #b85d19;
+  --map-indoor-text: #14241d;
+  --map-indoor-text-muted: #4a6155;
+  --map-indoor-badge-bg: rgba(255, 255, 255, 0.96);
+
+  --map-indoor-stairs: #0f766e;
+  --map-indoor-lift: #0369a1;
+  --map-indoor-entrance: #15803d;
+  --map-indoor-exit: #b91c1c;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  background-color: var(--map-indoor-bg);
+  font-family: var(--map-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  color: var(--map-indoor-text);
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--map-border, #b8c6be);
+  user-select: none;
+  touch-action: none;
+}
+
+.ned-indoor-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  outline: none;
+}
+
+.ned-indoor-svg:active {
+  cursor: grabbing;
+}
+
+/* Floor transition animations */
+.ned-indoor-floor-group {
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ned-indoor-floor-group {
+    transition: none !important;
+  }
+}
+
+/* Room styles */
+.ned-indoor-room-rect {
+  fill: var(--map-indoor-room);
+  stroke: var(--map-indoor-wall);
+  stroke-width: 0.35px;
+  stroke-linejoin: round;
+  transition: fill 120ms ease, stroke 120ms ease;
+  cursor: pointer;
+}
+
+.ned-indoor-room-rect:hover {
+  fill: var(--map-indoor-room-hover);
+  stroke: var(--map-indoor-wall-strong, #14241d);
+  stroke-width: 0.5px;
+}
+
+.ned-indoor-room-rect--selected {
+  fill: var(--map-indoor-room-selected) !important;
+  stroke: var(--map-indoor-room-selected-stroke) !important;
+  stroke-width: 0.75px !important;
+}
+
+.ned-indoor-room-rect--highlighted {
+  fill: #fffbeb !important;
+  stroke: #d97706 !important;
+  stroke-width: 0.65px !important;
+}
+
+.ned-indoor-room-rect--blocked {
+  fill: #fef2f2 !important;
+  stroke: #b91c1c !important;
+  stroke-dasharray: 1 1;
+}
+
+/* Corridor styles */
+.ned-indoor-corridor-underlay {
+  fill: none;
+  stroke: var(--map-indoor-corridor);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ned-indoor-corridor-edge {
+  fill: none;
+  stroke: var(--map-indoor-corridor-stroke);
+  stroke-width: 0.25px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0.8 0.6;
+}
+
+/* Facility symbols */
+.ned-indoor-symbol-group {
+  cursor: pointer;
+  transition: transform 140ms ease;
+}
+
+.ned-indoor-symbol-group:hover {
+  transform: scale(1.15);
+}
+
+/* Floor Switcher Overlay */
+.ned-indoor-floor-switcher {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--map-surface-card, rgba(250, 252, 251, 0.95));
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--map-border, #b8c6be);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 14px rgba(18, 31, 25, 0.12);
+  z-index: 20;
+}
+
+.ned-indoor-floor-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  min-width: 72px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--map-text-secondary, #3f544a);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  outline: none;
+}
+
+.ned-indoor-floor-btn:hover {
+  background-color: rgba(20, 36, 29, 0.06);
+  color: var(--map-text-primary, #14241d);
+}
+
+.ned-indoor-floor-btn--active {
+  background-color: var(--map-landmark-fill, #185a44) !important;
+  color: var(--map-text-inverse, #f7faf8) !important;
+  border-color: var(--map-landmark-stroke, #185a44);
+  box-shadow: 0 1px 4px rgba(24, 90, 68, 0.25);
+}
+
+.ned-indoor-floor-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--map-route-stroke, #b85d19);
+}
+
+.ned-indoor-floor-route-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--map-route-stroke, #b85d19);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.ned-indoor-floor-btn--active .ned-indoor-floor-route-dot {
+  background-color: #fde68a;
+  box-shadow: 0 0 0 1.5px rgba(24, 90, 68, 0.8);
+}
+
+/* Zoom / Reset HUD controls */
+.ned-indoor-hud-controls {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+
+.ned-indoor-hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--map-surface-card, rgba(250, 252, 251, 0.95));
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--map-border, #b8c6be);
+  border-radius: 6px;
+  color: var(--map-text-primary, #14241d);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(18, 31, 25, 0.08);
+  transition: background-color 120ms ease, border-color 120ms ease, transform 100ms ease;
+  outline: none;
+}
+
+.ned-indoor-hud-btn:hover {
+  background-color: #ffffff;
+  border-color: var(--map-border-strong, #5c7468);
+  transform: translateY(-1px);
+}
+
+.ned-indoor-hud-btn:active {
+  transform: translateY(0);
+}
+
+.ned-indoor-hud-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--map-route-stroke, #b85d19);
+}
+
+/* Demo badge overlay */
+.ned-indoor-demo-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: var(--map-surface-card, rgba(250, 252, 251, 0.92));
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--map-border, #b8c6be);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--map-text-secondary, #3f544a);
+  box-shadow: 0 2px 6px rgba(18, 31, 25, 0.06);
+  pointer-events: none;
+  z-index: 15;
+}
+
+.ned-indoor-demo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #d97706;
+}
+
+/* Labels */
+.ned-indoor-label {
+  font-family: inherit;
+  font-weight: 600;
+  fill: var(--map-indoor-text);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ned-indoor-label-bg {
+  fill: var(--map-indoor-badge-bg);
+  rx: 1.5;
+  stroke: var(--map-border, #b8c6be);
+  stroke-width: 0.25px;
+  pointer-events: none;
+}
+
+/* Route styling */
+.ned-indoor-route-casing {
+  fill: none;
+  stroke: var(--map-route-casing, #fff9f2);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ned-indoor-route-path {
+  fill: none;
+  stroke: var(--map-route-stroke, #b85d19);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ned-indoor-route-animated {
+  animation: ned-indoor-dash 1.4s linear infinite;
+}
+
+@keyframes ned-indoor-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ned-indoor-route-animated {
+    animation: none !important;
+  }
+}
+
+/* Floor transition badge (stairs / lift connector) */
+.ned-indoor-floor-transition-badge {
+  filter: drop-shadow(0 2px 4px rgba(18, 31, 25, 0.2));
+  cursor: pointer;
+}
+
+.ned-indoor-floor-transition-badge:hover text {
+  text-decoration: underline;
+}
+
+/* User marker pulse */
+.ned-indoor-user-pulse {
+  animation: ned-indoor-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ned-indoor-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ned-indoor-user-pulse {
+    animation: none !important;
+  }
+}

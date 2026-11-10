@@ -9,11 +9,12 @@
 - Task A3b delivered: Basemap switching, north-up warped master plan (`tools/warp_master_plan.py`), priority-ranked label collision logic, merged markers, and zoom animations.
 - Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
 - Task A3e delivered: Switched default street basemap to Esri World Light Gray Base (`clean`) and dropped CARTO due to API key watermarks.
-- Task A3d delivered: Footpath geometries, honest edge weights, validation, and geometry-aware map rendering:
-  - Multi-point realistic geometry on 77/108 edges (32 OSM-snapped, 45 corner detours) and 31 straight-line fallbacks.
-  - Validation checks in `tools/validate.py` for edge geometry, campus bounds, and honest cumulative Haversine weights.
-  - Helper functions in `web/src/map/geometry.ts` resolving edge geometries, orienting segments (reversing for b->a traversals), joining route/evacuation paths, and falling back to straight lines.
-  - `OutdoorMap.tsx` renders routes, trace replay segments, evacuation paths (blocked edges & assignments), and debug graph using `geometry`.
+- Task A3d delivered: Footpath geometries, honest edge weights, validation, and geometry-aware map rendering.
+- Task A4 in progress (Slice a completed: data sync + SVG renderer + floors + labels):
+  - Created `tools/sync_indoor_public.py` and copied 6 building datasets to `web/public/data/indoor/`.
+  - Built client-only SVG indoor renderer (`web/src/map/indoor/IndoorMap.tsx`) with smooth pointer/touch pan-and-zoom, corridor strips, room rectangles, hand-drawn stairs/lift/entrance/exit SVG symbols, and demo model badge.
+  - Implemented vertical floor switcher (`web/src/map/indoor/floors.tsx`) with route indicator dots and floor level abbreviations.
+  - Implemented priority-ranked label collision engine (`web/src/map/indoor/labels.ts`) displaying short codes at low zoom and full room names at high zoom.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -33,6 +34,11 @@
      - 31 edges have 2-point straight-line fallback geometries.
      - All edge weights `w` recomputed to honest walking distances along their geometry in meters.
      - Nodes, landmarks, and metadata structure preserved with 100% backward compatibility.
+6. **IndoorMap Usage (for Member C)**:
+   - Import from `@/map`: `import { IndoorMap, type IndoorBuilding, type IndoorMapProps } from "@/map";`
+   - Static indoor data: Load from `/data/indoor/<buildingId>.json` (6 buildings: `b-admin`, `b-auditorium`, `b-csit`, `b-csit-labs`, `b-dean-offices`, `b-library`).
+   - Props: `<IndoorMap building={building} floor={activeFloor} onFloorChange={(fl) => ...} route={indoorNodeIds} highlightedNodeIds={ids} selectedRoomId={roomId} onRoomClick={(id, node) => ...} userNode={nodeId} evacuation={evacData} trace={traceReplay} />`
+   - Styling: Uses standard `--map-*` tokens with fallbacks defined in `web/src/map/indoor/indoor.css`.
 
 ## Open Tasks
 - [ ] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
