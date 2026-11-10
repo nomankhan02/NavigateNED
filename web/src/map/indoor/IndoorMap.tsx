@@ -28,6 +28,7 @@ import {
   getFloorsWithRoute,
 } from "./floors";
 import { computeIndoorLabels, type PlacedLabel } from "./labels";
+import { extractFloorRoute } from "./route";
 
 const MARGIN_METERS = 5;
 const MIN_SCALE = 0.6;
@@ -317,6 +318,17 @@ export function IndoorMap({
     () => new Set(highlightedNodeIds ?? []),
     [highlightedNodeIds]
   );
+
+  // Extract floor-specific route polylines and transitions
+  const floorRoute = useMemo(() => {
+    return extractFloorRoute(route, building?.nodes ?? [], activeFloor);
+  }, [route, building?.nodes, activeFloor]);
+
+  // User location node on active floor
+  const currentUserNode = useMemo(() => {
+    if (!userNode) return null;
+    return floorNodeLookup.get(userNode) ?? null;
+  }, [userNode, floorNodeLookup]);
 
   return (
     <div
@@ -640,7 +652,162 @@ export function IndoorMap({
             })}
           </g>
 
-          {/* 4. Room Labels */}
+          {/* 4. Active Route Layer */}
+          <g className="ned-indoor-route-layer">
+            {floorRoute.polylines.map((pts, idx) => {
+              const d = pts
+                .map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`)
+                .join(" ");
+              return (
+                <g key={`route-poly-${idx}`}>
+                  {/* Casing stroke */}
+                  <path
+                    d={d}
+                    className="ned-indoor-route-casing"
+                    strokeWidth={1.8}
+                  />
+                  {/* Foreground animated stroke */}
+                  <path
+                    d={d}
+                    className="ned-indoor-route-path ned-indoor-route-animated"
+                    strokeWidth={1.0}
+                    strokeDasharray="2.5 1.5"
+                  />
+                </g>
+              );
+            })}
+
+            {/* Route Start Badge */}
+            {floorRoute.startPoint && (
+              <g
+                transform={`translate(${floorRoute.startPoint[0]}, ${floorRoute.startPoint[1]})`}
+                className="ned-indoor-symbol-group"
+              >
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="2.0"
+                  fill="var(--map-landmark-fill, #185a44)"
+                  stroke="#ffffff"
+                  strokeWidth="0.4"
+                />
+                <circle cx="0" cy="0" r="0.7" fill="#ffffff" />
+                <title>Route Start</title>
+              </g>
+            )}
+
+            {/* Route End Badge */}
+            {floorRoute.endPoint && (
+              <g
+                transform={`translate(${floorRoute.endPoint[0]}, ${floorRoute.endPoint[1]})`}
+                className="ned-indoor-symbol-group"
+              >
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="2.2"
+                  fill="var(--map-route-stroke, #b85d19)"
+                  stroke="#ffffff"
+                  strokeWidth="0.4"
+                />
+                {/* Finish flag symbol */}
+                <path
+                  d="M-0.8 1.1 v-2.2 M-0.8 -1.1 h1.6 l-0.4 0.6 l0.4 0.6 h-1.6"
+                  stroke="#ffffff"
+                  strokeWidth="0.35"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <title>Route Destination</title>
+              </g>
+            )}
+
+            {/* Stair / Lift Vertical Transition Badges */}
+            {floorRoute.transitions.map((t, idx) => {
+              const isUp = t.direction === "up";
+              return (
+                <g
+                  key={`trans-${t.nodeId}-${idx}`}
+                  transform={`translate(${t.x}, ${t.y - 3.2})`}
+                  className="ned-indoor-floor-transition-badge"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectFloor(t.targetFloor);
+                  }}
+                >
+                  <rect
+                    x="-3.2"
+                    y="-1.3"
+                    width="6.4"
+                    height="2.6"
+                    rx="0.6"
+                    fill="var(--map-surface-elevated, #ffffff)"
+                    stroke="var(--map-route-stroke, #b85d19)"
+                    strokeWidth="0.35"
+                  />
+                  {/* Direction indicator arrow */}
+                  <path
+                    d={
+                      isUp
+                        ? "M-1.8 0.4 l0.7 -0.8 l0.7 0.8"
+                        : "M-1.8 -0.4 l0.7 0.8 l0.7 -0.8"
+                    }
+                    stroke="var(--map-route-stroke, #b85d19)"
+                    strokeWidth="0.35"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                  <text
+                    x="0.6"
+                    y="0.1"
+                    className="ned-indoor-label"
+                    style={{
+                      fontSize: "1.0px",
+                      fill: "var(--map-route-stroke, #b85d19)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {t.targetLabel}
+                  </text>
+                  <title>{`Take ${t.kind} ${
+                    isUp ? "up" : "down"
+                  } to ${t.targetLabel} (click to switch floor)`}</title>
+                </g>
+              );
+            })}
+          </g>
+
+          {/* 5. User Location Marker ("I am here") */}
+          {currentUserNode && (
+            <g
+              transform={`translate(${currentUserNode.x}, ${currentUserNode.y})`}
+              className="ned-indoor-symbol-group"
+            >
+              {/* Outer pulsing halo */}
+              <circle
+                cx="0"
+                cy="0"
+                r="3.2"
+                fill="var(--map-user-dot, #0284c7)"
+                className="ned-indoor-user-pulse"
+              />
+              {/* Solid dot */}
+              <circle
+                cx="0"
+                cy="0"
+                r="1.7"
+                fill="var(--map-user-dot, #0284c7)"
+                stroke="#ffffff"
+                strokeWidth="0.4"
+              />
+              <circle cx="0" cy="0" r="0.6" fill="#ffffff" />
+              <title>You Are Here</title>
+            </g>
+          )}
+
+          {/* 6. Room Labels */}
           <g className="ned-indoor-labels-layer">
             {visibleLabels.map((lbl) => {
               return (

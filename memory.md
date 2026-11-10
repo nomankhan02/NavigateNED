@@ -10,11 +10,9 @@
 - Task A3c delivered: Building numbers on landmarks (`number`), badge-only rendering at zoom < 18, and collapsible searchable Key directory.
 - Task A3e delivered: Switched default street basemap to Esri World Light Gray Base (`clean`) and dropped CARTO due to API key watermarks.
 - Task A3d delivered: Footpath geometries, honest edge weights, validation, and geometry-aware map rendering.
-- Task A4 in progress (Slice a completed: data sync + SVG renderer + floors + labels):
-  - Created `tools/sync_indoor_public.py` and copied 6 building datasets to `web/public/data/indoor/`.
-  - Built client-only SVG indoor renderer (`web/src/map/indoor/IndoorMap.tsx`) with smooth pointer/touch pan-and-zoom, corridor strips, room rectangles, hand-drawn stairs/lift/entrance/exit SVG symbols, and demo model badge.
-  - Implemented vertical floor switcher (`web/src/map/indoor/floors.tsx`) with route indicator dots and floor level abbreviations.
-  - Implemented priority-ranked label collision engine (`web/src/map/indoor/labels.ts`) displaying short codes at low zoom and full room names at high zoom.
+- Task A4 in progress (Slices a & b completed; Slice c remaining):
+  - **Slice (a) Data Sync + SVG Renderer + Floors + Labels**: Created `tools/sync_indoor_public.py` (synced 6 indoor JSONs to `web/public/data/indoor/`), built client-only SVG indoor renderer (`IndoorMap.tsx`) with pan/zoom, corridor strips, room rectangles, hand-drawn stairs/lift/entrance/exit SVG symbols, floor switcher (`floors.tsx`), and priority collision labels (`labels.ts`).
+  - **Slice (b) Routes + Transitions + Markers**: Implemented floor-specific route extraction (`route.ts`), animated route polylines with casing, stair/lift vertical transition badges with clickable floor jumps, start/destination badges, pulsing `userNode` ("I am here") marker, and room selection/highlighting.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
