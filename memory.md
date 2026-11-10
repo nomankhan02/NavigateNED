@@ -16,6 +16,10 @@
   - Multi-floor routing with animated strokes, stair/lift vertical transition connector badges (clickable floor switch), and pulsing `userNode` ("I am here") marker.
   - Evacuation hazard overlays (exit node highlight rings, blocked corridors/rooms, assignment paths) and algorithm trace replay layer (`useTraceReplay`).
   - Temporary dev verification harness at `web/src/app/_map-dev/indoor/page.tsx` (and `web/src/app/%5Fmap-dev/indoor/page.tsx`).
+- Task A4b delivered: Indoor map fixes (hover jitter elimination, room label boundary clipping, and room popover):
+  - Hover jitter eliminated: Removed conflicting CSS transforms on SVG transform-positioned elements; added transparent hit-area primitives with `pointer-events: none` on inner visuals across stairs, lift, entrance, exit, transition badges, and markers; respected `prefers-reduced-motion`.
+  - Room label fitting & clipping: Computed room screen bounds at current zoom; fitted text using 2-line wrapped full names down to 9px min, short names, or short codes; centered labels within room rects; enforced strict clipping via SVG `<clipPath>` to prevent room overflow; recomputes on debounced zoom end (never during pan).
+  - Room popover: Floating details tooltip displays full room name, floor, capacity, and ID on room hover or tap.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -44,6 +48,7 @@
 
 ## Open Tasks
 - [x] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
+- [x] Member A (Task A4b): Indoor map fixes (hover jitter elimination, room label boundary clipping, and room popover).
 - [ ] Member B: Implement C++ DSA routing algorithms in `core/`.
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 

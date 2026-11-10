@@ -60,7 +60,7 @@
 - `web/src/map/indoor/floors.tsx`: Multi-floor state helpers and vertical floor switcher component.
 - `web/src/map/indoor/indoor.css`: Scoped CSS tokens and architectural styling for IndoorMap.
 - `web/src/map/indoor/IndoorMap.tsx`: Client-only SVG multi-floor indoor architectural building viewer.
-- `web/src/map/indoor/labels.ts`: Priority-ranked label collision detection and text formatting.
+- `web/src/map/indoor/labels.ts`: Responsive room label fitting with SVG clipPath boundary clipping, 2-line wrapping down to 9px, and short code fallback.
 - `web/src/map/indoor/route.ts`: Indoor route processing, floor-specific path extraction, and vertical transitions.
 - `web/src/map/indoor/types.ts`: TypeScript contracts for IndoorBuilding, IndoorMapProps, and indoor nodes/edges.
 - `web/src/map/map.css`: Outdoor map CSS variables (`--map-*`), self-contained Leaflet layout rules, and custom SVG control styles.

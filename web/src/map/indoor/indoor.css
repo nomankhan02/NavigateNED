@@ -110,14 +110,30 @@
   stroke-dasharray: 0.8 0.6;
 }
 
-/* Facility symbols */
-.ned-indoor-symbol-group {
+/* Facility symbols and markers - outer group positioned by SVG transform without CSS transform */
+.ned-indoor-symbol-marker {
   cursor: pointer;
-  transition: transform 140ms ease;
 }
 
-.ned-indoor-symbol-group:hover {
-  transform: scale(1.15);
+.ned-indoor-symbol-hit-area {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.ned-indoor-symbol-visual {
+  pointer-events: none;
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.ned-indoor-symbol-marker:hover .ned-indoor-symbol-visual {
+  filter: drop-shadow(0 0 2.5px rgba(24, 90, 68, 0.45));
+  opacity: 0.95;
+}
+
+.ned-indoor-symbol-marker:hover circle {
+  stroke-width: 0.55px;
 }
 
 /* Floor Switcher Overlay */
@@ -309,8 +325,24 @@
 
 /* Floor transition badge (stairs / lift connector) */
 .ned-indoor-floor-transition-badge {
-  filter: drop-shadow(0 2px 4px rgba(18, 31, 25, 0.2));
   cursor: pointer;
+}
+
+.ned-indoor-transition-hit-area {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.ned-indoor-transition-visual {
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(18, 31, 25, 0.18));
+  transition: filter 120ms ease;
+}
+
+.ned-indoor-floor-transition-badge:hover .ned-indoor-transition-visual {
+  filter: drop-shadow(0 2px 7px rgba(184, 93, 25, 0.4));
 }
 
 .ned-indoor-floor-transition-badge:hover text {
@@ -319,17 +351,16 @@
 
 /* User marker pulse */
 .ned-indoor-user-pulse {
+  pointer-events: none;
   animation: ned-indoor-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes ned-indoor-pulse {
   0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
+    opacity: 0.5;
   }
   50% {
     opacity: 0.15;
-    transform: scale(1.6);
   }
 }
 
@@ -337,4 +368,48 @@
   .ned-indoor-user-pulse {
     animation: none !important;
   }
+}
+
+/* Room Popover / Tooltip Overlay */
+.ned-indoor-room-popover {
+  position: absolute;
+  pointer-events: none;
+  background: var(--map-surface-card, rgba(250, 252, 251, 0.96));
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--map-border-strong, #5c7468);
+  border-radius: 6px;
+  padding: 7px 11px;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(18, 31, 25, 0.15);
+  z-index: 35;
+  max-width: 250px;
+  transition: opacity 100ms ease;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+}
+
+.ned-indoor-room-popover-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--map-text-primary, #14241d);
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.ned-indoor-room-popover-meta {
+  font-size: 10.5px;
+  color: var(--map-text-secondary, #3f544a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ned-indoor-room-popover-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(20, 36, 29, 0.08);
+  color: var(--map-text-primary, #14241d);
 }

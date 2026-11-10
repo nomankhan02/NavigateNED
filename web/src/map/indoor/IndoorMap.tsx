@@ -27,7 +27,7 @@ import {
   getBuildingFloors,
   getFloorsWithRoute,
 } from "./floors";
-import { computeIndoorLabels, type PlacedLabel } from "./labels";
+import { computeIndoorLabels, type FittedRoomLabel } from "./labels";
 import { extractFloorRoute } from "./route";
 
 const MARGIN_METERS = 5;
@@ -84,6 +84,48 @@ export function IndoorMap({
     x: -MARGIN_METERS,
     y: -MARGIN_METERS,
   });
+
+  // Container screen pixel dimensions for responsive text fitting
+  const [containerSize, setContainerSize] = useState<{
+    width: number;
+    height: number;
+  }>({
+    width: 800,
+    height: 520,
+  });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const updateSize = () => {
+      setContainerSize({
+        width: el.clientWidth || 800,
+        height: el.clientHeight || 520,
+      });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Debounced scale: recomputes room labels strictly on zoom end, never during pan
+  const [committedScale, setCommittedScale] = useState<number>(scale);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCommittedScale(scale);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [scale]);
+
+  // Hovered room state for floating details popover
+  const [hoveredRoom, setHoveredRoom] = useState<{
+    roomId: string;
+    node: IndoorNode;
+    screenX: number;
+    screenY: number;
+  } | null>(null);
 
   // Track pointers for panning and pinch-to-zoom
   const activePointersRef = useRef<Map<number, { x: number; y: number }>>(
@@ -301,18 +343,34 @@ export function IndoorMap({
     );
   }, [floorNodes]);
 
-  // Compute collision-free labels
+  // Compute fitted labels strictly fitting inside their room boxes on zoom end
   const activeRouteNodesSet = useMemo(() => new Set(route ?? []), [route]);
   const visibleLabels = useMemo(() => {
     return computeIndoorLabels(
       floorRooms,
       floorNodes,
       activeFloor,
-      scale,
+      committedScale,
+      containerSize.width,
+      containerSize.height,
+      baseWidth,
+      baseHeight,
+      MARGIN_METERS,
       selectedRoomId,
       activeRouteNodesSet
     );
-  }, [floorRooms, floorNodes, activeFloor, scale, selectedRoomId, activeRouteNodesSet]);
+  }, [
+    floorRooms,
+    floorNodes,
+    activeFloor,
+    committedScale,
+    containerSize.width,
+    containerSize.height,
+    baseWidth,
+    baseHeight,
+    selectedRoomId,
+    activeRouteNodesSet,
+  ]);
 
   const highlightedSet = useMemo(
     () => new Set(highlightedNodeIds ?? []),
@@ -536,6 +594,25 @@ export function IndoorMap({
               strokeWidth="0.1"
             />
           </pattern>
+
+          {/* Room-specific label clipping masks ensuring text never overflows room boundary */}
+          {floorRooms.map((r) => {
+            const [rx, ry, rw, rh] = r.rect;
+            return (
+              <clipPath
+                key={`clip-room-${r.nodeId}`}
+                id={`clip-room-${r.nodeId}`}
+              >
+                <rect
+                  x={rx + 0.15}
+                  y={ry + 0.15}
+                  width={Math.max(0, rw - 0.3)}
+                  height={Math.max(0, rh - 0.3)}
+                  rx="0.3"
+                />
+              </clipPath>
+            );
+          })}
         </defs>
 
         {/* Floor Canvas Background */}
@@ -621,6 +698,22 @@ export function IndoorMap({
                       e.stopPropagation();
                       onRoomClick?.(r.nodeId, node);
                     }}
+                    onPointerEnter={(e) => {
+                      const container = containerRef.current;
+                      if (!container || !node) return;
+                      const rect = container.getBoundingClientRect();
+                      setHoveredRoom({
+                        roomId: r.nodeId,
+                        node,
+                        screenX: e.clientX - rect.left,
+                        screenY: e.clientY - rect.top,
+                      });
+                    }}
+                    onPointerLeave={() => {
+                      setHoveredRoom((prev) =>
+                        prev?.roomId === r.nodeId ? null : prev
+                      );
+                    }}
                   >
                     <title>{node?.name ? `${node.name} (${node.id})` : node?.id}</title>
                   </rect>
@@ -636,120 +729,135 @@ export function IndoorMap({
                 <g
                   key={`facility-${n.id}`}
                   transform={`translate(${n.x}, ${n.y})`}
-                  className="ned-indoor-symbol-group"
+                  className="ned-indoor-symbol-marker"
                 >
-                  {n.type === "stairs" && (
-                    <g>
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r="2.2"
-                        fill="var(--map-surface-elevated)"
-                        stroke="var(--map-indoor-stairs)"
-                        strokeWidth="0.4"
-                      />
-                      {/* Hand-drawn staircase 1.75px style */}
-                      <path
-                        d="M-1.2 1.2 h0.8 v-0.8 h0.8 v-0.8 h0.8 v-0.8"
-                        stroke="var(--map-indoor-stairs)"
-                        strokeWidth="0.4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                      <title>{n.name ?? "Staircase"}</title>
-                    </g>
-                  )}
-
-                  {n.type === "lift" && (
-                    <g>
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r="2.2"
-                        fill="var(--map-surface-elevated)"
-                        stroke="var(--map-indoor-lift)"
-                        strokeWidth="0.4"
-                      />
-                      {/* Hand-drawn elevator box with up/down chevrons */}
-                      <rect
-                        x="-1.1"
-                        y="-1.1"
-                        width="2.2"
-                        height="2.2"
-                        rx="0.3"
-                        stroke="var(--map-indoor-lift)"
-                        strokeWidth="0.3"
-                        fill="none"
-                      />
-                      <path
-                        d="M-0.6 -0.1 l0.6 -0.6 l0.6 0.6 M-0.6 0.2 l0.6 0.6 l0.6 -0.6"
-                        stroke="var(--map-indoor-lift)"
-                        strokeWidth="0.3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                      <title>{n.name ?? "Elevator"}</title>
-                    </g>
-                  )}
-
-                  {n.type === "entrance" && (
-                    <g>
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r="2.4"
-                        fill="var(--map-surface-elevated)"
-                        stroke="var(--map-indoor-entrance)"
-                        strokeWidth="0.5"
-                      />
-                      {/* Hand-drawn entrance door & arrow */}
-                      <path
-                        d="M-0.7 1.1 v-2.2 h1.4 v2.2 M-1.2 0 h1.6 M0.1 -0.4 l0.4 0.4 l-0.4 0.4"
-                        stroke="var(--map-indoor-entrance)"
-                        strokeWidth="0.35"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                      <title>{n.name ?? "Main Entrance"}</title>
-                    </g>
-                  )}
-
-                  {n.type === "exit" && (
-                    <g>
-                      {exitNodesSet.has(n.id) && (
+                  {/* Transparent hit area circle so hover never flickers */}
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="3.4"
+                    className="ned-indoor-symbol-hit-area"
+                  />
+                  <g className="ned-indoor-symbol-visual">
+                    {n.type === "stairs" && (
+                      <g>
                         <circle
                           cx="0"
                           cy="0"
-                          r="3.6"
+                          r="2.2"
+                          fill="var(--map-surface-elevated)"
+                          stroke="var(--map-indoor-stairs)"
+                          strokeWidth="0.4"
+                        />
+                        {/* Hand-drawn staircase 1.75px style */}
+                        <path
+                          d="M-1.2 1.2 h0.8 v-0.8 h0.8 v-0.8 h0.8 v-0.8"
+                          stroke="var(--map-indoor-stairs)"
+                          strokeWidth="0.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                           fill="none"
+                        />
+                      </g>
+                    )}
+
+                    {n.type === "lift" && (
+                      <g>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="2.2"
+                          fill="var(--map-surface-elevated)"
+                          stroke="var(--map-indoor-lift)"
+                          strokeWidth="0.4"
+                        />
+                        {/* Hand-drawn elevator box with up/down chevrons */}
+                        <rect
+                          x="-1.1"
+                          y="-1.1"
+                          width="2.2"
+                          height="2.2"
+                          rx="0.3"
+                          stroke="var(--map-indoor-lift)"
+                          strokeWidth="0.3"
+                          fill="none"
+                        />
+                        <path
+                          d="M-0.6 -0.1 l0.6 -0.6 l0.6 0.6 M-0.6 0.2 l0.6 0.6 l0.6 -0.6"
+                          stroke="var(--map-indoor-lift)"
+                          strokeWidth="0.3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </g>
+                    )}
+
+                    {n.type === "entrance" && (
+                      <g>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="2.4"
+                          fill="var(--map-surface-elevated)"
+                          stroke="var(--map-indoor-entrance)"
+                          strokeWidth="0.5"
+                        />
+                        {/* Hand-drawn entrance door & arrow */}
+                        <path
+                          d="M-0.7 1.1 v-2.2 h1.4 v2.2 M-1.2 0 h1.6 M0.1 -0.4 l0.4 0.4 l-0.4 0.4"
+                          stroke="var(--map-indoor-entrance)"
+                          strokeWidth="0.35"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </g>
+                    )}
+
+                    {n.type === "exit" && (
+                      <g>
+                        {exitNodesSet.has(n.id) && (
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r="3.6"
+                            fill="none"
+                            stroke="var(--map-indoor-exit)"
+                            strokeWidth="0.5"
+                            strokeDasharray="1.2 0.8"
+                          />
+                        )}
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="2.4"
+                          fill="var(--map-surface-elevated)"
                           stroke="var(--map-indoor-exit)"
                           strokeWidth="0.5"
-                          strokeDasharray="1.2 0.8"
                         />
-                      )}
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r="2.4"
-                        fill="var(--map-surface-elevated)"
-                        stroke="var(--map-indoor-exit)"
-                        strokeWidth="0.5"
-                      />
-                      {/* Hand-drawn exit door & arrow */}
-                      <path
-                        d="M-1.1 1.1 v-2.2 h1.4 v2.2 M-0.2 0 h1.6 M1.0 -0.4 l0.4 0.4 l-0.4 0.4"
-                        stroke="var(--map-indoor-exit)"
-                        strokeWidth="0.35"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                      <title>{n.name ?? "Emergency Exit"}</title>
-                    </g>
-                  )}
+                        {/* Hand-drawn exit door & arrow */}
+                        <path
+                          d="M-1.1 1.1 v-2.2 h1.4 v2.2 M-0.2 0 h1.6 M1.0 -0.4 l0.4 0.4 l-0.4 0.4"
+                          stroke="var(--map-indoor-exit)"
+                          strokeWidth="0.35"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </g>
+                    )}
+                  </g>
+                  <title>
+                    {n.name ??
+                      (n.type === "stairs"
+                        ? "Staircase"
+                        : n.type === "lift"
+                        ? "Elevator"
+                        : n.type === "entrance"
+                        ? "Main Entrance"
+                        : "Emergency Exit")}
+                  </title>
                 </g>
               );
             })}
@@ -784,17 +892,25 @@ export function IndoorMap({
             {floorRoute.startPoint && (
               <g
                 transform={`translate(${floorRoute.startPoint[0]}, ${floorRoute.startPoint[1]})`}
-                className="ned-indoor-symbol-group"
+                className="ned-indoor-symbol-marker"
               >
                 <circle
                   cx="0"
                   cy="0"
-                  r="2.0"
-                  fill="var(--map-landmark-fill, #185a44)"
-                  stroke="#ffffff"
-                  strokeWidth="0.4"
+                  r="3.2"
+                  className="ned-indoor-symbol-hit-area"
                 />
-                <circle cx="0" cy="0" r="0.7" fill="#ffffff" />
+                <g className="ned-indoor-symbol-visual">
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="2.0"
+                    fill="var(--map-landmark-fill, #185a44)"
+                    stroke="#ffffff"
+                    strokeWidth="0.4"
+                  />
+                  <circle cx="0" cy="0" r="0.7" fill="#ffffff" />
+                </g>
                 <title>Route Start</title>
               </g>
             )}
@@ -803,25 +919,33 @@ export function IndoorMap({
             {floorRoute.endPoint && (
               <g
                 transform={`translate(${floorRoute.endPoint[0]}, ${floorRoute.endPoint[1]})`}
-                className="ned-indoor-symbol-group"
+                className="ned-indoor-symbol-marker"
               >
                 <circle
                   cx="0"
                   cy="0"
-                  r="2.2"
-                  fill="var(--map-route-stroke, #b85d19)"
-                  stroke="#ffffff"
-                  strokeWidth="0.4"
+                  r="3.4"
+                  className="ned-indoor-symbol-hit-area"
                 />
-                {/* Finish flag symbol */}
-                <path
-                  d="M-0.8 1.1 v-2.2 M-0.8 -1.1 h1.6 l-0.4 0.6 l0.4 0.6 h-1.6"
-                  stroke="#ffffff"
-                  strokeWidth="0.35"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
+                <g className="ned-indoor-symbol-visual">
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="2.2"
+                    fill="var(--map-route-stroke, #b85d19)"
+                    stroke="#ffffff"
+                    strokeWidth="0.4"
+                  />
+                  {/* Finish flag symbol */}
+                  <path
+                    d="M-0.8 1.1 v-2.2 M-0.8 -1.1 h1.6 l-0.4 0.6 l0.4 0.6 h-1.6"
+                    stroke="#ffffff"
+                    strokeWidth="0.35"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </g>
                 <title>Route Destination</title>
               </g>
             )}
@@ -840,40 +964,49 @@ export function IndoorMap({
                   }}
                 >
                   <rect
-                    x="-3.2"
-                    y="-1.3"
-                    width="6.4"
-                    height="2.6"
-                    rx="0.6"
-                    fill="var(--map-surface-elevated, #ffffff)"
-                    stroke="var(--map-route-stroke, #b85d19)"
-                    strokeWidth="0.35"
+                    x="-3.6"
+                    y="-1.7"
+                    width="7.2"
+                    height="3.4"
+                    className="ned-indoor-transition-hit-area"
                   />
-                  {/* Direction indicator arrow */}
-                  <path
-                    d={
-                      isUp
-                        ? "M-1.8 0.4 l0.7 -0.8 l0.7 0.8"
-                        : "M-1.8 -0.4 l0.7 0.8 l0.7 -0.8"
-                    }
-                    stroke="var(--map-route-stroke, #b85d19)"
-                    strokeWidth="0.35"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                  <text
-                    x="0.6"
-                    y="0.1"
-                    className="ned-indoor-label"
-                    style={{
-                      fontSize: "1.0px",
-                      fill: "var(--map-route-stroke, #b85d19)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {t.targetLabel}
-                  </text>
+                  <g className="ned-indoor-transition-visual">
+                    <rect
+                      x="-3.2"
+                      y="-1.3"
+                      width="6.4"
+                      height="2.6"
+                      rx="0.6"
+                      fill="var(--map-surface-elevated, #ffffff)"
+                      stroke="var(--map-route-stroke, #b85d19)"
+                      strokeWidth="0.35"
+                    />
+                    {/* Direction indicator arrow */}
+                    <path
+                      d={
+                        isUp
+                          ? "M-1.8 0.4 l0.7 -0.8 l0.7 0.8"
+                          : "M-1.8 -0.4 l0.7 0.8 l0.7 -0.8"
+                      }
+                      stroke="var(--map-route-stroke, #b85d19)"
+                      strokeWidth="0.35"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                    <text
+                      x="0.6"
+                      y="0.1"
+                      className="ned-indoor-label"
+                      style={{
+                        fontSize: "1.0px",
+                        fill: "var(--map-route-stroke, #b85d19)",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {t.targetLabel}
+                    </text>
+                  </g>
                   <title>{`Take ${t.kind} ${
                     isUp ? "up" : "down"
                   } to ${t.targetLabel} (click to switch floor)`}</title>
@@ -886,7 +1019,7 @@ export function IndoorMap({
           {currentUserNode && (
             <g
               transform={`translate(${currentUserNode.x}, ${currentUserNode.y})`}
-              className="ned-indoor-symbol-group"
+              pointerEvents="none"
             >
               {/* Outer pulsing halo */}
               <circle
@@ -895,6 +1028,7 @@ export function IndoorMap({
                 r="3.2"
                 fill="var(--map-user-dot, #0284c7)"
                 className="ned-indoor-user-pulse"
+                pointerEvents="none"
               />
               {/* Solid dot */}
               <circle
@@ -904,8 +1038,9 @@ export function IndoorMap({
                 fill="var(--map-user-dot, #0284c7)"
                 stroke="#ffffff"
                 strokeWidth="0.4"
+                pointerEvents="none"
               />
-              <circle cx="0" cy="0" r="0.6" fill="#ffffff" />
+              <circle cx="0" cy="0" r="0.6" fill="#ffffff" pointerEvents="none" />
               <title>You Are Here</title>
             </g>
           )}
@@ -1098,24 +1233,68 @@ export function IndoorMap({
             </g>
           )}
 
-          {/* 9. Room Labels */}
+          {/* 9. Room Labels (strictly clipped inside room boxes) */}
           <g className="ned-indoor-labels-layer">
-            {visibleLabels.map((lbl) => {
-              return (
+            {visibleLabels.map((lbl) => (
+              <g
+                key={`label-${lbl.id}`}
+                clipPath={`url(#clip-room-${lbl.nodeId})`}
+                pointerEvents="none"
+              >
                 <text
-                  key={`label-${lbl.id}`}
-                  x={lbl.x}
-                  y={lbl.y}
+                  x={lbl.cx}
+                  y={lbl.cy}
                   className="ned-indoor-label"
-                  style={{ fontSize: `${lbl.fontSize}px` }}
+                  style={{ fontSize: `${lbl.fontSizeMeters}px` }}
+                  textAnchor="middle"
+                  dominantBaseline="central"
                 >
-                  {lbl.text}
+                  {lbl.lines.length === 1 ? (
+                    lbl.lines[0]
+                  ) : (
+                    <>
+                      <tspan x={lbl.cx} dy="-0.6em">
+                        {lbl.lines[0]}
+                      </tspan>
+                      <tspan x={lbl.cx} dy="1.2em">
+                        {lbl.lines[1]}
+                      </tspan>
+                    </>
+                  )}
                 </text>
-              );
-            })}
+              </g>
+            ))}
           </g>
         </g>
       </svg>
+
+      {/* Floating Room Popover / Tooltip */}
+      {hoveredRoom && (
+        <div
+          className="ned-indoor-room-popover"
+          style={{
+            left: Math.max(
+              110,
+              Math.min(containerSize.width - 110, hoveredRoom.screenX)
+            ),
+            top: Math.max(36, hoveredRoom.screenY - 10),
+          }}
+        >
+          <div className="ned-indoor-room-popover-title">
+            {hoveredRoom.node.name || hoveredRoom.node.id}
+          </div>
+          <div className="ned-indoor-room-popover-meta">
+            <span className="ned-indoor-room-popover-pill">
+              Floor{" "}
+              {hoveredRoom.node.floor === 0 ? "Ground" : hoveredRoom.node.floor}
+            </span>
+            {hoveredRoom.node.capacity && (
+              <span>Capacity: {hoveredRoom.node.capacity}</span>
+            )}
+            <span style={{ opacity: 0.7 }}>{hoveredRoom.node.id}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

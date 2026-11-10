@@ -5,5 +5,11 @@
 
 export { IndoorMap } from "./IndoorMap";
 export { FloorSwitcher, getBuildingFloors, getFloorsWithRoute } from "./floors";
-export { computeIndoorLabels, getIndoorShortLabel } from "./labels";
+export {
+  computeIndoorLabels,
+  getIndoorShortLabel,
+  getIndoorShortName,
+  getIndoorShortCode,
+  type FittedRoomLabel,
+} from "./labels";
 export * from "./types";
