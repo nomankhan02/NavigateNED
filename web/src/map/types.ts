@@ -78,6 +78,7 @@ export interface EvacuationAssignment {
   assemblyId: string;
   path: string[];
   distance: number;
+  count?: number;
 }
 
 export interface EvacuationOverlayData {

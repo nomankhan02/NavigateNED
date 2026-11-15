@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import type {
+  EvacDataset,
+  EvacuateResponse,
+  EvacuationCompareResponse,
+} from "@/core/navcore";
 import {
   Badge,
   Button,
   CloseIcon,
   HazardIcon,
   PeopleFlowIcon,
+  PlayIcon,
   SearchField,
   type SearchOption,
+  SegmentedControl,
   Toggle,
 } from "@/ui";
+import { EvacResultsCard } from "./EvacResultsCard";
 import styles from "./evacuatePanel.module.css";
 
 export interface EvacGroupItem {
@@ -34,6 +42,14 @@ export interface EvacuatePanelProps {
   onRemoveBlockedNode: (nodeId: string) => void;
   onRemoveBlockedEdge: (a: string, b: string) => void;
   onClearBlocked: () => void;
+  evacMode: "nearest" | "capacity";
+  onChangeEvacMode: (mode: "nearest" | "capacity") => void;
+  onRunEvacuation: () => void;
+  isRunning: boolean;
+  evacError: string | null;
+  evacDataset: EvacDataset | null;
+  evacResult: EvacuateResponse | null;
+  evacCompare: EvacuationCompareResponse | null;
 }
 
 export function EvacuatePanel({
@@ -50,6 +66,14 @@ export function EvacuatePanel({
   onRemoveBlockedNode,
   onRemoveBlockedEdge,
   onClearBlocked,
+  evacMode,
+  onChangeEvacMode,
+  onRunEvacuation,
+  isRunning,
+  evacError,
+  evacDataset,
+  evacResult,
+  evacCompare,
 }: EvacuatePanelProps) {
   const [groupQuery, setGroupQuery] = useState("");
   const [selectedAt, setSelectedAt] = useState("");
@@ -57,6 +81,7 @@ export function EvacuatePanel({
   const [groupCount, setGroupCount] = useState(150);
 
   const totalBlocked = blockedNodes.length + blockedEdges.length;
+  const totalPeople = groups.reduce((acc, g) => acc + g.count, 0);
 
   return (
     <>
@@ -249,6 +274,41 @@ export function EvacuatePanel({
 
         <p className={styles.fixedNote}>Lifts are off during evacuation.</p>
       </section>
+
+      <section className={styles.sectionCard}>
+        <h3 className={styles.sectionTitle}>Evacuation mode</h3>
+        <SegmentedControl
+          name="evac-mode"
+          value={evacMode}
+          onChange={(val) => onChangeEvacMode(val as "nearest" | "capacity")}
+          options={[
+            { value: "nearest", label: "Nearest assembly" },
+            { value: "capacity", label: "Capacity-aware" },
+          ]}
+        />
+        <Button
+          variant="primary"
+          chamfer
+          loading={isRunning}
+          disabled={groups.length === 0}
+          leadingIcon={<PlayIcon size={14} />}
+          onClick={onRunEvacuation}
+        >
+          Run evacuation ({totalPeople} people)
+        </Button>
+        {evacError ? (
+          <p className={styles.emptyHint} role="alert">
+            {evacError}
+          </p>
+        ) : null}
+      </section>
+
+      <EvacResultsCard
+        totalPeople={totalPeople}
+        evacDataset={evacDataset}
+        result={evacResult}
+        compare={evacCompare}
+      />
     </>
   );
 }

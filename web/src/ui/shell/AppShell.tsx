@@ -20,8 +20,13 @@ import {
   useTraceReplay,
 } from "@/map";
 import {
+  compareEvacuation,
   computeRoute,
   ensureAllCampusDataLoaded,
+  evacuateCampus,
+  type EvacDataset,
+  type EvacuateResponse,
+  type EvacuationCompareResponse,
   getDirections,
   INDOOR_BUILDING_IDS,
   type Maneuver,
@@ -190,6 +195,13 @@ export function AppShell() {
   const [blockMode, setBlockMode] = useState<boolean>(false);
   const [blockedNodes, setBlockedNodes] = useState<string[]>([]);
   const [blockedEdges, setBlockedEdges] = useState<[string, string][]>([]);
+  const [evacDataset, setEvacDataset] = useState<EvacDataset | null>(null);
+  const [evacMode, setEvacMode] = useState<"nearest" | "capacity">("capacity");
+  const [evacResult, setEvacResult] = useState<EvacuateResponse | null>(null);
+  const [evacCompare, setEvacCompare] =
+    useState<EvacuationCompareResponse | null>(null);
+  const [isEvacRunning, setIsEvacRunning] = useState<boolean>(false);
+  const [evacError, setEvacError] = useState<string | null>(null);
 
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
@@ -232,6 +244,7 @@ export function AppShell() {
         if (cancelled) return;
         setGraph(loaded.graph);
         setIndoorBuildings(loaded.indoorBuildings);
+        setEvacDataset(loaded.evac);
         setWasmReady(true);
       })
       .catch((err) => {
@@ -446,13 +459,53 @@ export function AppShell() {
     [graph],
   );
 
+  const runEvacuation = useCallback(
+    async (modeOverride?: "nearest" | "capacity") => {
+      if (!wasmReady || evacGroups.length === 0) return;
+      const activeMode = modeOverride ?? evacMode;
+      setIsEvacRunning(true);
+      setEvacError(null);
+      try {
+        const people = evacGroups.map((g) => ({ at: g.at, count: g.count }));
+        const blocked = { nodes: blockedNodes, edges: blockedEdges };
+        const [res, cmp] = await Promise.all([
+          evacuateCampus({
+            mode: activeMode,
+            blocked,
+            people,
+            disableLifts: true,
+          }),
+          compareEvacuation({
+            blocked,
+            people,
+            disableLifts: true,
+          }),
+        ]);
+        setEvacResult(res);
+        setEvacCompare(cmp);
+      } catch (err) {
+        setEvacError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsEvacRunning(false);
+      }
+    },
+    [wasmReady, evacGroups, evacMode, blockedNodes, blockedEdges],
+  );
+
   const evacOverlay: EvacuationOverlayData | null = useMemo(() => {
     if (mode !== "evacuate") return null;
     return {
       blockedNodes,
       blockedEdges,
+      assignments: evacResult?.assignments.map((a) => ({
+        from: a.from,
+        assemblyId: a.assemblyId,
+        path: extractOutdoorPath(a.path),
+        distance: a.distance,
+        count: a.count,
+      })),
     };
-  }, [mode, blockedNodes, blockedEdges]);
+  }, [mode, blockedNodes, blockedEdges, evacResult]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -1526,6 +1579,19 @@ export function AppShell() {
                   setBlockedNodes([]);
                   setBlockedEdges([]);
                 }}
+                evacMode={evacMode}
+                onChangeEvacMode={(nextMode) => {
+                  setEvacMode(nextMode);
+                  if (evacResult) {
+                    void runEvacuation(nextMode);
+                  }
+                }}
+                onRunEvacuation={() => void runEvacuation()}
+                isRunning={isEvacRunning}
+                evacError={evacError}
+                evacDataset={evacDataset}
+                evacResult={evacResult}
+                evacCompare={evacCompare}
               />
             ) : null}
           </div>
