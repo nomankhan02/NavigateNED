@@ -23,7 +23,7 @@
 - Task B1 & B2 delivered: Single-file C++17 routing & DSA engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
   - Merged 697-node graph (`data/graph.json` 86 outdoor nodes + 6 `data/indoor/*.json` 611 indoor nodes) linked via 3 m entrance edges.
   - Routing: Dijkstra, A* (admissible Haversine heuristic), BFS (fewest hops), Bellman-Ford (with negative cycle detection), and Floyd-Warshall (`algo: "floyd"`), all supporting `accessible: true` and `avoid` / `blockedEdges`, memoized by an O(1) LRU cache (invalidated when blocked sets change).
-  - Additional DSA: Prefix Trie (`search`), Floyd-Warshall landmark matrix (`allPairs`), Union-Find + Kruskal/Prim (`mst`), Held-Karp bitmask DP & Nearest-Neighbor (`tsp` with heuristic gap %), and Tarjan's articulation points & bridges (`criticalPoints`).
+  - Additional DSA: Prefix Trie (`search`), Floyd-Warshall landmark matrix (`allPairs`), Union-Find + Kruskal/Prim (`mst`), Held-Karp bitmask DP & Nearest-Neighbor (`tsp` with heuristic gap %), and Tarjan's articulation points & bridges (`criticalPoints`). Fully deterministic tie-breaking across platforms.
   - CLI (`g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): supports `ping`, `route`, `compare`, `search`, `cacheStats`, `allPairs`, `mst`, `tsp`, `criticalPoints`.
 
 ## Delivery Note for Members B & C

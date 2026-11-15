@@ -330,6 +330,7 @@ struct SearchItem {
     std::string lowerShort;
     std::string lowerNumber;
     std::string lowerCode;
+    std::string lowerId;
     std::vector<std::string> lowerWords;
 };
 
@@ -400,19 +401,28 @@ public:
         item.lowerLabel = trimCopy(toLowerCopy(item.label));
         item.lowerShort = trimCopy(toLowerCopy(item.shortName));
         item.lowerNumber = trimCopy(toLowerCopy(item.number));
+        item.lowerId = trimCopy(toLowerCopy(item.id));
 
         const auto colonPos = item.id.find(':');
         if (colonPos != std::string::npos) {
             item.lowerCode = toLowerCopy(item.id.substr(colonPos + 1));
+        } else if (item.id.rfind("b-", 0) == 0) {
+            item.lowerCode = toLowerCopy(item.id.substr(2));
         } else {
             item.lowerCode = toLowerCopy(item.id);
         }
 
-        // Collect all word tokens from label and shortName
+        // Collect all word tokens from label, shortName, and lowerCode
         auto w1 = tokenizeWords(item.lowerLabel);
         auto w2 = tokenizeWords(item.lowerShort);
-        item.lowerWords = w1;
+        auto w3 = tokenizeWords(item.lowerCode);
+        item.lowerWords = std::move(w1);
         for (const auto& w : w2) {
+            if (std::find(item.lowerWords.begin(), item.lowerWords.end(), w) == item.lowerWords.end()) {
+                item.lowerWords.push_back(w);
+            }
+        }
+        for (const auto& w : w3) {
             if (std::find(item.lowerWords.begin(), item.lowerWords.end(), w) == item.lowerWords.end()) {
                 item.lowerWords.push_back(w);
             }
@@ -423,7 +433,7 @@ public:
         insertKey(item.lowerShort, idx);
         insertKey(item.lowerNumber, idx);
         insertKey(item.lowerCode, idx);
-        insertKey(item.id, idx);
+        insertKey(item.lowerId, idx);
         for (const auto& w : item.lowerWords) {
             insertKey(w, idx);
         }
@@ -433,7 +443,11 @@ public:
 
     /**
      * Searches the Trie for `query` and returns up to `limit` ranked items.
-     * Exact and shorter matches are prioritized first.
+     * Fully deterministic sorting per specification:
+     * (1) match quality: exact full-name match (0), then prefix of full name (1), then prefix of word (2)
+     * (2) kind: landmark before room (0 before 1)
+     * (3) shorter label first (label.size())
+     * (4) id in lexicographic order (strictly unique total order)
      */
     std::vector<SearchItem> search(const std::string& rawQuery, int limit = 10) const {
         const std::string q = trimCopy(toLowerCopy(rawQuery));
@@ -453,15 +467,15 @@ public:
             return &pool[curr].itemIndices;
         };
 
-        std::unordered_set<int> candidateSet;
+        std::vector<int> candidateIndices;
         if (const auto* directList = traversePrefix(q)) {
-            candidateSet.insert(directList->begin(), directList->end());
+            candidateIndices.insert(candidateIndices.end(), directList->begin(), directList->end());
         }
 
-        // If query has multiple words, also intersect matches of individual query words
+        // If query has multiple words, intersect matches of individual query words
         const auto qWords = tokenizeWords(q);
         if (qWords.size() > 1) {
-            std::unordered_set<int> multiMatch;
+            std::vector<int> multiMatch;
             bool firstWord = true;
             for (const auto& qw : qWords) {
                 const auto* wList = traversePrefix(qw);
@@ -469,81 +483,95 @@ public:
                     multiMatch.clear();
                     break;
                 }
-                std::unordered_set<int> wordSet(wList->begin(), wList->end());
+                std::vector<int> sortedWList = *wList;
+                std::sort(sortedWList.begin(), sortedWList.end());
+                sortedWList.erase(std::unique(sortedWList.begin(), sortedWList.end()), sortedWList.end());
                 if (firstWord) {
-                    multiMatch = std::move(wordSet);
+                    multiMatch = std::move(sortedWList);
                     firstWord = false;
                 } else {
-                    std::unordered_set<int> nextSet;
-                    for (int id : multiMatch) {
-                        if (wordSet.count(id)) nextSet.insert(id);
-                    }
-                    multiMatch = std::move(nextSet);
+                    std::vector<int> nextMatch;
+                    std::set_intersection(multiMatch.begin(), multiMatch.end(),
+                                          sortedWList.begin(), sortedWList.end(),
+                                          std::back_inserter(nextMatch));
+                    multiMatch = std::move(nextMatch);
                 }
             }
-            candidateSet.insert(multiMatch.begin(), multiMatch.end());
+            candidateIndices.insert(candidateIndices.end(), multiMatch.begin(), multiMatch.end());
         }
+
+        // Deterministically sort and deduplicate candidate item indices
+        std::sort(candidateIndices.begin(), candidateIndices.end());
+        candidateIndices.erase(std::unique(candidateIndices.begin(), candidateIndices.end()), candidateIndices.end());
+
+        // Match quality definition:
+        // Tier 0: Exact full-name match on label, shortName, number, code/slug, or id
+        // Tier 1: Prefix of the full name on label, shortName, number, code/slug, or id
+        // Tier 2: Prefix of an individual word token
+        // Tier 3: Other
+        auto computeMatchQuality = [&](const SearchItem& it) -> int {
+            // (1) Exact full-name match
+            if (it.lowerLabel == q ||
+                (!it.lowerShort.empty() && it.lowerShort == q) ||
+                (!it.lowerNumber.empty() && it.lowerNumber == q) ||
+                (!it.lowerCode.empty() && it.lowerCode == q) ||
+                it.lowerId == q) {
+                return 0;
+            }
+            // (2) Prefix of the full name
+            if (it.lowerLabel.rfind(q, 0) == 0 ||
+                (!it.lowerShort.empty() && it.lowerShort.rfind(q, 0) == 0) ||
+                (!it.lowerNumber.empty() && it.lowerNumber.rfind(q, 0) == 0) ||
+                (!it.lowerCode.empty() && it.lowerCode.rfind(q, 0) == 0) ||
+                it.lowerId.rfind(q, 0) == 0) {
+                return 1;
+            }
+            // (3) Prefix of a word
+            for (const auto& w : it.lowerWords) {
+                if (w.rfind(q, 0) == 0) {
+                    return 2;
+                }
+            }
+            return 3;
+        };
 
         struct RankedCandidate {
             int itemIdx;
-            int tier;
-            size_t matchLen;
-            int kindOrder;
+            int matchQuality; // 0: exact full-name, 1: prefix of full name, 2: prefix of word
+            int kindOrder;    // 0: landmark, 1: room
         };
 
         std::vector<RankedCandidate> ranked;
-        ranked.reserve(candidateSet.size());
+        ranked.reserve(candidateIndices.size());
 
-        for (int idx : candidateSet) {
+        for (int idx : candidateIndices) {
             const SearchItem& it = items[idx];
-            int tier = 4;
-            size_t matchLen = it.label.size();
-
-            // Tier 0: Exact match on building number, short name, code, id, or full label
-            if (it.lowerNumber == q || it.lowerShort == q ||
-                it.lowerCode == q || it.lowerLabel == q ||
-                toLowerCopy(it.id) == q) {
-                tier = 0;
-                if (it.lowerNumber == q) matchLen = it.lowerNumber.size();
-                else if (it.lowerShort == q) matchLen = it.lowerShort.size();
-                else if (it.lowerCode == q) matchLen = it.lowerCode.size();
-            }
-            // Tier 1: Prefix of whole label, short name, or building number
-            else if ((!it.lowerNumber.empty() && it.lowerNumber.rfind(q, 0) == 0) ||
-                     (!it.lowerShort.empty() && it.lowerShort.rfind(q, 0) == 0) ||
-                     it.lowerLabel.rfind(q, 0) == 0 ||
-                     it.lowerCode.rfind(q, 0) == 0) {
-                tier = 1;
-                if (!it.lowerNumber.empty() && it.lowerNumber.rfind(q, 0) == 0) {
-                    matchLen = it.lowerNumber.size();
-                } else if (!it.lowerShort.empty() && it.lowerShort.rfind(q, 0) == 0) {
-                    matchLen = it.lowerShort.size();
-                }
-            }
-            // Tier 2: Exact match on any individual word token
-            else {
-                for (const auto& w : it.lowerWords) {
-                    if (w == q) {
-                        tier = 2;
-                        break;
-                    } else if (w.rfind(q, 0) == 0 && tier > 3) {
-                        tier = 3;
-                    }
-                }
-            }
-
+            const int mq = computeMatchQuality(it);
             const int kindOrder = (it.kind == "landmark") ? 0 : 1;
-            ranked.push_back(RankedCandidate{idx, tier, matchLen, kindOrder});
+            ranked.push_back(RankedCandidate{idx, mq, kindOrder});
         }
 
+        // Fully deterministic sort order per specification:
+        // (1) match quality: exact full-name match, then prefix of the full name, then prefix of a word
+        // (2) kind: landmark before room
+        // (3) shorter label first
+        // (4) label lexicographical
+        // (5) id in lexicographic order (strictly unique tie-breaker ensuring total ordering)
         std::sort(ranked.begin(), ranked.end(), [&](const RankedCandidate& a, const RankedCandidate& b) {
-            if (a.tier != b.tier) return a.tier < b.tier;
-            if (a.matchLen != b.matchLen) return a.matchLen < b.matchLen;
-            if (a.kindOrder != b.kindOrder) return a.kindOrder < b.kindOrder;
+            if (a.matchQuality != b.matchQuality) {
+                return a.matchQuality < b.matchQuality;
+            }
+            if (a.kindOrder != b.kindOrder) {
+                return a.kindOrder < b.kindOrder;
+            }
             const auto& ia = items[a.itemIdx];
             const auto& ib = items[b.itemIdx];
-            if (ia.label.size() != ib.label.size()) return ia.label.size() < ib.label.size();
-            if (ia.label != ib.label) return ia.label < ib.label;
+            if (ia.label.size() != ib.label.size()) {
+                return ia.label.size() < ib.label.size();
+            }
+            if (ia.label != ib.label) {
+                return ia.label < ib.label;
+            }
             return ia.id < ib.id;
         });
 
@@ -1384,7 +1412,10 @@ inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions
         int u;
         bool operator>(const AStarNode& other) const {
             if (std::abs(f - other.f) > 1e-12) return f > other.f;
-            return g > other.g;
+            if (std::abs(g - other.g) > 1e-12) return g > other.g;
+            // Deterministic tie-breaker on vertex index to ensure priority-queue extraction
+            // and path reconstruction are 100% reproducible across platforms and compilers.
+            return u > other.u;
         }
     };
 
@@ -1944,12 +1975,19 @@ inline json computeAllPairsMatrixJson(const Graph& g, const RouteOptions& opts) 
     json matrix = json::object();
 
     if (!g.landmarks.empty()) {
-        for (const auto& lmA : g.landmarks) {
+        // Sort landmarks by ID so the allPairs matrix rows and columns appear in
+        // strict deterministic lexicographic order, regardless of input JSON array order.
+        std::vector<Landmark> sortedLandmarks = g.landmarks;
+        std::sort(sortedLandmarks.begin(), sortedLandmarks.end(), [](const Landmark& a, const Landmark& b) {
+            return a.id < b.id;
+        });
+
+        for (const auto& lmA : sortedLandmarks) {
             json row = json::object();
             const int gIdxA = g.getNodeIndex(lmA.nodeId);
             const auto itA = fw.graphToOutdoorIdx.find(gIdxA);
 
-            for (const auto& lmB : g.landmarks) {
+            for (const auto& lmB : sortedLandmarks) {
                 const int gIdxB = g.getNodeIndex(lmB.nodeId);
                 const auto itB = fw.graphToOutdoorIdx.find(gIdxB);
                 if (itA != fw.graphToOutdoorIdx.end() && itB != fw.graphToOutdoorIdx.end()) {
@@ -1966,13 +2004,18 @@ inline json computeAllPairsMatrixJson(const Graph& g, const RouteOptions& opts) 
             matrix[lmA.id] = std::move(row);
         }
     } else {
-        // Fallback when no landmarks exist: index by outdoor node IDs
-        const int m = static_cast<int>(fw.outdoorToGraphIdx.size());
-        for (int i = 0; i < m; ++i) {
-            const std::string& idA = g.nodes[fw.outdoorToGraphIdx[i]].id;
+        // Fallback when no landmarks exist: index by outdoor node IDs sorted deterministically
+        std::vector<int> sortedOutdoor = fw.outdoorToGraphIdx;
+        std::sort(sortedOutdoor.begin(), sortedOutdoor.end(), [&](int u, int v) {
+            return g.nodes[u].id < g.nodes[v].id;
+        });
+        for (int u : sortedOutdoor) {
+            const std::string& idA = g.nodes[u].id;
+            const int i = fw.graphToOutdoorIdx.at(u);
             json row = json::object();
-            for (int j = 0; j < m; ++j) {
-                const std::string& idB = g.nodes[fw.outdoorToGraphIdx[j]].id;
+            for (int v : sortedOutdoor) {
+                const std::string& idB = g.nodes[v].id;
+                const int j = fw.graphToOutdoorIdx.at(v);
                 const double d = fw.dist[i][j];
                 if (std::isinf(d)) {
                     row[idB] = nullptr;
@@ -2100,7 +2143,9 @@ inline void extractOutdoorUndirectedGraph(const Graph& g,
         }
     }
 
-    std::unordered_map<uint64_t, double> bestWeight;
+    // Use std::map (not unordered_map) so unique undirected edges are collected
+    // in strict deterministic index order (a, b) across all platforms.
+    std::map<uint64_t, double> bestWeight;
     for (int mU = 0; mU < static_cast<int>(outdoorToGraph.size()); ++mU) {
         const int gU = outdoorToGraph[mU];
         for (const auto& e : g.adj[gU]) {
@@ -2639,7 +2684,12 @@ inline CriticalPointsResult runTarjanCriticalPoints(const Graph& g) {
         res.nodeDetails.push_back(std::move(detail));
     }
 
+    // Sort articulation points and node details deterministically by node ID
+    // so results are 100% reproducible across platforms and independent of DFS graph traversal.
     std::sort(res.articulationPoints.begin(), res.articulationPoints.end());
+    std::sort(res.nodeDetails.begin(), res.nodeDetails.end(), [](const json& a, const json& b) {
+        return a["id"].get<std::string>() < b["id"].get<std::string>();
+    });
 
     // Sort bridges by their endpoint node IDs for deterministic output
     std::vector<std::pair<std::string, std::string>> sortedBridges;
@@ -2669,6 +2719,12 @@ inline CriticalPointsResult runTarjanCriticalPoints(const Graph& g) {
         });
     }
 
+    // Sort bridge edge details deterministically by endpoints (a, b)
+    std::sort(res.edgeDetails.begin(), res.edgeDetails.end(), [](const json& a, const json& b) {
+        if (a["a"] != b["a"]) return a["a"] < b["a"];
+        return a["b"] < b["b"];
+    });
+
     return res;
 }
 
@@ -2688,6 +2744,8 @@ inline CriticalPointsResult runTarjanCriticalPoints(const Graph& g) {
  *   Algorithm Comparison Drawer in the web UI and the `compare` CLI command.
  */
 inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptions& baseOpts) {
+    // Fixed algorithm evaluation sequence and deterministic JSON object output
+    // to guarantee identical benchmark output structure across platforms.
     const std::vector<std::string> algos = {"dijkstra", "astar", "bfs", "bellmanford", "floyd"};
     json results = json::object();
 
@@ -3027,12 +3085,22 @@ inline std::string handleMST(const std::string& argsJson) {
 
     json edgesJson = json::array();
     for (const auto& e : mst.edges) {
+        std::string aId = g.nodes[e.graphU].id;
+        std::string bId = g.nodes[e.graphV].id;
+        if (bId < aId) std::swap(aId, bId);
         edgesJson.push_back({
-            {"a", g.nodes[e.graphU].id},
-            {"b", g.nodes[e.graphV].id},
+            {"a", aId},
+            {"b", bId},
             {"w", e.w}
         });
     }
+
+    // Sort MST edge listing deterministically by endpoints (a, b) so output order
+    // does not depend on Prim/Kruskal discovery order or platform container hashes.
+    std::sort(edgesJson.begin(), edgesJson.end(), [](const json& e1, const json& e2) {
+        if (e1["a"] != e2["a"]) return e1["a"] < e2["a"];
+        return e1["b"] < e2["b"];
+    });
 
     json out = {
         {"algo", mst.algo},

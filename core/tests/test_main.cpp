@@ -696,3 +696,68 @@ TEST_CASE("Task B2.6: Tarjan's articulation points and bridges on hand-made grap
         }
     }
 }
+
+TEST_CASE("Task B2 fix: PrefixTrie search ranking is strictly deterministic across different insertion orders") {
+    auto loadRes = loadRealMergedGraph();
+    REQUIRE(loadRes["status"] == "ok");
+
+    const navcore::Graph& g = navcore::detail::globalGraph();
+    const auto& originalItems = g.searchTrie.items;
+    REQUIRE(!originalItems.empty());
+
+    // 1. Build Trie Forward: normal item insertion order
+    navcore::PrefixTrie trieForward;
+    for (size_t i = 0; i < originalItems.size(); ++i) {
+        trieForward.addEntry(originalItems[i]);
+    }
+
+    // 2. Build Trie Reverse: reverse item insertion order
+    navcore::PrefixTrie trieReverse;
+    for (size_t i = originalItems.size(); i > 0; --i) {
+        trieReverse.addEntry(originalItems[i - 1]);
+    }
+
+    // 3. Build Trie Shuffled: pseudo-random item insertion order with fixed seed
+    std::vector<navcore::SearchItem> shuffledItems = originalItems;
+    std::mt19937 rng(4242);
+    std::shuffle(shuffledItems.begin(), shuffledItems.end(), rng);
+
+    navcore::PrefixTrie trieShuffled;
+    for (const auto& item : shuffledItems) {
+        trieShuffled.addEntry(item);
+    }
+
+    // Test a wide variety of queries: full-name, prefix, short name, number, room code
+    const std::vector<std::string> testQueries = {
+        "libr", "admin", "11", "auditorium", "Audi", "lab", "csit", "201", "g09", "library", "central", "main"
+    };
+
+    for (const auto& q : testQueries) {
+        auto rFwd = trieForward.search(q, 10);
+        auto rRev = trieReverse.search(q, 10);
+        auto rShuf = trieShuffled.search(q, 10);
+
+        REQUIRE(rFwd.size() == rRev.size());
+        REQUIRE(rFwd.size() == rShuf.size());
+
+        for (size_t i = 0; i < rFwd.size(); ++i) {
+            CHECK(rFwd[i].id == rRev[i].id);
+            CHECK(rFwd[i].kind == rRev[i].kind);
+            CHECK(rFwd[i].label == rRev[i].label);
+
+            CHECK(rShuf[i].id == rFwd[i].id);
+            CHECK(rShuf[i].kind == rFwd[i].kind);
+            CHECK(rShuf[i].label == rFwd[i].label);
+        }
+    }
+
+    // Explicitly assert that "libr" returns landmark "b-library" first before any room
+    auto resLibrFwd = trieForward.search("libr", 5);
+    auto resLibrRev = trieReverse.search("libr", 5);
+    REQUIRE(!resLibrFwd.empty());
+    REQUIRE(!resLibrRev.empty());
+    CHECK(resLibrFwd[0].id == "b-library");
+    CHECK(resLibrFwd[0].kind == "landmark");
+    CHECK(resLibrRev[0].id == "b-library");
+    CHECK(resLibrRev[0].kind == "landmark");
+}
