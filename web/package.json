@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3008",
+    "dev:fresh": "npx --yes kill-port 3008 && node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev -p 3008",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

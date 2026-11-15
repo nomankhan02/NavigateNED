@@ -52,6 +52,8 @@ export type RouteAlgo = "dijkstra" | "astar" | "bfs" | "bellmanford";
 
 const SNAP_ORDER: readonly SheetSnap[] = ["peek", "half", "expanded"];
 
+const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID ?? "dev";
+
 const INDOOR_BUILDING_IDS = [
   "b-admin",
   "b-auditorium",
@@ -854,13 +856,13 @@ export function AppShell() {
             {/* Inline status line at end of sheet scroll content on phone */}
             <div className={styles.mobileSheetFooterLine}>
               <span>SURVEY PLATE // WGS84</span>
-              <span>697 NODES READY</span>
+              <span>BUILD {BUILD_ID}</span>
             </div>
           </div>
 
           <footer className={styles.dockFooter}>
             <span>SURVEY PLATE // WGS84</span>
-            <span>697 NODES READY</span>
+            <span>BUILD {BUILD_ID} // 697 NODES</span>
           </footer>
         </aside>
       </div>

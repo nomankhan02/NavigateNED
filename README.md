@@ -13,6 +13,10 @@ cd web
 npm install
 npm run dev
 ```
+If stale or old UI appears in development, clear the Next.js cache and restart on port `3008` with:
+```bash
+npm run dev:fresh
+```
 Static export build:
 ```bash
 cd web

@@ -1,4 +1,13 @@
+import { execSync } from "node:child_process";
 import type { NextConfig } from "next";
+
+function resolveBuildId(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  }
+}
 
 const nextConfig: NextConfig = {
   output: "export",
@@ -7,8 +16,11 @@ const nextConfig: NextConfig = {
     appIsrStatus: false,
     buildActivity: false,
   },
+  env: {
+    NEXT_PUBLIC_BUILD_ID: resolveBuildId(),
+  },
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
   async headers() {
     return [
@@ -17,22 +29,21 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=31536000, immutable"
-          }
-        ]
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
       },
       {
         source: "/wasm/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=3600, must-revalidate"
-          }
-        ]
-      }
+            value: "public, max-age=3600, must-revalidate",
+          },
+        ],
+      },
     ];
-  }
+  },
 };
 
 export default nextConfig;
-
