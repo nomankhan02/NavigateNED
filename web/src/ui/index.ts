@@ -7,3 +7,5 @@ export * from "./Surfaces";
 export * from "./StatReadout";
 export * from "./Sheet";
 export * from "./Toast";
+export * from "./shell/AppShell";
+

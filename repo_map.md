@@ -47,7 +47,7 @@
 - `web/public/map/ned_master_plan_warped.webp`: North-up georeferenced RGBA WebP master plan overlay for `L.imageOverlay(bounds)`.
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
 - `web/src/app/layout.tsx`: Root layout loading self-hosted Bricolage Grotesque, Familjen Grotesk, Azeret Mono, and Campus Survey Plate tokens.
-- `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
+- `web/src/app/page.tsx`: Home route mounting the Campus Survey Plate `AppShell` over full-bleed `OutdoorMap`.
 - `web/src/app/kit/page.tsx`: Interactive `/kit` showcase of all Campus Survey Plate tokens, typography, icons, and UI components in Daylight and Night modes.
 - `web/src/app/kit/kit.module.css`: Scoped layout styles for the `/kit` styleguide page.
 - `web/src/app/_map-dev/page.tsx`: Temporary dev harness page verifying `OutdoorMap`, `useTraceReplay`, and evacuation overlays.
@@ -85,6 +85,8 @@
 - `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with optional tick-up animation (`prefers-reduced-motion` safe).
 - `web/src/ui/Sheet.tsx`: Responsive left edge panel on desktop and draggable 3-snap bottom sheet (`peek`, `half`, `expanded`) on phone.
 - `web/src/ui/Toast.tsx`: `Toast` notification banner and `SurveyLoader` calibration bar.
+- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with title-block header strip, `<700ms` intro animation, edge-attached left panel / mobile bottom sheet, and live `OutdoorMap`.
+- `web/src/ui/shell/shell.module.css`: Scoped styles and intro keyframes for the `AppShell`.
 - `web/src/ui/index.ts`: Barrel export for all UI components and icons.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
 - `web/src/styles/tokens.css`: Single-source Campus Survey Plate CSS custom properties (Daylight & Night plates, typography, vellum, chamfer, spacing, motion, and `--map-*` mappings).
