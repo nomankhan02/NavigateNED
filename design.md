@@ -17,29 +17,29 @@ NavigateNED is designed as an architectural **drafting sheet and geodetic survey
 
 ---
 
-## 3. Color Tokens (`web/src/styles/tokens.css`)
+## 3. Color Tokens (`web/src/styles/tokens.css`) — Theme 2: Harbor Chart
 
-| Token | Daylight Plate (`light` / `:root`) | Night Plate (`dark`) | Purpose |
+| Token | Daylight Harbor Chart (`light` / `:root`) | Night Harbor Chart (`dark`) | Purpose |
 | :--- | :--- | :--- | :--- |
-| `--color-bg-canvas` | `#F5F2EA` (Warm Drafting Paper) | `#0B1410` (Deep Green-Black Ground) | Root canvas & page ground |
-| `--color-surface-panel` | `#ECE7DC` (Toned Survey Sheet) | `#111E18` (Night Instrument Plate) | Side panels, headers, drawers |
-| `--color-surface-elevated` | `#FAF8F3` (Bright Vellum Card) | `#172820` (Elevated Night Cell) | Interactive rows, inputs, cards |
-| `--color-surface-recessed` | `#E2DCD0` (Recessed Well) | `#070D0A` (Recessed Night Well) | Segmented tracks, code/log wells |
-| `--color-text-primary` | `#111D18` (Deep Green-Black Ink) | `#EDEAE1` (Crisp Chalk Ink) | Primary headings, labels, values |
-| `--color-text-secondary` | `#394D44` (Drafting Graphite) | `#A5B5AD` (Muted Silver-Sage) | Secondary descriptions, metadata |
-| `--color-text-muted` | `#63776D` (Calibration Gray-Green) | `#6E8278` (Dim Grid Legend) | Hints, disabled states, coordinates |
-| `--color-border-hairline` | `#C4BDB0` | `#24382E` | `1px` structural grid & table hairlines |
-| `--color-border-strong` | `#6D7F76` | `#415E50` | Active control borders & frame rules |
-| `--color-network-teal` | `#0E6B5E` | `#24A18E` | Walkable campus network & footprints |
-| `--color-signal-vermilion` | `#D9431F` | `#EC532F` | Primary actions, active route, focus ring |
-| `--color-hazard-red` | `#C62828` | `#E53935` | Blocked paths, hazards, evacuation alerts |
-| `--color-safe-green` | `#1D7544` | `#2EAE66` | Assembly areas, entrances, safe status |
-| `--color-caution-amber` | `#C4760A` | `#E59423` | Frontier exploration, capacity warning |
+| `--color-bg-canvas` | `#EEF2F3` (Sea-Salt Chart Paper) | `#09151E` (Abyssal Chart Ground) | Root canvas & page ground |
+| `--color-surface-panel` | `#E2E9EB` (Pale Harbor Slate) | `#0F202D` (Night Chart Plate) | Side panels, headers, drawers |
+| `--color-surface-elevated` | `#F8FBFB` (Bright Chart Vellum) | `#152B3B` (Elevated Night Cell) | Interactive rows, section cards |
+| `--color-surface-recessed` | `#D5DFE2` (Recessed Sounding Well) | `#060F16` (Recessed Night Well) | Segmented tracks, input & readout wells |
+| `--color-text-primary` | `#0E2233` (Deep Maritime Ink) | `#E8F0F4` (Crisp Chart Chalk) | Primary headings, labels, values |
+| `--color-text-secondary` | `#2D4659` (Harbor Slate) | `#A5BCC9` (Muted Sea Mist) | Secondary descriptions, metadata |
+| `--color-text-muted` | `#50697A` (Sounding Gray-Blue) | `#7692A3` (Dim Grid Legend) | Hints, disabled states, coordinates |
+| `--color-border-hairline` | `#B4C3C8` | `#223E52` | `1px` structural grid & table hairlines |
+| `--color-border-strong` | `#587282` | `#41657E` | Active control borders & frame rules |
+| `--color-network-teal` | `#0B6E75` | `#2AB3BC` | Walkable campus network & secondary states |
+| `--color-signal-vermilion` | `#C93E24` | `#F05A3E` | Route, active tab, selected algo & primary actions |
+| `--color-hazard-red` | `#B91C1C` | `#EF4444` | Blocked paths, hazards, evacuation alerts |
+| `--color-safe-green` | `#157347` | `#2EB872` | Assembly areas, entrances, safe status |
+| `--color-caution-amber` | `#B45309` | `#E59423` | Frontier exploration, capacity warning |
 
 ### Frosted Tracing Vellum (Map Overlay Surfaces Only)
 - Allowed **strictly** on surfaces sitting directly over the map canvas (bottom sheet, edge side panel, Campus Key drawer, floating route readouts):
-  - `--vellum-bg`: `rgba(245, 242, 234, 0.82)` (Daylight) / `rgba(17, 30, 24, 0.83)` (Night)
-  - `--vellum-bg-fallback`: `#EFECE3` (Daylight) / `#13211B` (Night) solid fallback when `backdrop-filter` is unsupported.
+  - `--vellum-bg`: `rgba(238, 242, 243, 0.84)` (Daylight) / `rgba(15, 32, 45, 0.84)` (Night)
+  - `--vellum-bg-fallback`: `#E6ECEE` (Daylight) / `#112433` (Night) solid fallback when `backdrop-filter` is unsupported.
   - `--vellum-blur`: `12px` (`backdrop-filter: blur(12px)`).
   - `--vellum-border`: `1px solid var(--vellum-border)`.
   - **No Glass-on-Glass**: Children inside a vellum container use flat opaque/toned surfaces (`--color-surface-elevated` or `--color-surface-recessed`).

@@ -1,58 +1,63 @@
 /* ==========================================================================
- * NavigateNED — Campus Survey Plate Design Tokens (web/src/styles/tokens.css)
- * Aesthetic Direction: Architectural & Geodetic Survey Instrument Plate
+ * NavigateNED — Harbor Chart Design Tokens (web/src/styles/tokens.css)
+ * Theme 2: Harbor Chart (Nautical & Geodetic Survey Instrument Plate)
  * ========================================================================== */
 
 :root,
 [data-theme="light"] {
   color-scheme: light;
 
-  /* 1. Daylight Survey Plate Palette ("Drafting Paper & Geodetic Ink") */
-  --color-bg-canvas: #f5f2ea;
-  --color-surface-panel: #ece7dc;
-  --color-surface-elevated: #faf8f3;
-  --color-surface-recessed: #e2dcd0;
-  --color-surface-hover: #e5dfd2;
+  /* 1. Daylight Harbor Chart Palette ("Sea-Salt Paper & Maritime Ink") */
+  --color-bg-canvas: #eef2f3;
+  --color-surface-panel: #e2e9eb;
+  --color-surface-elevated: #f8fbfb;
+  --color-surface-recessed: #d5dfe2;
+  --color-surface-hover: #dbe4e7;
 
-  /* Deep Ink Green-Black Text Hierarchy */
-  --color-text-primary: #111d18;
-  --color-text-secondary: #394d44;
-  --color-text-muted: #63776d;
-  --color-text-inverse: #f8f6f0;
+  /* Deep Maritime Ink Text Hierarchy (WCAG AA+ >= 4.5:1) */
+  --color-text-primary: #0e2233;
+  --color-text-secondary: #2d4659;
+  --color-text-muted: #50697a;
+  --color-text-inverse: #f7fafa;
 
   /* Hairline Rules & Tick Marks */
-  --color-border-subtle: #d3cdc0;
-  --color-border-hairline: #c4bdb0;
-  --color-border-strong: #6d7f76;
-  --color-border-ink: #1a2c24;
-  --color-tick-mark: #83948b;
+  --color-border-subtle: #c6d2d6;
+  --color-border-hairline: #b4c3c8;
+  --color-border-strong: #587282;
+  --color-border-ink: #0e2233;
+  --color-tick-mark: #698393;
 
-  /* Walkable Network Teal */
-  --color-network-teal: #0e6b5e;
-  --color-network-teal-hover: #094f45;
-  --color-network-teal-subtle: #dbece9;
-  --color-network-teal-border: #7bb5ac;
+  /* Walkable Network Harbor Teal */
+  --color-network-teal: #0b6e75;
+  --color-network-teal-hover: #075359;
+  --color-network-teal-subtle: #d8edef;
+  --color-network-teal-border: #68b2b8;
 
-  /* Signal Vermilion (Primary Actions, Active Routes & Focus Rings) */
-  --color-signal-vermilion: #d9431f;
-  --color-signal-vermilion-hover: #b83414;
-  --color-signal-vermilion-active: #99290d;
-  --color-signal-vermilion-subtle: #fce7e1;
-  --color-signal-vermilion-casing: #fff9f5;
+  /* Route Signal Buoy Coral-Vermilion (Route, Active Tab, Selected Algo, Primary Action) */
+  --color-signal-vermilion: #c93e24;
+  --color-signal-vermilion-hover: #a8301a;
+  --color-signal-vermilion-active: #8a2412;
+  --color-signal-vermilion-subtle: #fbe6e2;
+  --color-signal-vermilion-casing: #fff9f7;
 
   /* Semantic Instrument Status Colors (Zero Purple) */
-  --color-hazard-red: #c62828;
-  --color-hazard-red-hover: #a51d1d;
-  --color-hazard-red-subtle: #fdeaea;
+  --color-hazard-red: #b91c1c;
+  --color-hazard-red-hover: #991b1b;
+  --color-hazard-red-subtle: #fee2e2;
 
-  --color-safe-green: #1d7544;
-  --color-safe-green-hover: #155933;
-  --color-safe-green-subtle: #e0f2e8;
+  --color-safe-green: #157347;
+  --color-safe-green-hover: #0f5735;
+  --color-safe-green-subtle: #dcf2e7;
 
-  --color-caution-amber: #c4760a;
-  --color-caution-amber-subtle: #fdf0db;
+  --color-caution-amber: #b45309;
+  --color-caution-amber-subtle: #fef3c7;
 
-  /* Legacy alias mappings for existing pages */
+  /* Isometric Logo Flat Face Tones (Light / Mid / Dark) */
+  --color-logo-light: #e2e9eb;
+  --color-logo-mid: #4a6b7c;
+  --color-logo-dark: #0e2233;
+
+  /* Legacy alias mappings */
   --color-accent: var(--color-signal-vermilion);
   --color-accent-subtle: var(--color-signal-vermilion-subtle);
   --color-accent-active: var(--color-signal-vermilion-active);
@@ -61,10 +66,10 @@
   --color-status-error: var(--color-hazard-red);
 
   /* 2. Frosted Tracing Vellum (Allowed ONLY on surfaces sitting over the map) */
-  --vellum-bg: rgba(245, 242, 234, 0.82);
-  --vellum-bg-elevated: rgba(250, 248, 243, 0.86);
-  --vellum-bg-fallback: #efece3;
-  --vellum-border: #8b9a92;
+  --vellum-bg: rgba(238, 242, 243, 0.84);
+  --vellum-bg-elevated: rgba(248, 251, 251, 0.88);
+  --vellum-bg-fallback: #e6ecee;
+  --vellum-border: #78909e;
   --vellum-blur: 12px;
 
   /* 3. Typography & Numerals System */
@@ -141,9 +146,9 @@
 
   /* 6. Minimal Architectural Shadows (Crisp offset, zero diffuse glow) */
   --shadow-none: none;
-  --shadow-sm: 0 1px 2px rgba(17, 29, 24, 0.07);
-  --shadow-md: 0 3px 10px rgba(17, 29, 24, 0.11);
-  --shadow-plate: 2px 2px 0px rgba(17, 29, 24, 0.14);
+  --shadow-sm: 0 1px 2px rgba(14, 34, 51, 0.08);
+  --shadow-md: 0 3px 10px rgba(14, 34, 51, 0.12);
+  --shadow-plate: 2px 2px 0px rgba(14, 34, 51, 0.15);
 
   /* 7. Z-Index Layers */
   --z-map: 1;
@@ -169,8 +174,8 @@
   --ease-spring-snap: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* 9. Unified Outdoor & Indoor Map Variable Mapping (--map-*) */
-  --map-bg: #eae5d9;
-  --map-Turf-tint: #dfe7dd;
+  --map-bg: #e7edee;
+  --map-Turf-tint: #d9e6e2;
   --map-surface-card: var(--vellum-bg);
   --map-surface-elevated: var(--color-surface-elevated);
   --map-border: var(--color-border-hairline);
@@ -180,13 +185,13 @@
   --map-text-secondary: var(--color-text-secondary);
   --map-text-inverse: var(--color-text-inverse);
 
-  --map-edge-walkway: #5a786d;
+  --map-edge-walkway: #537585;
   --map-edge-covered: var(--color-network-teal);
 
   --map-landmark-fill: var(--color-network-teal);
   --map-landmark-stroke: var(--color-network-teal-hover);
-  --map-landmark-hover-fill: #08473e;
-  --map-landmark-hover-stroke: #06352e;
+  --map-landmark-hover-fill: #075359;
+  --map-landmark-hover-stroke: #043b40;
   --map-landmark-selected-fill: var(--color-signal-vermilion);
   --map-landmark-selected-stroke: var(--color-signal-vermilion-hover);
 
@@ -213,21 +218,21 @@
   --map-font-display: var(--font-display);
   --map-font-mono: var(--font-numerals);
 
-  /* Indoor map variables mapped to survey plate tokens */
-  --map-indoor-bg: #ebe6da;
-  --map-indoor-canvas: #f5f2ea;
-  --map-indoor-grid: #e2ddd0;
-  --map-indoor-wall: #1c2e26;
-  --map-indoor-wall-muted: #52685e;
-  --map-indoor-corridor: #e4e9e4;
-  --map-indoor-corridor-stroke: #a5b8af;
-  --map-indoor-room: #faf8f3;
-  --map-indoor-room-hover: #e5efe9;
+  /* Indoor map variables mapped to Harbor Chart tokens */
+  --map-indoor-bg: #e5ecef;
+  --map-indoor-canvas: #f2f5f6;
+  --map-indoor-grid: #dce4e7;
+  --map-indoor-wall: #102536;
+  --map-indoor-wall-muted: #526e80;
+  --map-indoor-corridor: #e1eaec;
+  --map-indoor-corridor-stroke: #9cb3be;
+  --map-indoor-room: #f8fbfb;
+  --map-indoor-room-hover: #e2eff1;
   --map-indoor-room-selected: var(--color-signal-vermilion-subtle);
   --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
   --map-indoor-text: var(--color-text-primary);
   --map-indoor-text-muted: var(--color-text-secondary);
-  --map-indoor-badge-bg: rgba(250, 248, 243, 0.94);
+  --map-indoor-badge-bg: rgba(248, 251, 251, 0.94);
   --map-indoor-stairs: var(--color-network-teal);
   --map-indoor-lift: #0d5c75;
   --map-indoor-entrance: var(--color-safe-green);
@@ -235,157 +240,165 @@
 }
 
 /* ==========================================================================
- * Night Survey Plate Palette ([data-theme="dark"] & system dark mode)
+ * Night Harbor Chart Palette ([data-theme="dark"] & system dark mode)
  * ========================================================================== */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --color-bg-canvas: #0b1410;
-    --color-surface-panel: #111e18;
-    --color-surface-elevated: #172820;
-    --color-surface-recessed: #070d0a;
-    --color-surface-hover: #1d3128;
+    --color-bg-canvas: #09151e;
+    --color-surface-panel: #0f202d;
+    --color-surface-elevated: #152b3b;
+    --color-surface-recessed: #060f16;
+    --color-surface-hover: #1b3548;
 
-    --color-text-primary: #edeae1;
-    --color-text-secondary: #a5b5ad;
-    --color-text-muted: #6e8278;
-    --color-text-inverse: #0b1410;
+    --color-text-primary: #e8f0f4;
+    --color-text-secondary: #a5bcc9;
+    --color-text-muted: #7692a3;
+    --color-text-inverse: #09151e;
 
-    --color-border-subtle: #1c2e25;
-    --color-border-hairline: #24382e;
-    --color-border-strong: #415e50;
-    --color-border-ink: #9bb0a6;
-    --color-tick-mark: #4c6b5c;
+    --color-border-subtle: #1a3142;
+    --color-border-hairline: #223e52;
+    --color-border-strong: #41657e;
+    --color-border-ink: #9cb5c4;
+    --color-tick-mark: #4c728a;
 
-    --color-network-teal: #24a18e;
-    --color-network-teal-hover: #38b8a4;
-    --color-network-teal-subtle: #122e29;
-    --color-network-teal-border: #286e63;
+    --color-network-teal: #2ab3bc;
+    --color-network-teal-hover: #46c9d2;
+    --color-network-teal-subtle: #10323a;
+    --color-network-teal-border: #277a82;
 
-    --color-signal-vermilion: #ec532f;
-    --color-signal-vermilion-hover: #f36b4b;
-    --color-signal-vermilion-active: #d9431f;
-    --color-signal-vermilion-subtle: #361a13;
-    --color-signal-vermilion-casing: #18110e;
+    --color-signal-vermilion: #f05a3e;
+    --color-signal-vermilion-hover: #f5745b;
+    --color-signal-vermilion-active: #d94429;
+    --color-signal-vermilion-subtle: #381914;
+    --color-signal-vermilion-casing: #18100e;
 
-    --color-hazard-red: #e53935;
-    --color-hazard-red-hover: #ef5350;
-    --color-hazard-red-subtle: #361414;
+    --color-hazard-red: #ef4444;
+    --color-hazard-red-hover: #f87171;
+    --color-hazard-red-subtle: #381414;
 
-    --color-safe-green: #2eae66;
-    --color-safe-green-hover: #43c47b;
-    --color-safe-green-subtle: #122e1e;
+    --color-safe-green: #2eb872;
+    --color-safe-green-hover: #46cc88;
+    --color-safe-green-subtle: #102e20;
 
     --color-caution-amber: #e59423;
     --color-caution-amber-subtle: #33230c;
 
-    --vellum-bg: rgba(17, 30, 24, 0.83);
-    --vellum-bg-elevated: rgba(23, 40, 32, 0.88);
-    --vellum-bg-fallback: #13211b;
-    --vellum-border: #3d594b;
+    --color-logo-light: #c8dae3;
+    --color-logo-mid: #4f7991;
+    --color-logo-dark: #1d384a;
+
+    --vellum-bg: rgba(15, 32, 45, 0.84);
+    --vellum-bg-elevated: rgba(21, 43, 59, 0.88);
+    --vellum-bg-fallback: #112433;
+    --vellum-border: #3b5c73;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
     --shadow-plate: 2px 2px 0px rgba(0, 0, 0, 0.5);
 
-    --map-bg: #0d1713;
-    --map-Turf-tint: #11221b;
-    --map-edge-walkway: #4c7364;
+    --map-bg: #0b1822;
+    --map-Turf-tint: #0f232c;
+    --map-edge-walkway: #4c6f82;
     --map-edge-covered: var(--color-network-teal);
-    --map-landmark-fill: #1b7a6c;
-    --map-landmark-stroke: #29a895;
-    --map-landmark-hover-fill: #249685;
-    --map-landmark-hover-stroke: #46c4b1;
+    --map-landmark-fill: #1b818a;
+    --map-landmark-stroke: #2ab3bc;
+    --map-landmark-hover-fill: #249ca6;
+    --map-landmark-hover-stroke: #46c9d2;
 
-    --map-indoor-bg: #0b1410;
-    --map-indoor-canvas: #0f1b16;
-    --map-indoor-grid: #182921;
-    --map-indoor-wall: #9bb0a6;
-    --map-indoor-wall-muted: #597367;
-    --map-indoor-corridor: #15261f;
-    --map-indoor-corridor-stroke: #2e4a3e;
-    --map-indoor-room: #14231c;
-    --map-indoor-room-hover: #1c3127;
-    --map-indoor-room-selected: #381b14;
+    --map-indoor-bg: #09151e;
+    --map-indoor-canvas: #0d1d28;
+    --map-indoor-grid: #162c3b;
+    --map-indoor-wall: #9cb5c4;
+    --map-indoor-wall-muted: #58768a;
+    --map-indoor-corridor: #132736;
+    --map-indoor-corridor-stroke: #2c4c61;
+    --map-indoor-room: #132533;
+    --map-indoor-room-hover: #1a3345;
+    --map-indoor-room-selected: #381914;
     --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
-    --map-indoor-badge-bg: rgba(20, 35, 28, 0.94);
+    --map-indoor-badge-bg: rgba(19, 37, 51, 0.94);
   }
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --color-bg-canvas: #0b1410;
-  --color-surface-panel: #111e18;
-  --color-surface-elevated: #172820;
-  --color-surface-recessed: #070d0a;
-  --color-surface-hover: #1d3128;
+  --color-bg-canvas: #09151e;
+  --color-surface-panel: #0f202d;
+  --color-surface-elevated: #152b3b;
+  --color-surface-recessed: #060f16;
+  --color-surface-hover: #1b3548;
 
-  --color-text-primary: #edeae1;
-  --color-text-secondary: #a5b5ad;
-  --color-text-muted: #6e8278;
-  --color-text-inverse: #0b1410;
+  --color-text-primary: #e8f0f4;
+  --color-text-secondary: #a5bcc9;
+  --color-text-muted: #7692a3;
+  --color-text-inverse: #09151e;
 
-  --color-border-subtle: #1c2e25;
-  --color-border-hairline: #24382e;
-  --color-border-strong: #415e50;
-  --color-border-ink: #9bb0a6;
-  --color-tick-mark: #4c6b5c;
+  --color-border-subtle: #1a3142;
+  --color-border-hairline: #223e52;
+  --color-border-strong: #41657e;
+  --color-border-ink: #9cb5c4;
+  --color-tick-mark: #4c728a;
 
-  --color-network-teal: #24a18e;
-  --color-network-teal-hover: #38b8a4;
-  --color-network-teal-subtle: #122e29;
-  --color-network-teal-border: #286e63;
+  --color-network-teal: #2ab3bc;
+  --color-network-teal-hover: #46c9d2;
+  --color-network-teal-subtle: #10323a;
+  --color-network-teal-border: #277a82;
 
-  --color-signal-vermilion: #ec532f;
-  --color-signal-vermilion-hover: #f36b4b;
-  --color-signal-vermilion-active: #d9431f;
-  --color-signal-vermilion-subtle: #361a13;
-  --color-signal-vermilion-casing: #18110e;
+  --color-signal-vermilion: #f05a3e;
+  --color-signal-vermilion-hover: #f5745b;
+  --color-signal-vermilion-active: #d94429;
+  --color-signal-vermilion-subtle: #381914;
+  --color-signal-vermilion-casing: #18100e;
 
-  --color-hazard-red: #e53935;
-  --color-hazard-red-hover: #ef5350;
-  --color-hazard-red-subtle: #361414;
+  --color-hazard-red: #ef4444;
+  --color-hazard-red-hover: #f87171;
+  --color-hazard-red-subtle: #381414;
 
-  --color-safe-green: #2eae66;
-  --color-safe-green-hover: #43c47b;
-  --color-safe-green-subtle: #122e1e;
+  --color-safe-green: #2eb872;
+  --color-safe-green-hover: #46cc88;
+  --color-safe-green-subtle: #102e20;
 
   --color-caution-amber: #e59423;
   --color-caution-amber-subtle: #33230c;
 
-  --vellum-bg: rgba(17, 30, 24, 0.83);
-  --vellum-bg-elevated: rgba(23, 40, 32, 0.88);
-  --vellum-bg-fallback: #13211b;
-  --vellum-border: #3d594b;
+  --color-logo-light: #c8dae3;
+  --color-logo-mid: #4f7991;
+  --color-logo-dark: #1d384a;
+
+  --vellum-bg: rgba(15, 32, 45, 0.84);
+  --vellum-bg-elevated: rgba(21, 43, 59, 0.88);
+  --vellum-bg-fallback: #112433;
+  --vellum-border: #3b5c73;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-plate: 2px 2px 0px rgba(0, 0, 0, 0.5);
 
-  --map-bg: #0d1713;
-  --map-Turf-tint: #11221b;
-  --map-edge-walkway: #4c7364;
+  --map-bg: #0b1822;
+  --map-Turf-tint: #0f232c;
+  --map-edge-walkway: #4c6f82;
   --map-edge-covered: var(--color-network-teal);
-  --map-landmark-fill: #1b7a6c;
-  --map-landmark-stroke: #29a895;
-  --map-landmark-hover-fill: #249685;
-  --map-landmark-hover-stroke: #46c4b1;
+  --map-landmark-fill: #1b818a;
+  --map-landmark-stroke: #2ab3bc;
+  --map-landmark-hover-fill: #249ca6;
+  --map-landmark-hover-stroke: #46c9d2;
 
-  --map-indoor-bg: #0b1410;
-  --map-indoor-canvas: #0f1b16;
-  --map-indoor-grid: #182921;
-  --map-indoor-wall: #9bb0a6;
-  --map-indoor-wall-muted: #597367;
-  --map-indoor-corridor: #15261f;
-  --map-indoor-corridor-stroke: #2e4a3e;
-  --map-indoor-room: #14231c;
-  --map-indoor-room-hover: #1c3127;
-  --map-indoor-room-selected: #381b14;
+  --map-indoor-bg: #09151e;
+  --map-indoor-canvas: #0d1d28;
+  --map-indoor-grid: #162c3b;
+  --map-indoor-wall: #9cb5c4;
+  --map-indoor-wall-muted: #58768a;
+  --map-indoor-corridor: #132736;
+  --map-indoor-corridor-stroke: #2c4c61;
+  --map-indoor-room: #132533;
+  --map-indoor-room-hover: #1a3345;
+  --map-indoor-room-selected: #381914;
   --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
-  --map-indoor-badge-bg: rgba(20, 35, 28, 0.94);
+  --map-indoor-badge-bg: rgba(19, 37, 51, 0.94);
 }
 
 /* ==========================================================================
@@ -443,7 +456,7 @@ pre,
   font-variant-numeric: tabular-nums;
 }
 
-/* Visible keyboard focus ring in the signal vermilion color */
+/* Visible keyboard focus ring in the route signal color */
 :focus-visible {
   outline: 2px solid var(--color-signal-vermilion);
   outline-offset: 2px;
