@@ -21,6 +21,7 @@ import {
   computeRoute,
   ensureAllCampusDataLoaded,
   getDirections,
+  INDOOR_BUILDING_IDS,
   type Maneuver,
   type ManeuverType,
   type NavAlgo,
@@ -179,6 +180,19 @@ export function AppShell() {
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
     route: string[];
+    selectedRoomId?: string;
+  } | null>(null);
+  const [indoorLoadError, setIndoorLoadError] = useState<{
+    buildingId: string;
+    route: string[];
+    selectedRoomId?: string;
+    message: string;
+  } | null>(null);
+  const [indoorLoading, setIndoorLoading] = useState<boolean>(false);
+  const [selectedSearchRoom, setSelectedSearchRoom] = useState<{
+    buildingId: string;
+    nodeId: string;
+    label: string;
   } | null>(null);
 
   const [selectedLandmarkId, setSelectedLandmarkId] = useState<string | null>(
@@ -206,6 +220,7 @@ export function AppShell() {
         setWasmReady(true);
       })
       .catch((err) => {
+        console.error("[NavigateNED] Failed to load campus data:", err);
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : String(err));
         }
@@ -214,6 +229,55 @@ export function AppShell() {
       cancelled = true;
     };
   }, []);
+
+  const hasIndoorData = useCallback(
+    (buildingId?: string | null): boolean => {
+      if (!buildingId) return false;
+      return (
+        Boolean(indoorBuildings[buildingId]) ||
+        (INDOOR_BUILDING_IDS as readonly string[]).includes(buildingId)
+      );
+    },
+    [indoorBuildings],
+  );
+
+  const openIndoorBuilding = useCallback(
+    async (buildingId: string, route: string[], selectedRoomId?: string) => {
+      setIndoorLoadError(null);
+      if (indoorBuildings[buildingId]) {
+        setActiveIndoor({ buildingId, route, selectedRoomId });
+        setMobileSnap("peek");
+        return;
+      }
+
+      setIndoorLoading(true);
+      try {
+        const res = await fetch(`/data/indoor/${buildingId}.json`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} loading /data/indoor/${buildingId}.json`);
+        }
+        const bldg = (await res.json()) as IndoorBuilding;
+        setIndoorBuildings((prev) => ({ ...prev, [buildingId]: bldg }));
+        setActiveIndoor({ buildingId, route, selectedRoomId });
+        setMobileSnap("peek");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[NavigateNED] Failed to load indoor map for ${buildingId}:`,
+          err,
+        );
+        setIndoorLoadError({
+          buildingId,
+          route,
+          selectedRoomId,
+          message: `Could not load indoor map (${msg}).`,
+        });
+      } finally {
+        setIndoorLoading(false);
+      }
+    },
+    [indoorBuildings],
+  );
 
   const runNavigation = useCallback(
     async (
@@ -525,14 +589,16 @@ export function AppShell() {
       >
         <div className={styles.mapCanvas}>
           {graph ? (
-            <OutdoorMap
-              graph={graph}
-              route={outdoorRoutePath}
-              showGraph={showGraph}
-              selectedLandmarkId={selectedLandmarkId}
-              onLandmarkClick={handleLandmarkClickOnMap}
-              onMapClick={(coords) => setCursorCoords(coords)}
-            />
+            <div className={styles.outdoorWrap}>
+              <OutdoorMap
+                graph={graph}
+                route={outdoorRoutePath}
+                showGraph={showGraph}
+                selectedLandmarkId={selectedLandmarkId}
+                onLandmarkClick={handleLandmarkClickOnMap}
+                onMapClick={(coords) => setCursorCoords(coords)}
+              />
+            </div>
           ) : (
             <div className={styles.loadingOverlay}>
               {loadError ? (
@@ -551,6 +617,7 @@ export function AppShell() {
                 activeIndoorBuilding.name
               }
               route={activeIndoor.route}
+              initialSelectedRoomId={activeIndoor.selectedRoomId}
               onBackToCampus={() => setActiveIndoor(null)}
               onSetOriginFromRoom={(nodeId, label) => {
                 setFromTargetId(nodeId);
@@ -638,8 +705,40 @@ export function AppShell() {
                 setToInput(opt.name);
                 setToTargetId(opt.id);
                 focusLandmarkOnMap(opt.landmarkId);
+                if (opt.id.includes(":")) {
+                  const bid = opt.id.slice(0, opt.id.indexOf(":"));
+                  setSelectedSearchRoom({
+                    buildingId: bid,
+                    nodeId: opt.id,
+                    label: opt.name,
+                  });
+                } else {
+                  setSelectedSearchRoom(null);
+                }
               }}
             />
+            {selectedSearchRoom && hasIndoorData(selectedSearchRoom.buildingId) ? (
+              <div className={styles.searchRoomQuickBar}>
+                <span className={styles.searchRoomLabel}>
+                  Room: {selectedSearchRoom.label}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={indoorLoading}
+                  leadingIcon={<BuildingIcon size={13} />}
+                  onClick={() =>
+                    void openIndoorBuilding(
+                      selectedSearchRoom.buildingId,
+                      [],
+                      selectedSearchRoom.nodeId,
+                    )
+                  }
+                >
+                  Show in indoor map
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <div className={styles.dockScroll}>
@@ -674,6 +773,16 @@ export function AppShell() {
                           setToInput(opt.name);
                           setToTargetId(opt.id);
                           focusLandmarkOnMap(opt.landmarkId);
+                          if (opt.id.includes(":")) {
+                            const bid = opt.id.slice(0, opt.id.indexOf(":"));
+                            setSelectedSearchRoom({
+                              buildingId: bid,
+                              nodeId: opt.id,
+                              label: opt.name,
+                            });
+                          } else {
+                            setSelectedSearchRoom(null);
+                          }
                         }}
                       />
                     </div>
@@ -800,12 +909,10 @@ export function AppShell() {
                               size="sm"
                               variant="primary"
                               chamfer
+                              loading={indoorLoading}
                               leadingIcon={<BuildingIcon size={14} />}
                               onClick={() =>
-                                setActiveIndoor({
-                                  buildingId: leg.buildingId!,
-                                  route: leg.nodeIds,
-                                })
+                                void openIndoorBuilding(leg.buildingId!, leg.nodeIds)
                               }
                             >
                               Enter {leg.buildingName}?
@@ -817,6 +924,58 @@ export function AppShell() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  ) : null}
+
+                  {(() => {
+                    const destBuildingId = toTargetId.includes(":")
+                      ? toTargetId.slice(0, toTargetId.indexOf(":"))
+                      : toTargetId;
+                    if (!hasIndoorData(destBuildingId)) return null;
+                    const indoorLeg = routeLegs.find(
+                      (l) => l.kind === "indoor" && l.buildingId === destBuildingId,
+                    );
+                    const targetRoom = toTargetId.includes(":")
+                      ? toTargetId
+                      : undefined;
+                    return (
+                      <div className={styles.indoorAvailRow}>
+                        <Badge variant="teal">Indoor map available</Badge>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={indoorLoading}
+                          leadingIcon={<BuildingIcon size={14} />}
+                          onClick={() =>
+                            void openIndoorBuilding(
+                              destBuildingId,
+                              indoorLeg?.nodeIds ?? [],
+                              targetRoom,
+                            )
+                          }
+                        >
+                          Open indoor map
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {indoorLoadError ? (
+                    <div className={styles.indoorErrorBox} role="alert">
+                      <span>{indoorLoadError.message}</span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          void openIndoorBuilding(
+                            indoorLoadError.buildingId,
+                            indoorLoadError.route,
+                            indoorLoadError.selectedRoomId,
+                          )
+                        }
+                      >
+                        Retry
+                      </Button>
                     </div>
                   ) : null}
                 </section>
@@ -1003,22 +1162,38 @@ export function AppShell() {
                       >
                         Directions to here
                       </Button>
-                      {indoorBuildings[selectedExploreLandmark.id] ? (
+                      {hasIndoorData(selectedExploreLandmark.id) ? (
                         <Button
                           size="sm"
                           variant="secondary"
+                          loading={indoorLoading}
                           leadingIcon={<BuildingIcon size={14} />}
                           onClick={() =>
-                            setActiveIndoor({
-                              buildingId: selectedExploreLandmark.id,
-                              route: [],
-                            })
+                            void openIndoorBuilding(selectedExploreLandmark.id, [])
                           }
                         >
                           Open indoor map
                         </Button>
                       ) : null}
                     </div>
+                    {indoorLoadError ? (
+                      <div className={styles.indoorErrorBox} role="alert">
+                        <span>{indoorLoadError.message}</span>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            void openIndoorBuilding(
+                              indoorLoadError.buildingId,
+                              indoorLoadError.route,
+                              indoorLoadError.selectedRoomId,
+                            )
+                          }
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    ) : null}
                   </section>
                 ) : null}
 

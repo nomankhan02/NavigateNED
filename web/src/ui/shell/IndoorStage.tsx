@@ -15,6 +15,7 @@ export interface IndoorStageProps {
   building: IndoorBuilding;
   buildingDisplayName: string;
   route?: string[];
+  initialSelectedRoomId?: string;
   onBackToCampus: () => void;
   onSetOriginFromRoom: (nodeId: string, label: string) => void;
 }
@@ -23,6 +24,7 @@ export function IndoorStage({
   building,
   buildingDisplayName,
   route = [],
+  initialSelectedRoomId,
   onBackToCampus,
   onSetOriginFromRoom,
 }: IndoorStageProps) {
@@ -35,22 +37,29 @@ export function IndoorStage({
   }, [building]);
 
   const initialFloor = useMemo(() => {
+    if (initialSelectedRoomId) {
+      const roomNode = nodeById.get(initialSelectedRoomId);
+      if (roomNode) return roomNode.floor;
+    }
     if (route.length > 0) {
       const first = nodeById.get(route[0]);
       if (first) return first.floor;
     }
     return building.floors[0]?.level ?? 0;
-  }, [building, route, nodeById]);
+  }, [building, route, initialSelectedRoomId, nodeById]);
 
   const [floor, setFloor] = useState<number>(initialFloor);
   const [stepIndex, setStepIndex] = useState<number>(0);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(
+    initialSelectedRoomId ?? null,
+  );
   const [userNode, setUserNode] = useState<string | null>(null);
 
   useEffect(() => {
     setStepIndex(0);
     setFloor(initialFloor);
-  }, [building.id, initialFloor]);
+    setSelectedRoomId(initialSelectedRoomId ?? null);
+  }, [building.id, initialFloor, initialSelectedRoomId]);
 
   const activeStepNodeId = route[stepIndex] ?? null;
   const activeStepNode = activeStepNodeId ? nodeById.get(activeStepNodeId) : undefined;
@@ -155,3 +164,4 @@ export function IndoorStage({
     </div>
   );
 }
+
