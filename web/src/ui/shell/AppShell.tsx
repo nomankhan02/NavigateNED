@@ -21,11 +21,10 @@ import {
   AssemblyPointIcon,
   Badge,
   BrandLogo,
-  Button,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  ChevronDownIcon,
   Chip,
   DistanceIcon,
   Field,
@@ -33,6 +32,7 @@ import {
   GraphIcon,
   HazardIcon,
   IconButton,
+  LayersIcon,
   ListRow,
   RouteIcon,
   SearchField,
@@ -281,21 +281,36 @@ export function AppShell() {
     setMobileSnap(SNAP_ORDER[nextIdx]);
   };
 
-  const handleGrabPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const handleGrabPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
     dragStartYRef.current = e.clientY;
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handleGrabPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const handleGrabPointerUp = (e: ReactPointerEvent<HTMLButtonElement>) => {
     if (dragStartYRef.current === null) return;
     const dy = e.clientY - dragStartYRef.current;
     dragStartYRef.current = null;
-    if (dy < -28) cycleMobileSnap(1);
-    else if (dy > 28) cycleMobileSnap(-1);
+    if (dy < -28) {
+      cycleMobileSnap(1);
+    } else if (dy > 28) {
+      cycleMobileSnap(-1);
+    } else {
+      // Tap on handle cycles peek -> half -> expanded -> peek
+      const nextIdx = (SNAP_ORDER.indexOf(mobileSnap) + 1) % SNAP_ORDER.length;
+      setMobileSnap(SNAP_ORDER[nextIdx]);
+    }
   };
+
+  const mobileBottomInset =
+    mobileSnap === "peek"
+      ? "168px"
+      : mobileSnap === "expanded"
+        ? "calc(100dvh - 54px)"
+        : "52vh";
 
   const mapStageStyle = {
     "--map-left-inset": dockCollapsed ? "0px" : "392px",
+    "--map-bottom-inset": mobileBottomInset,
   } as CSSProperties;
 
   const mobileSnapClass =
@@ -330,9 +345,11 @@ export function AppShell() {
           </div>
 
           {graph ? (
-            <Badge variant="teal" numeric>
-              {graph.landmarks.length} BUILDINGS
-            </Badge>
+            <span className={styles.buildingsBadge}>
+              <Badge variant="teal" numeric>
+                {graph.landmarks.length} BUILDINGS
+              </Badge>
+            </span>
           ) : null}
 
           <div className={styles.headerActions}>
@@ -346,10 +363,14 @@ export function AppShell() {
               <GraphIcon size={16} />
             </IconButton>
             <ThemeSwitch size="sm" />
-            <Link href="/kit">
-              <Button size="sm" variant="secondary">
-                UI Kit
-              </Button>
+            <Link
+              href="/kit"
+              className={styles.kitLinkBtn}
+              aria-label="Open UI Kit"
+              title="UI Kit"
+            >
+              <LayersIcon size={15} />
+              <span className={styles.kitLinkLabel}>UI Kit</span>
             </Link>
           </div>
         </div>
@@ -358,7 +379,11 @@ export function AppShell() {
       </header>
 
       {/* FULL-BLEED MAP STAGE + EDGE-ATTACHED PANEL / MOBILE SHEET */}
-      <div className={styles.mapStage} style={mapStageStyle}>
+      <div
+        className={styles.mapStage}
+        style={mapStageStyle}
+        data-sheet-snap={mobileSnap}
+      >
         <div className={styles.mapCanvas}>
           {graph ? (
             <OutdoorMap
@@ -405,37 +430,19 @@ export function AppShell() {
             )}
           </button>
 
-          {/* Phone drag handle & snap controls */}
-          <div
+          {/* Single Phone Drag/Tap Handle (cycles peek -> half -> expanded) */}
+          <button
+            type="button"
             className={styles.mobileGrabHeader}
+            aria-label={`Survey sheet (${mobileSnap}). Drag or tap to resize`}
             onPointerDown={handleGrabPointerDown}
             onPointerUp={handleGrabPointerUp}
           >
-            <div className={styles.mobileGrabPill} />
-            <div className={styles.mobileSnapHeaderRow}>
-              <span className={styles.plateSerial}>
-                SURVEY SHEET // {mobileSnap.toUpperCase()}
-              </span>
-              <div style={{ display: "inline-flex", gap: 4 }}>
-                <IconButton
-                  size="sm"
-                  aria-label="Expand bottom sheet"
-                  disabled={mobileSnap === "expanded"}
-                  onClick={() => cycleMobileSnap(1)}
-                >
-                  <ChevronUpIcon size={14} />
-                </IconButton>
-                <IconButton
-                  size="sm"
-                  aria-label="Collapse bottom sheet"
-                  disabled={mobileSnap === "peek"}
-                  onClick={() => cycleMobileSnap(-1)}
-                >
-                  <ChevronDownIcon size={14} />
-                </IconButton>
-              </div>
-            </div>
-          </div>
+            <span className={styles.mobileGrabPill} aria-hidden="true" />
+            <span className={styles.mobileSnapStatus}>
+              SURVEY SHEET // {mobileSnap.toUpperCase()}
+            </span>
+          </button>
 
           {/* Top-level Mode Tabs + "Where to" Floating Dropdown Search */}
           <div className={styles.dockHeader}>
@@ -843,6 +850,12 @@ export function AppShell() {
                 </section>
               </>
             ) : null}
+
+            {/* Inline status line at end of sheet scroll content on phone */}
+            <div className={styles.mobileSheetFooterLine}>
+              <span>SURVEY PLATE // WGS84</span>
+              <span>697 NODES READY</span>
+            </div>
           </div>
 
           <footer className={styles.dockFooter}>

@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Campus Survey Plate — App Shell Layout & 3-Level Hierarchy (Task C1d & C1b)
-   Strictly uses tokens from web/src/styles/tokens.css.
+   Campus Survey Plate — App Shell Layout & Mobile Coordination (Task C1d)
+   Verified for widths 320, 360, 390, 430, 768, and 1280px.
    ========================================================================== */
 
 .shellRoot {
@@ -18,7 +18,7 @@
 /* --- Title-Block Header Strip --- */
 .titleBlock {
   position: relative;
-  height: 52px;
+  height: 54px;
   flex-shrink: 0;
   z-index: var(--z-header);
   display: flex;
@@ -70,11 +70,11 @@
 .brandCluster {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
+  gap: var(--space-2-5, 10px);
+  flex-shrink: 0;
 }
 
-/* Brand Mark Stamp (Logo faces animate in sequence via BrandLogo animated prop) */
+/* Brand Mark Stamp */
 .compassStamp {
   display: inline-flex;
   align-items: center;
@@ -91,7 +91,6 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  min-width: 0;
 }
 
 .plateSerial {
@@ -103,8 +102,6 @@
   text-transform: uppercase;
   color: var(--color-text-muted);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .appTitle {
@@ -121,6 +118,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
 .coordReadout {
@@ -144,10 +142,41 @@
   letter-spacing: var(--tracking-wide);
 }
 
+.buildingsBadge {
+  display: inline-flex;
+}
+
 .headerActions {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.kitLinkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: var(--hairline-width) solid var(--color-border-strong);
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.kitLinkBtn:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-text-primary);
+}
+
+.kitLinkLabel {
+  display: inline;
 }
 
 /* --- Main Map Stage & Edge-Attached Dock --- */
@@ -181,7 +210,7 @@
   background-color: var(--color-bg-canvas);
 }
 
-/* LEVEL 1 SURFACE: Panel Base (Frosted Tracing Vellum / Toned Survey Sheet) */
+/* LEVEL 1 SURFACE: Panel Base */
 .leftDock {
   position: absolute;
   top: 0;
@@ -238,29 +267,42 @@
   outline-offset: 2px;
 }
 
+/* Single Drag/Tap Handle for Phone Bottom Sheet */
 .mobileGrabHeader {
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: var(--space-2) var(--space-3) var(--space-1);
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 8px var(--space-3) 6px;
   border-bottom: var(--hairline-width) solid var(--color-border-hairline);
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  width: 100%;
+  cursor: grab;
   touch-action: none;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .mobileGrabPill {
-  width: 36px;
+  width: 40px;
   height: 4px;
   background-color: var(--color-border-strong);
   border-radius: 1px;
 }
 
-.mobileSnapHeaderRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+.mobileSnapStatus {
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-plate);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* Top Dock Header (Mode Tabs + Where-To Search) */
@@ -273,6 +315,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 /* Main Scrollable Body holding numbered sections */
@@ -281,13 +324,13 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px var(--space-3);
+  padding: 10px var(--space-3) 36px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* LEVEL 2 SURFACE: Section Surface (--color-surface-elevated) */
+/* LEVEL 2 SURFACE: Section Surface */
 .sectionCard {
   position: relative;
   display: flex;
@@ -301,7 +344,6 @@
   flex-shrink: 0;
 }
 
-/* Section 05 Landmarks fills remaining height with a proper scrollable list */
 .sectionCardFill {
   flex: 1;
   min-height: 220px;
@@ -391,7 +433,7 @@
 /* Route From/To Grid */
 .endpointGrid {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-2);
   align-items: end;
 }
@@ -400,16 +442,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 /* 2x2 Summary Readout Grid */
 .readoutGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-/* Scrollable Landmarks List inside Section 05 (Level 3 Inset Well) */
+/* Scrollable Landmarks List inside Section 05 */
 .landmarksScrollList {
   flex: 1;
   min-height: 160px;
@@ -475,10 +518,9 @@
   flex-shrink: 0;
 }
 
-/* Full-width "Set as destination" button per row that is never cut off */
 .setDestBtn {
   width: 100%;
-  height: 28px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -511,8 +553,10 @@
   color: var(--color-text-inverse);
 }
 
+/* Desktop Footer Strip (Fixed inside leftDock; hidden on phone) */
 .dockFooter {
-  padding: 6px var(--space-3);
+  height: 32px;
+  padding: 0 var(--space-3);
   border-top: var(--hairline-width) solid var(--color-border-strong);
   background-color: var(--color-surface-panel);
   display: flex;
@@ -527,17 +571,30 @@
   flex-shrink: 0;
 }
 
+/* Phone inline status line at end of sheet scroll content */
+.mobileSheetFooterLine {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 8px 4px 4px;
+  border-top: var(--hairline-width) solid var(--color-border-hairline);
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoint 1: 560px to 900px (Hide coordinates, keep badge) --- */
 @media (max-width: 900px) {
   .coordReadout {
     display: none;
   }
 }
 
+/* --- Breakpoint 2: Phone <= 768px (Bottom sheet + Map control coordination + 44px tap targets) --- */
 @media (max-width: 768px) {
-  .titleBlock {
-    padding: 0 var(--space-3);
-  }
-
   .plateSerial {
     display: none;
   }
@@ -566,15 +623,130 @@
     display: flex;
   }
 
+  .dockScroll {
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .dockFooter {
+    display: none;
+  }
+
+  .mobileSheetFooterLine {
+    display: flex;
+  }
+
   .mobileSnapPeek {
-    height: 174px;
+    height: 168px;
   }
 
   .mobileSnapHalf {
-    height: 54vh;
+    height: 52vh;
   }
 
   .mobileSnapExpanded {
-    height: calc(100dvh - 56px);
+    height: calc(100dvh - 54px);
+  }
+
+  .setDestBtn {
+    min-height: 44px;
+  }
+
+  /* Map controls coordination on phone (>=44px tap targets, no overlap with sheet or each other) */
+  .mapStage :global(.ned-key-toggle-btn) {
+    top: 10px;
+    left: 10px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .mapStage :global(.ned-key-toggle-btn span),
+  .mapStage :global(.ned-key-toggle-btn svg:nth-of-type(2)) {
+    display: none;
+  }
+
+  .mapStage :global(.ned-layer-switcher) {
+    top: 10px;
+    right: 10px;
+    left: auto;
+    padding: 4px;
+  }
+
+  .mapStage :global(.ned-layer-btn) {
+    min-height: 44px;
+    padding: 0 10px;
+  }
+
+  .mapStage :global(.ned-map-controls) {
+    right: 10px;
+    bottom: calc(var(--map-bottom-inset, 168px) + 12px);
+    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+  }
+
+  .mapStage :global(.ned-map-ctrl-btn) {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mapStage :global(.ned-map-hud) {
+    left: 10px;
+    bottom: calc(var(--map-bottom-inset, 168px) + 12px);
+    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+  }
+
+  .mapStage :global(.ned-map-attribution) {
+    left: 10px;
+    right: 62px;
+    bottom: calc(var(--map-bottom-inset, 168px) + 46px);
+    max-width: calc(100% - 76px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+  }
+
+  .mapStage[data-sheet-snap="half"] :global(.ned-map-hud),
+  .mapStage[data-sheet-snap="half"] :global(.ned-map-attribution) {
+    display: none;
+  }
+
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-controls),
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-hud),
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-attribution),
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-key-toggle-btn),
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-layer-switcher) {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* --- Breakpoint 3: Narrow Phone < 560px (320, 360, 390, 430) --- */
+@media (max-width: 559px) {
+  .titleBlock {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .buildingsBadge {
+    display: none;
+  }
+
+  .kitLinkLabel {
+    display: none;
+  }
+
+  .kitLinkBtn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .headerActions {
+    gap: 6px;
+  }
+
+  .headerActions :global(button) {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

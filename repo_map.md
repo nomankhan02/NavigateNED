@@ -40,7 +40,7 @@
 - `web/`: Next.js 15 App Router static export frontend.
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
-- `web/next.config.ts`: Next.js config with static export and cache headers.
+- `web/next.config.ts`: Next.js config with static export, cache headers, and `devIndicators` disabled.
 - `web/public/favicon.svg`: Static 30° isometric "N" Harbor Chart vector favicon.
 - `web/public/apple-touch-icon.png`: 180x180 anti-aliased isometric "N" app icon.
 - `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.

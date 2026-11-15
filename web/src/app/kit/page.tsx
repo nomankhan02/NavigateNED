@@ -392,7 +392,7 @@ export default function KitPage() {
               onChange={setSearchQuery}
               resultCount={4}
             />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "end" }}>
+            <div className={styles.fromToGrid}>
               <Field
                 id="kit-from"
                 label="Origin Node"

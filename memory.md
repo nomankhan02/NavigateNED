@@ -40,6 +40,11 @@
   - Rethemed `web/src/styles/tokens.css` & `design.md` to Theme 2 (**Harbor Chart**, day & night palettes + unified `--map-*` / `--map-indoor-*` tokens).
   - Fixed `Toggle` (`transform` only, 180ms ease, `prefers-reduced-motion`), `SearchField` focus ring (single outer 2px route-colour ring, no inner cursor bars, `/` keycap preserved), and unified `ThemeProvider` (`try/catch` localStorage, `prefers-color-scheme`, inline pre-paint script in `layout.tsx`, accurate `ThemeSwitch` icon & `aria-label` synced across `/kit` and shell).
   - Created 30° 3D isometric extruded `"N"` `BrandLogo` (`web/src/ui/icons/BrandLogo.tsx`, full 24px/64px + simplified 16px, staggered 4px face rise intro `<700ms`), `web/public/favicon.svg`, and `web/public/apple-touch-icon.png` (180x180).
+- Task C1d (Mobile & Layout Overlap Fixes) delivered:
+  - Responsive header across 320–1280px (below 560px: logo + `NavigateNED` + 3 icon buttons with `>=44px` tap targets; 560–900px: + buildings badge; >900px: + coordinates & `"UI Kit"` label).
+  - Desktop panel scroll padding clears the fixed footer strip; phone moves status line inline at the end of the sheet scroll area with `env(safe-area-inset-bottom)`.
+  - Single drag/tap handle on the phone bottom sheet (`peek -> half -> expanded -> peek`), coordinating map controls (`44px` icon-only Campus Key top-left, layer switcher top-right, zoom/locate above `--map-bottom-inset`, hidden when sheet is expanded).
+  - `/kit` solid sticky/fixed header with top-padded content and `320px`-safe wrapping grids; disabled Next.js `devIndicators` in `web/next.config.ts`.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
