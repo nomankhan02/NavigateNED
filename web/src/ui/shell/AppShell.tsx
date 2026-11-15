@@ -203,6 +203,7 @@ export function AppShell() {
   );
   const [exploreCategory, setExploreCategory] = useState<string>("all");
   const [landmarksExpanded, setLandmarksExpanded] = useState<boolean>(true);
+  const [optionsOpen, setOptionsOpen] = useState<boolean>(false);
 
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lng: number }>({
     lat: 24.9325,
@@ -210,7 +211,7 @@ export function AppShell() {
   });
 
   const [dockCollapsed, setDockCollapsed] = useState<boolean>(false);
-  const [mobileSnap, setMobileSnap] = useState<SheetSnap>("half");
+  const [mobileSnap, setMobileSnap] = useState<SheetSnap>("peek");
   const dragStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -305,6 +306,9 @@ export function AppShell() {
         if (res.found) {
           const dirRes = await getDirections({ route: res });
           setManeuvers(dirRes.maneuvers ?? []);
+          if (typeof window !== "undefined" && window.innerWidth <= 768) {
+            setMobileSnap("peek");
+          }
         } else {
           setManeuvers([]);
           setRouteError(res.error ?? "No valid path found for the selected options.");
@@ -866,40 +870,59 @@ export function AppShell() {
                   </Button>
                 </section>
 
-                {/* 02 ALGORITHM */}
+                {/* 02 OPTIONS (Collapsed-by-default accordion: Algorithm + Step-free) */}
                 <section className={styles.sectionCard} style={{ zIndex: 15 }}>
-                  <SectionHeader number="02" title="ALGORITHM" />
-                  <SegmentedControl
-                    fullWidth
-                    ariaLabel="Routing algorithm"
-                    value={algo}
-                    onChange={setAlgo}
-                    options={[
-                      { value: "dijkstra", label: "Dijkstra" },
-                      { value: "astar", label: "A*" },
-                      { value: "bfs", label: "BFS" },
-                      { value: "bellmanford", label: "Bellman" },
-                      { value: "floyd", label: "Floyd" },
-                    ]}
+                  <SectionHeader
+                    number="02"
+                    title="OPTIONS"
+                    right={
+                      <button
+                        type="button"
+                        className={styles.sectionToggleBtn}
+                        aria-expanded={optionsOpen}
+                        onClick={() => setOptionsOpen((v) => !v)}
+                      >
+                        <span>
+                          {algo.toUpperCase()} · {stepFree ? "Step-free" : "Standard"}
+                        </span>
+                        {optionsOpen ? (
+                          <ChevronUpIcon size={14} />
+                        ) : (
+                          <ChevronDownIcon size={14} />
+                        )}
+                      </button>
+                    }
                   />
+                  {optionsOpen ? (
+                    <>
+                      <SegmentedControl
+                        fullWidth
+                        ariaLabel="Routing algorithm"
+                        value={algo}
+                        onChange={setAlgo}
+                        options={[
+                          { value: "dijkstra", label: "Dijkstra" },
+                          { value: "astar", label: "A*" },
+                          { value: "bfs", label: "BFS" },
+                          { value: "bellmanford", label: "Bellman" },
+                          { value: "floyd", label: "Floyd" },
+                        ]}
+                      />
+                      <Toggle
+                        id="shell-step-free"
+                        checked={stepFree}
+                        onChange={setStepFree}
+                        leadingIcon={<AccessibilityIcon size={15} />}
+                        label="Step-free route"
+                        hint="Use ramps and lifts; avoid stairs"
+                      />
+                    </>
+                  ) : null}
                 </section>
 
-                {/* 03 OPTIONS */}
-                <section className={styles.sectionCard} style={{ zIndex: 12 }}>
-                  <SectionHeader number="03" title="OPTIONS" />
-                  <Toggle
-                    id="shell-step-free"
-                    checked={stepFree}
-                    onChange={setStepFree}
-                    leadingIcon={<AccessibilityIcon size={15} />}
-                    label="Step-free route"
-                    hint="Use ramps and lifts; avoid stairs"
-                  />
-                </section>
-
-                {/* 04 SUMMARY & ROUTE LEGS */}
+                {/* 03 SUMMARY & ROUTE LEGS */}
                 <section className={styles.sectionCard} style={{ zIndex: 10 }}>
-                  <SectionHeader number="04" title="SUMMARY" />
+                  <SectionHeader number="03" title="SUMMARY" />
                   {routeError ? (
                     <Badge variant="hazard">{routeError}</Badge>
                   ) : null}
@@ -1037,31 +1060,7 @@ export function AppShell() {
                   ) : null}
                 </section>
 
-                {/* 05 DIRECTIONS */}
-                {maneuvers.length > 0 ? (
-                  <section className={styles.sectionCard} style={{ zIndex: 8 }}>
-                    <SectionHeader number="05" title="DIRECTIONS" />
-                    <div className={styles.directionsList}>
-                      {maneuvers.map((m, idx) => (
-                        <div key={`${m.atNodeId}-${idx}`} className={styles.maneuverRow}>
-                          <div className={styles.maneuverLeft}>
-                            <span className={styles.maneuverIcon} aria-hidden="true">
-                              {renderManeuverIcon(m.type)}
-                            </span>
-                            <span className={styles.maneuverText}>{m.text}</span>
-                          </div>
-                          {m.distanceM > 0 ? (
-                            <span className={styles.maneuverDist}>
-                              {m.distanceM.toFixed(0)} m
-                            </span>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
-
-                {/* 06 LANDMARKS */}
+                {/* 04 LANDMARKS */}
                 <section
                   className={[
                     styles.sectionCard,
@@ -1072,7 +1071,7 @@ export function AppShell() {
                   style={{ zIndex: 5 }}
                 >
                   <SectionHeader
-                    number="06"
+                    number="04"
                     title="LANDMARKS"
                     rightSlot={
                       <button
