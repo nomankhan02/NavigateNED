@@ -9,7 +9,7 @@ include_directories(
 )
 
 if(EMSCRIPTEN)
-    add_executable(navcore src/api.cpp)
+    add_executable(navcore src/navcore.cpp)
     set_target_properties(navcore PROPERTIES
         OUTPUT_NAME "navcore"
         SUFFIX ".js"
@@ -23,12 +23,17 @@ if(EMSCRIPTEN)
         "-sALLOW_MEMORY_GROWTH=1"
     )
 else()
-    # Native test runner executable
+    # Native test runner executable (test_main.cpp #includes ../src/navcore.cpp)
     enable_testing()
     add_executable(core_tests
         tests/test_main.cpp
-        src/api.cpp
     )
     add_test(NAME core_tests COMMAND core_tests)
+
+    # Optional CLI executable
+    add_executable(navcore_cli
+        src/navcore.cpp
+    )
+    target_compile_definitions(navcore_cli PRIVATE NAVCORE_CLI)
 endif()
 

@@ -45,3 +45,5 @@ Thumbs.db
 # Private keys and certificates
 *.pem
 *.key
+
+*.exe

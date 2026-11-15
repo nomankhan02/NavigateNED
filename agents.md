@@ -12,7 +12,7 @@ Every task executed by an agent or human contributor must strictly follow these 
 
 | Member | Focus Area | Owned Directories & Files | Prohibited |
 | :--- | :--- | :--- | :--- |
-| **Member A** | Data, GIS, Indoor Maps, Map Renderers | `data/`, `tools/`, `web/src/map/` | `core/`, `web/src/ui/`, `web/src/core/`, `.github/` |
+| **Member A** | Data, GIS, Indoor Maps, Map Renderers, C++ DSA Core, WASM Bridge, CI Workflows | `data/`, `tools/`, `web/src/map/`, `core/`, `.github/workflows/` | `web/src/ui/`, `web/src/core/` |
 | **Member B** | C++ DSA Core, WASM Bridge, CI Workflows | `core/`, `.github/workflows/` | `data/`, `web/src/` (except consuming output) |
 | **Member C** | Web UI, State, Visualizers, Design, Deploy | `web/` (except `web/src/map/`), `design.md` | `core/`, `data/`, `web/src/map/` |
 

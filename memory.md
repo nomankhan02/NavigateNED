@@ -20,6 +20,15 @@
   - Hover jitter eliminated: Removed conflicting CSS transforms on SVG transform-positioned elements; added transparent hit-area primitives with `pointer-events: none` on inner visuals across stairs, lift, entrance, exit, transition badges, and markers; respected `prefers-reduced-motion`.
   - Room label fitting & clipping: Computed room screen bounds at current zoom; fitted text using 2-line wrapped full names down to 9px min, short names, or short codes; centered labels within room rects; enforced strict clipping via SVG `<clipPath>` to prevent room overflow; recomputes on debounced zoom end (never during pan).
   - Room popover: Floating details tooltip displays full room name, floor, capacity, and ID on room hover or tap.
+- Task B1 delivered: Single-file C++17 routing core (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI update (`.github/workflows/core.yml`):
+  - Merged adjacency-list graph loading `data/graph.json` (86 outdoor nodes) + all 6 `data/indoor/*.json` files (611 indoor nodes) into a single 697-node graph linked via the 3 m indoor-to-outdoor entrance edges.
+  - Implemented Dijkstra (binary min-heap), A* (admissible Haversine heuristic using building entrance coordinates for indoor nodes), BFS (fewest hops), and Bellman-Ford (with negative cycle detection), all supporting step-free (`accessible: true`) and blocked nodes/edges (`avoid`, `blockedEdges`).
+  - Implemented `call("ping")`, `call("load")`, `call("route")` (with outdoor/indoor/entrance/floor-change `steps[]` and 2000-capped `trace[]`), and `call("compare")` with exception-safe JSON error boundary.
+  - CLI usage (`#ifdef NAVCORE_CLI`):
+    - Compile: `g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`
+    - Run route: `./navcore_cli route b-csit:201 n1 astar --accessible`
+    - Run compare: `./navcore_cli compare b-csit:201 b-library:204`
+    - Run tests: `g++ -std=c++17 -I core/third_party core/tests/test_main.cpp -o test_runner && ./test_runner`
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -49,8 +58,9 @@
 ## Open Tasks
 - [x] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
 - [x] Member A (Task A4b): Indoor map fixes (hover jitter elimination, room label boundary clipping, and room popover).
-- [ ] Member B: Implement C++ DSA routing algorithms in `core/`.
+- [x] Member A/B (Task B1): C++17 single-file routing core (`core/src/navcore.cpp`) with merged outdoor+indoor graph, Dijkstra, A*, BFS, Bellman-Ford, CLI, and Doctest suite.
+- [ ] Member A/B (Task B2+): Remaining C++ DSA algorithms (`allPairs`, `mst`, `tsp`, `criticalPoints`, `search`, `evacuate`) in `core/src/navcore.cpp`.
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
 ## Known Issues
-- Local Windows host lacks CMake/native compiler; C++ native tests and Emscripten WASM compile in GitHub Actions.
+- Local Windows host uses MinGW-w64 `g++ 16.2.0` for native C++17 tests and CLI; Emscripten WASM compiles in GitHub Actions.
