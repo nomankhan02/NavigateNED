@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Maneuver, ManeuverType, NavAlgo } from "@/core/navcore";
+import type { Maneuver, ManeuverType, NavAlgo, TraceEvent } from "@/core/navcore";
+import type { TraceReplayState } from "@/map";
 import {
   Badge,
   BuildingIcon,
@@ -10,11 +11,15 @@ import {
   ChevronRightIcon,
   CloseIcon,
   EntranceIcon,
+  GraphIcon,
   LiftIcon,
+  PauseIcon,
+  PlayIcon,
   RouteIcon,
   StairsIcon,
   type SheetSnap,
 } from "@/ui";
+import { TraceReplayPanel } from "./TraceReplayPanel";
 import styles from "./routeCard.module.css";
 
 export interface RouteCardProps {
@@ -29,6 +34,12 @@ export interface RouteCardProps {
   isIndoorMode?: boolean;
   indoorLoading?: boolean;
   sheetSnap?: SheetSnap;
+  traceReplay?: TraceReplayState;
+  traceEvents?: TraceEvent[];
+  hasIndoorLeg?: boolean;
+  replayOpen?: boolean;
+  onToggleReplay?: () => void;
+  onOpenCompare?: () => void;
 }
 
 function renderManeuverIcon(type: ManeuverType): ReactNode {
@@ -62,11 +73,18 @@ export function RouteCard({
   isIndoorMode = false,
   indoorLoading = false,
   sheetSnap = "peek",
+  traceReplay,
+  traceEvents = [],
+  hasIndoorLeg = false,
+  replayOpen = false,
+  onToggleReplay,
+  onOpenCompare,
 }: RouteCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (maneuvers.length === 0) return null;
 
+  const hasReplay = !isIndoorMode && Boolean(traceReplay && traceEvents.length > 0 && onToggleReplay);
   const safeIdx = Math.max(0, Math.min(maneuvers.length - 1, activeStepIndex));
   const current = maneuvers[safeIdx];
   const walkMinutes = Math.max(1, Math.round(distanceM / 78));
@@ -98,6 +116,15 @@ export function RouteCard({
           </Badge>
         </div>
       </div>
+
+      {replayOpen && hasReplay && traceReplay && onToggleReplay ? (
+        <TraceReplayPanel
+          traceReplay={traceReplay}
+          events={traceEvents}
+          hasIndoor={hasIndoorLeg}
+          onClose={onToggleReplay}
+        />
+      ) : null}
 
       {!expanded ? (
         <>
@@ -163,13 +190,37 @@ export function RouteCard({
               </Button>
             </div>
 
-            <Button
-              size="sm"
-              variant="quiet"
-              onClick={() => setExpanded(true)}
-            >
-              Expand
-            </Button>
+            <div className={styles.navBtns}>
+              {hasReplay ? (
+                <Button
+                  size="sm"
+                  variant={replayOpen ? "primary" : "secondary"}
+                  aria-label="Watch the search"
+                  title="Watch the search"
+                  leadingIcon={
+                    traceReplay?.isPlaying ? <PauseIcon size={14} /> : <PlayIcon size={14} />
+                  }
+                  onClick={onToggleReplay}
+                />
+              ) : null}
+              {!isIndoorMode && onOpenCompare ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-label="Compare algorithms"
+                  title="Compare algorithms"
+                  leadingIcon={<GraphIcon size={14} />}
+                  onClick={onOpenCompare}
+                />
+              ) : null}
+              <Button
+                size="sm"
+                variant="quiet"
+                onClick={() => setExpanded(true)}
+              >
+                Expand
+              </Button>
+            </div>
           </div>
         </>
       ) : (
@@ -222,14 +273,38 @@ export function RouteCard({
             <span className={styles.stepCounter}>
               Step {safeIdx + 1} of {maneuvers.length}
             </span>
-            <Button
-              size="sm"
-              variant="secondary"
-              leadingIcon={<CloseIcon size={14} />}
-              onClick={() => setExpanded(false)}
-            >
-              Close
-            </Button>
+            <div className={styles.navBtns}>
+              {hasReplay ? (
+                <Button
+                  size="sm"
+                  variant={replayOpen ? "primary" : "secondary"}
+                  leadingIcon={
+                    traceReplay?.isPlaying ? <PauseIcon size={14} /> : <PlayIcon size={14} />
+                  }
+                  onClick={onToggleReplay}
+                >
+                  {replayOpen ? "Hide search" : "Watch the search"}
+                </Button>
+              ) : null}
+              {!isIndoorMode && onOpenCompare ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  leadingIcon={<GraphIcon size={14} />}
+                  onClick={onOpenCompare}
+                >
+                  Compare algorithms
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                variant="secondary"
+                leadingIcon={<CloseIcon size={14} />}
+                onClick={() => setExpanded(false)}
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </>
       )}

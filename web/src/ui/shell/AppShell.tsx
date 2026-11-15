@@ -16,6 +16,7 @@ import {
   type CampusLandmark,
   type IndoorBuilding,
   OutdoorMap,
+  useTraceReplay,
 } from "@/map";
 import {
   computeRoute,
@@ -178,6 +179,7 @@ export function AppShell() {
   const [stepFocusActive, setStepFocusActive] = useState<boolean>(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState<boolean>(false);
+  const [replayOpen, setReplayOpen] = useState<boolean>(false);
 
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
@@ -294,6 +296,7 @@ export function AppShell() {
       if (!wasmReady || !fromId || !toId) return;
       setIsRouting(true);
       setRouteError(null);
+      setReplayOpen(false);
       try {
         const res = await computeRoute({
           from: fromId,
@@ -328,6 +331,16 @@ export function AppShell() {
       void runNavigation(fromTargetId, toTargetId, algo, stepFree);
     }
   }, [wasmReady, fromTargetId, toTargetId, algo, stepFree, runNavigation]);
+
+  const outdoorTraceEvents = useMemo(
+    () => (routeResult?.trace ?? []).filter((ev) => !ev.node.includes(":")),
+    [routeResult],
+  );
+  const hasIndoorLeg = useMemo(
+    () => Boolean(routeResult?.path?.some((id) => id.includes(":"))),
+    [routeResult],
+  );
+  const traceReplay = useTraceReplay(outdoorTraceEvents, 1);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -604,7 +617,14 @@ export function AppShell() {
             <div className={styles.outdoorWrap}>
               <OutdoorMap
                 graph={graph}
-                route={outdoorRoutePath}
+                route={
+                  replayOpen &&
+                  traceReplay.totalEvents > 0 &&
+                  traceReplay.currentIndex < traceReplay.totalEvents - 1
+                    ? []
+                    : outdoorRoutePath
+                }
+                trace={replayOpen ? traceReplay : null}
                 activeManeuver={activeManeuverForMap}
                 activeLegPath={activeLegPathForMap}
                 showGraph={showGraph}
@@ -664,6 +684,20 @@ export function AppShell() {
                 }}
                 indoorLoading={indoorLoading}
                 sheetSnap={mobileSnap}
+                traceReplay={traceReplay}
+                traceEvents={outdoorTraceEvents}
+                hasIndoorLeg={hasIndoorLeg}
+                replayOpen={replayOpen}
+                onToggleReplay={() => {
+                  if (replayOpen) {
+                    traceReplay.pause();
+                    setReplayOpen(false);
+                  } else {
+                    setReplayOpen(true);
+                    traceReplay.seek(0);
+                    traceReplay.play();
+                  }
+                }}
               />
             );
           })()}
