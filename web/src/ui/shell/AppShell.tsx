@@ -137,17 +137,15 @@ function renderManeuverIcon(type: ManeuverType) {
 }
 
 interface SectionHeaderProps {
-  number: string;
+  number?: string;
   title: string;
   rightSlot?: ReactNode;
 }
 
-function SectionHeader({ number, title, rightSlot }: SectionHeaderProps) {
+function SectionHeader({ title, rightSlot }: SectionHeaderProps) {
   return (
     <div className={styles.sectionHeader}>
-      <span className={styles.sectionNumber}>{number}</span>
       <span className={styles.sectionTitle}>{title}</span>
-      <span className={styles.sectionRule} aria-hidden="true" />
       {rightSlot}
     </div>
   );
@@ -560,36 +558,16 @@ export function AppShell() {
 
   return (
     <div className={styles.shellRoot}>
-      {/* TITLE-BLOCK HEADER STRIP */}
+      {/* HEADER STRIP */}
       <header className={styles.titleBlock}>
         <div className={styles.brandCluster}>
           <span className={styles.compassStamp}>
             <BrandLogo size={24} animated title="NavigateNED" />
           </span>
-          <div className={styles.brandTitles}>
-            <span className={styles.plateSerial}>
-              NED UNIVERSITY // CAMPUS SURVEY PLATE
-            </span>
-            <h1 className={styles.appTitle}>NavigateNED</h1>
-          </div>
+          <h1 className={styles.appTitle}>NavigateNED</h1>
         </div>
 
         <div className={styles.telemetryCluster}>
-          <div className={styles.coordReadout} title="Active survey coordinates">
-            <span className={styles.coordLabel}>COORDS</span>
-            <span>
-              {cursorCoords.lat.toFixed(4)}°N, {cursorCoords.lng.toFixed(4)}°E
-            </span>
-          </div>
-
-          {graph ? (
-            <span className={styles.buildingsBadge}>
-              <Badge variant="teal" numeric>
-                {graph.landmarks.length} BUILDINGS
-              </Badge>
-            </span>
-          ) : null}
-
           <div className={styles.headerActions}>
             <IconButton
               size="sm"
@@ -613,7 +591,6 @@ export function AppShell() {
           </div>
         </div>
 
-        <div className={styles.titleHairlineRule} aria-hidden="true" />
       </header>
 
       {/* FULL-BLEED MAP STAGE + EDGE-ATTACHED PANEL / MOBILE SHEET */}
@@ -833,7 +810,7 @@ export function AppShell() {
               <>
                 {/* 01 ROUTE */}
                 <section className={styles.sectionCard} style={{ zIndex: 20 }}>
-                  <SectionHeader number="01" title="ROUTE" />
+                  <SectionHeader title="Route" />
                   <div className={styles.endpointGrid}>
                     <div className={styles.endpointFields}>
                       <Field
@@ -899,8 +876,7 @@ export function AppShell() {
                 {/* 02 OPTIONS (Collapsed-by-default accordion: Algorithm + Step-free) */}
                 <section className={styles.sectionCard} style={{ zIndex: 15 }}>
                   <SectionHeader
-                    number="02"
-                    title="OPTIONS"
+                    title="Options"
                     rightSlot={
                       <button
                         type="button"
@@ -940,15 +916,15 @@ export function AppShell() {
                         onChange={setStepFree}
                         leadingIcon={<AccessibilityIcon size={15} />}
                         label="Step-free route"
-                        hint="Use ramps and lifts; avoid stairs"
+                        hint="Avoids stairs"
                       />
                     </>
                   ) : null}
                 </section>
 
-                {/* 03 SUMMARY & ROUTE LEGS */}
+                {/* SUMMARY & ROUTE LEGS */}
                 <section className={styles.sectionCard} style={{ zIndex: 10 }}>
-                  <SectionHeader number="03" title="SUMMARY" />
+                  <SectionHeader title="Summary" />
                   {routeError ? (
                     <Badge variant="hazard">{routeError}</Badge>
                   ) : null}
@@ -959,7 +935,6 @@ export function AppShell() {
                       value={routeResult?.found ? routeResult.distance : 0}
                       decimals={1}
                       unit="m"
-                      sublabel={routeResult?.found ? "Shortest path" : "Waiting"}
                       tone="vermilion"
                       icon={<DistanceIcon size={14} />}
                     />
@@ -972,28 +947,19 @@ export function AppShell() {
                           : 0
                       }
                       unit="min"
-                      sublabel={stepFree ? "Step-free pace" : "Standard pace"}
                       tone="teal"
                       icon={<RouteIcon size={14} />}
                     />
-                    <StatReadout
-                      size="sm"
-                      label="Floors"
-                      value={indoorFloorCount}
-                      unit="fl"
-                      sublabel={indoorFloorCount > 0 ? "Indoor legs" : "Ground level"}
-                      tone="safe"
-                      icon={<FloorIcon size={14} />}
-                    />
-                    <StatReadout
-                      size="sm"
-                      label="Steps"
-                      value={maneuvers.length}
-                      unit="turns"
-                      sublabel={`${algo.toUpperCase()} active`}
-                      tone="neutral"
-                      icon={<GraphIcon size={14} />}
-                    />
+                    {indoorFloorCount > 1 ? (
+                      <StatReadout
+                        size="sm"
+                        label="Floors"
+                        value={indoorFloorCount}
+                        unit="fl"
+                        tone="safe"
+                        icon={<FloorIcon size={14} />}
+                      />
+                    ) : null}
                   </div>
 
                   {routeLegs.length > 0 ? (
@@ -1097,8 +1063,7 @@ export function AppShell() {
                   style={{ zIndex: 5 }}
                 >
                   <SectionHeader
-                    number="04"
-                    title="LANDMARKS"
+                    title="Landmarks"
                     rightSlot={
                       <button
                         type="button"
@@ -1182,7 +1147,7 @@ export function AppShell() {
             {mode === "explore" ? (
               <>
                 <section className={styles.sectionCard}>
-                  <SectionHeader number="01" title="FILTER" />
+                  <SectionHeader title="Filter" />
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {[
                       { id: "all", label: "All", count: orderedLandmarks.length },
@@ -1204,7 +1169,7 @@ export function AppShell() {
 
                 {selectedExploreLandmark ? (
                   <section className={styles.sectionCard}>
-                    <SectionHeader number="02" title="DETAILS" />
+                    <SectionHeader title="Details" />
                     <div className={styles.landmarkItemTop}>
                       <div className={styles.landmarkItemIdentity}>
                         {selectedExploreLandmark.number ? (
@@ -1282,7 +1247,7 @@ export function AppShell() {
                 <section
                   className={[styles.sectionCard, styles.sectionCardFill].join(" ")}
                 >
-                  <SectionHeader number="03" title="LANDMARKS" />
+                  <SectionHeader title="Landmarks" />
                   <div
                     className={styles.landmarksScrollList}
                     style={{ maxHeight: "360px" }}
@@ -1323,7 +1288,7 @@ export function AppShell() {
             {mode === "evacuate" ? (
               <>
                 <section className={styles.sectionCard}>
-                  <SectionHeader number="01" title="SUMMARY" />
+                  <SectionHeader title="Summary" />
                   <div className={styles.readoutGrid}>
                     <StatReadout
                       size="sm"
@@ -1347,7 +1312,7 @@ export function AppShell() {
                 </section>
 
                 <section className={styles.sectionCard}>
-                  <SectionHeader number="02" title="OPTIONS" />
+                  <SectionHeader title="Options" />
                   <Toggle
                     id="shell-evac-lifts"
                     checked={disableLifts}
@@ -1361,7 +1326,7 @@ export function AppShell() {
                 <section
                   className={[styles.sectionCard, styles.sectionCardFill].join(" ")}
                 >
-                  <SectionHeader number="03" title="ASSEMBLY POINTS" />
+                  <SectionHeader title="Assembly Points" />
                   <div className={styles.landmarksScrollList}>
                     <ListRow
                       leading={<Badge variant="safe" numeric>01</Badge>}
@@ -1385,18 +1350,7 @@ export function AppShell() {
                 </section>
               </>
             ) : null}
-
-            {/* Inline status line at end of sheet scroll content on phone */}
-            <div className={styles.mobileSheetFooterLine}>
-              <span>SURVEY PLATE // WGS84</span>
-              <span>BUILD {BUILD_ID}</span>
-            </div>
           </div>
-
-          <footer className={styles.dockFooter}>
-            <span>SURVEY PLATE // WGS84</span>
-            <span>BUILD {BUILD_ID} // 697 NODES</span>
-          </footer>
         </aside>
       </div>
     </div>

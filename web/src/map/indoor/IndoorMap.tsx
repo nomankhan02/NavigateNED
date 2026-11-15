@@ -494,11 +494,10 @@ export function IndoorMap({
         routeFloors={routeFloors}
       />
 
-      {/* Demo Badge */}
+      {/* Demo Tag */}
       {building?.meta?.demo && (
-        <div className="ned-indoor-demo-badge" title="Architectural Floor Model">
-          <span className="ned-indoor-demo-dot" aria-hidden="true" />
-          <span>Demo Model</span>
+        <div className="ned-indoor-demo-badge" title="Demo floor plan">
+          <span>Demo</span>
         </div>
       )}
 

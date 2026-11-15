@@ -77,6 +77,9 @@ export default function KitPage() {
         </div>
 
         <div className={styles.titleRight}>
+          <Badge variant="neutral" numeric>
+            BUILD {process.env.NEXT_PUBLIC_BUILD_ID || "dev"}
+          </Badge>
           <SegmentedControl
             ariaLabel="Survey plate theme mode"
             value={theme}

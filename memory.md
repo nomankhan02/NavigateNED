@@ -55,6 +55,7 @@
   - Task C2c (b) delivered: Removed `05 DIRECTIONS` from the left sidebar, collapsed `02 ALGORITHM` + `03 OPTIONS` into a collapsed-by-default `"02 OPTIONS"` accordion, kept auto-compute on From/To change, and set mobile sheet to open at `"peek"` and drop to `"peek"` when a route is computed.
   - Task C2c (c) delivered: Updated `OutdoorMap` landmark label rules (`<=17` number badges only, `18` short names, `>=19` or selected/hovered/route start/end full names). (`tsc --noEmit` exit 0.)
   - Task C2d (a) delivered: Kept `RouteCard` visible above `IndoorStage` (`z-index: 915`) showing indoor maneuvers, removed duplicate Back/Next/`1 / 14` stepper from `IndoorStage` top bar, and synced `RouteCard` step changes to `IndoorStage` floor switching and node highlighting.
+  - Task C2d (b) delivered: Decluttered header (logo, `NavigateNED`, 3 icon buttons only), removed app footer strip (kept `BUILD` badge on `/kit`), simplified summary cards to `Distance` + `Walk time` (+ `Floors` when >1 floor) without sublabels, simplified section headers to plain words without number prefixes or tick rules, shortened `"Avoids stairs"`, and changed indoor `"Demo Model"` badge to a quiet `"Demo"` corner tag.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
