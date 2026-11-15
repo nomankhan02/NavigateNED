@@ -750,3 +750,159 @@
     min-height: 44px;
   }
 }
+
+/* --- Task C2: Indoor Stage, Route Legs & Directions --- */
+.indoorStage {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-canvas);
+}
+
+.indoorToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 8px calc(var(--map-left-inset, 392px) + 12px);
+  background-color: var(--color-surface-panel);
+  border-bottom: var(--hairline-width) solid var(--color-border-strong);
+  z-index: 50;
+}
+
+.indoorToolbarLeft,
+.indoorToolbarRight,
+.indoorStepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.indoorTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.indoorStepCounter {
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0 4px;
+}
+
+.indoorMapWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.legList,
+.directionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--color-surface-recessed);
+  border: var(--hairline-width) solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+}
+
+.legMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.legTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.legSub {
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+}
+
+.maneuverRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  background-color: var(--color-surface-recessed);
+  border: var(--hairline-width) solid var(--color-border-hairline);
+  border-radius: var(--radius-xs);
+}
+
+.maneuverLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.maneuverIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-elevated);
+  border: var(--hairline-width) solid var(--color-border-strong);
+  color: var(--color-network-teal);
+  flex-shrink: 0;
+}
+
+.maneuverText {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.maneuverDist {
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.exploreActionsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .indoorToolbar {
+    padding: 8px 10px;
+  }
+}

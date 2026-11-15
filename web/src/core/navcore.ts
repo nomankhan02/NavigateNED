@@ -124,9 +124,16 @@ export interface LoadedCampusData {
 export type NativeCallFn = (fn: string, argsJson: string) => string;
 
 interface NavcoreModuleInstance {
-  cwrap: (funcName: string, returnType: string, argTypes: string[]) => NativeCallFn;
+  cwrap?: (funcName: string, returnType: string, argTypes: string[]) => NativeCallFn;
   call?: NativeCallFn;
+  _malloc?: (size: number) => number;
+  _free?: (ptr: number) => void;
+  _call?: (fnPtr: number, argsPtr: number) => number;
+  stringToUTF8?: (str: string, outPtr: number, maxBytesToWrite: number) => void;
+  UTF8ToString?: (ptr: number) => string;
 }
+
+const utf8Encoder = new TextEncoder();
 
 export const INDOOR_BUILDING_IDS = [
   "b-admin",
@@ -155,7 +162,36 @@ export async function getNavCore(): Promise<NativeCallFn> {
     const instance: NavcoreModuleInstance = await createModule();
 
     let callFn: NativeCallFn;
-    if (typeof instance.cwrap === "function") {
+    // Allocate large JSON payloads (graph.json is ~400KB) on the WASM heap rather than
+    // via cwrap's 64KB C stack to avoid memory access out of bounds.
+    if (
+      typeof instance._malloc === "function" &&
+      typeof instance._free === "function" &&
+      typeof instance._call === "function" &&
+      typeof instance.stringToUTF8 === "function" &&
+      typeof instance.UTF8ToString === "function"
+    ) {
+      const malloc = instance._malloc;
+      const free = instance._free;
+      const nativeCall = instance._call;
+      const stringToUTF8 = instance.stringToUTF8;
+      const utf8ToString = instance.UTF8ToString;
+      callFn = (fn: string, argsJson: string): string => {
+        const fnBytes = utf8Encoder.encode(fn).length + 1;
+        const argsBytes = utf8Encoder.encode(argsJson).length + 1;
+        const fnPtr = malloc(fnBytes);
+        const argsPtr = malloc(argsBytes);
+        try {
+          stringToUTF8(fn, fnPtr, fnBytes);
+          stringToUTF8(argsJson, argsPtr, argsBytes);
+          const resPtr = nativeCall(fnPtr, argsPtr);
+          return utf8ToString(resPtr);
+        } finally {
+          free(fnPtr);
+          free(argsPtr);
+        }
+      };
+    } else if (typeof instance.cwrap === "function") {
       callFn = instance.cwrap("call", "string", ["string", "string"]);
     } else if (typeof instance.call === "function") {
       callFn = instance.call;

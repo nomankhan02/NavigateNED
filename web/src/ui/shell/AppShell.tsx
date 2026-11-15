@@ -5,6 +5,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -17,51 +18,57 @@ import {
   OutdoorMap,
 } from "@/map";
 import {
+  computeRoute,
+  ensureAllCampusDataLoaded,
+  getDirections,
+  type Maneuver,
+  type ManeuverType,
+  type NavAlgo,
+  type RouteResponse,
+} from "@/core/navcore";
+import {
   AccessibilityIcon,
   AssemblyPointIcon,
   Badge,
   BrandLogo,
+  BuildingIcon,
+  Button,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-  ChevronDownIcon,
   Chip,
   DistanceIcon,
+  EntranceIcon,
   Field,
   FloorIcon,
   GraphIcon,
   HazardIcon,
   IconButton,
   LayersIcon,
+  LiftIcon,
   ListRow,
+  LocateIcon,
   RouteIcon,
   SearchField,
   type SearchOption,
   SegmentedControl,
   type SheetSnap,
+  StairsIcon,
   StatReadout,
   SurveyLoader,
   SwapIcon,
   ThemeSwitch,
   Toggle,
 } from "@/ui";
+import { IndoorStage } from "./IndoorStage";
+import { extractOutdoorPath, splitRouteIntoLegs } from "./routeLegs";
 import styles from "./shell.module.css";
 
 export type AppMode = "navigate" | "explore" | "evacuate";
-export type RouteAlgo = "dijkstra" | "astar" | "bfs" | "bellmanford";
 
 const SNAP_ORDER: readonly SheetSnap[] = ["peek", "half", "expanded"];
-
 const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID ?? "dev";
-
-const INDOOR_BUILDING_IDS = [
-  "b-admin",
-  "b-auditorium",
-  "b-csit",
-  "b-csit-labs",
-  "b-dean-offices",
-  "b-library",
-] as const;
 
 const PREFERRED_DISPLAY_NAMES: Record<string, string> = {
   "b-library": "Central Library",
@@ -84,7 +91,6 @@ export function formatLandmarkName(lm: CampusLandmark): string {
   return lm.name;
 }
 
-/** Sorts landmarks by building number first (1, 2, ..., 5, 5A, ...), then alphabetically. */
 function compareLandmarksByNumber(a: CampusLandmark, b: CampusLandmark): number {
   const numA = a.number ?? "";
   const numB = b.number ?? "";
@@ -100,6 +106,32 @@ function compareLandmarksByNumber(a: CampusLandmark, b: CampusLandmark): number 
     if (cmp !== 0) return cmp;
   }
   return formatLandmarkName(a).localeCompare(formatLandmarkName(b));
+}
+
+function renderManeuverIcon(type: ManeuverType) {
+  switch (type) {
+    case "start":
+      return <LocateIcon size={14} />;
+    case "enter-building":
+      return <EntranceIcon size={14} />;
+    case "stairs-up":
+    case "stairs-down":
+      return <StairsIcon size={14} />;
+    case "lift":
+      return <LiftIcon size={14} />;
+    case "slight-left":
+    case "left":
+    case "sharp-left":
+      return <ChevronLeftIcon size={14} />;
+    case "slight-right":
+    case "right":
+    case "sharp-right":
+      return <ChevronRightIcon size={14} />;
+    case "arrive":
+      return <AssemblyPointIcon size={14} />;
+    default:
+      return <ChevronUpIcon size={14} />;
+  }
 }
 
 interface SectionHeaderProps {
@@ -121,11 +153,14 @@ function SectionHeader({ number, title, rightSlot }: SectionHeaderProps) {
 
 export function AppShell() {
   const [graph, setGraph] = useState<CampusGraph | null>(null);
-  const [indoorBuildings, setIndoorBuildings] = useState<IndoorBuilding[]>([]);
+  const [indoorBuildings, setIndoorBuildings] = useState<
+    Record<string, IndoorBuilding>
+  >({});
+  const [wasmReady, setWasmReady] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [mode, setMode] = useState<AppMode>("navigate");
-  const [algo, setAlgo] = useState<RouteAlgo>("astar");
+  const [algo, setAlgo] = useState<NavAlgo>("astar");
   const [stepFree, setStepFree] = useState<boolean>(false);
   const [disableLifts, setDisableLifts] = useState<boolean>(true);
   const [showGraph, setShowGraph] = useState<boolean>(false);
@@ -133,7 +168,22 @@ export function AppShell() {
   const [whereToQuery, setWhereToQuery] = useState<string>("");
   const [fromInput, setFromInput] = useState<string>("Main Gate");
   const [toInput, setToInput] = useState<string>("Central Library");
-  const [selectedLandmarkId, setSelectedLandmarkId] = useState<string | null>("b-library");
+  const [fromTargetId, setFromTargetId] = useState<string>("b-main-gate");
+  const [toTargetId, setToTargetId] = useState<string>("b-library");
+
+  const [routeResult, setRouteResult] = useState<RouteResponse | null>(null);
+  const [maneuvers, setManeuvers] = useState<Maneuver[]>([]);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [isRouting, setIsRouting] = useState<boolean>(false);
+
+  const [activeIndoor, setActiveIndoor] = useState<{
+    buildingId: string;
+    route: string[];
+  } | null>(null);
+
+  const [selectedLandmarkId, setSelectedLandmarkId] = useState<string | null>(
+    "b-library",
+  );
   const [exploreCategory, setExploreCategory] = useState<string>("all");
   const [landmarksExpanded, setLandmarksExpanded] = useState<boolean>(true);
 
@@ -148,38 +198,62 @@ export function AppShell() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/data/graph.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status} loading campus map`);
-        return res.json() as Promise<CampusGraph>;
-      })
-      .then((data) => {
-        if (!cancelled) setGraph(data);
+    ensureAllCampusDataLoaded()
+      .then((loaded) => {
+        if (cancelled) return;
+        setGraph(loaded.graph);
+        setIndoorBuildings(loaded.indoorBuildings);
+        setWasmReady(true);
       })
       .catch((err) => {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : String(err));
         }
       });
-
-    Promise.all(
-      INDOOR_BUILDING_IDS.map((bid) =>
-        fetch(`/data/indoor/${bid}.json`)
-          .then((r) => (r.ok ? (r.json() as Promise<IndoorBuilding>) : null))
-          .catch(() => null),
-      ),
-    ).then((buildings) => {
-      if (!cancelled) {
-        setIndoorBuildings(
-          buildings.filter((b): b is IndoorBuilding => b !== null),
-        );
-      }
-    });
-
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const runNavigation = useCallback(
+    async (
+      fromId: string,
+      toId: string,
+      selectedAlgo: NavAlgo,
+      accessible: boolean,
+    ) => {
+      if (!wasmReady || !fromId || !toId) return;
+      setIsRouting(true);
+      setRouteError(null);
+      try {
+        const res = await computeRoute({
+          from: fromId,
+          to: toId,
+          algo: selectedAlgo,
+          accessible,
+        });
+        setRouteResult(res);
+        if (res.found) {
+          const dirRes = await getDirections({ route: res });
+          setManeuvers(dirRes.maneuvers ?? []);
+        } else {
+          setManeuvers([]);
+          setRouteError(res.error ?? "No valid path found for the selected options.");
+        }
+      } catch (err) {
+        setRouteError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsRouting(false);
+      }
+    },
+    [wasmReady],
+  );
+
+  useEffect(() => {
+    if (wasmReady && fromTargetId && toTargetId) {
+      void runNavigation(fromTargetId, toTargetId, algo, stepFree);
+    }
+  }, [wasmReady, fromTargetId, toTargetId, algo, stepFree, runNavigation]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -190,13 +264,19 @@ export function AppShell() {
     return map;
   }, [graph]);
 
-  /** Ordered campus landmarks (by building number, then alphabetically), independent of search */
   const orderedLandmarks = useMemo(() => {
     if (!graph) return [];
     return [...graph.landmarks].sort(compareLandmarksByNumber);
   }, [graph]);
 
-  /** Unified search options (buildings + indoor rooms) for Where-to, From, and To dropdowns */
+  const displayNamesById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const lm of orderedLandmarks) {
+      map[lm.id] = formatLandmarkName(lm);
+    }
+    return map;
+  }, [orderedLandmarks]);
+
   const searchOptions: SearchOption[] = useMemo(() => {
     if (!graph) return [];
     const lmById = new Map<string, CampusLandmark>();
@@ -217,7 +297,7 @@ export function AppShell() {
       });
     }
 
-    for (const bldg of indoorBuildings) {
+    for (const bldg of Object.values(indoorBuildings)) {
       const parentLm = lmById.get(bldg.landmarkId || bldg.id);
       const bldgShort = parentLm ? formatLandmarkName(parentLm) : bldg.name;
       for (const node of bldg.nodes) {
@@ -239,11 +319,61 @@ export function AppShell() {
   }, [graph, orderedLandmarks, indoorBuildings]);
 
   const exploreLandmarks = useMemo(() => {
-    if (exploreCategory === "all") return orderedLandmarks;
-    return orderedLandmarks.filter(
-      (lm) => lm.category.toLowerCase() === exploreCategory,
+    const q = whereToQuery.trim().toLowerCase();
+    return orderedLandmarks.filter((lm) => {
+      if (
+        exploreCategory !== "all" &&
+        lm.category.toLowerCase() !== exploreCategory
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        formatLandmarkName(lm).toLowerCase().includes(q) ||
+        lm.name.toLowerCase().includes(q) ||
+        (lm.number ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [orderedLandmarks, exploreCategory, whereToQuery]);
+
+  const selectedExploreLandmark = useMemo(() => {
+    if (!selectedLandmarkId) return orderedLandmarks[0] ?? null;
+    return (
+      orderedLandmarks.find((lm) => lm.id === selectedLandmarkId) ??
+      orderedLandmarks[0] ??
+      null
     );
-  }, [orderedLandmarks, exploreCategory]);
+  }, [orderedLandmarks, selectedLandmarkId]);
+
+  const outdoorRoutePath = useMemo(
+    () => (routeResult?.found ? extractOutdoorPath(routeResult.path) : []),
+    [routeResult],
+  );
+
+  const routeLegs = useMemo(
+    () =>
+      routeResult?.found
+        ? splitRouteIntoLegs(
+            routeResult.path,
+            indoorBuildings,
+            displayNamesById,
+          )
+        : [],
+    [routeResult, indoorBuildings, displayNamesById],
+  );
+
+  const indoorFloorCount = useMemo(() => {
+    if (!routeResult?.found) return 0;
+    const floors = new Set<string>();
+    for (const id of routeResult.path) {
+      const colon = id.indexOf(":");
+      if (colon <= 0) continue;
+      const bid = id.slice(0, colon);
+      const node = indoorBuildings[bid]?.nodes.find((n) => n.id === id);
+      if (node) floors.add(`${bid}:${node.floor}`);
+    }
+    return floors.size;
+  }, [routeResult, indoorBuildings]);
 
   const focusLandmarkOnMap = (landmarkId?: string) => {
     if (!landmarkId || !graph) return;
@@ -264,17 +394,21 @@ export function AppShell() {
       setCursorCoords({ lat: node.lat, lng: node.lng });
     }
     setToInput(formatLandmarkName(lm));
+    setToTargetId(lm.id);
   };
 
   const handleSetDestination = (lm: CampusLandmark) => {
     const cleanName = formatLandmarkName(lm);
     setToInput(cleanName);
+    setToTargetId(lm.id);
     focusLandmarkOnMap(lm.id);
   };
 
   const handleSwapEndpoints = () => {
     setFromInput(toInput);
     setToInput(fromInput);
+    setFromTargetId(toTargetId);
+    setToTargetId(fromTargetId);
   };
 
   const cycleMobileSnap = (dir: 1 | -1) => {
@@ -297,7 +431,6 @@ export function AppShell() {
     } else if (dy > 28) {
       cycleMobileSnap(-1);
     } else {
-      // Tap on handle cycles peek -> half -> expanded -> peek
       const nextIdx = (SNAP_ORDER.indexOf(mobileSnap) + 1) % SNAP_ORDER.length;
       setMobileSnap(SNAP_ORDER[nextIdx]);
     }
@@ -321,6 +454,10 @@ export function AppShell() {
       : mobileSnap === "expanded"
         ? styles.mobileSnapExpanded
         : styles.mobileSnapHalf;
+
+  const activeIndoorBuilding = activeIndoor
+    ? indoorBuildings[activeIndoor.buildingId]
+    : undefined;
 
   return (
     <div className={styles.shellRoot}>
@@ -390,6 +527,7 @@ export function AppShell() {
           {graph ? (
             <OutdoorMap
               graph={graph}
+              route={outdoorRoutePath}
               showGraph={showGraph}
               selectedLandmarkId={selectedLandmarkId}
               onLandmarkClick={handleLandmarkClickOnMap}
@@ -400,10 +538,28 @@ export function AppShell() {
               {loadError ? (
                 <Badge variant="hazard">{loadError}</Badge>
               ) : (
-                <SurveyLoader label="CALIBRATING CAMPUS SURVEY PLATE" />
+                <SurveyLoader label="CALIBRATING WASM & CAMPUS PLATE" />
               )}
             </div>
           )}
+
+          {activeIndoor && activeIndoorBuilding ? (
+            <IndoorStage
+              building={activeIndoorBuilding}
+              buildingDisplayName={
+                displayNamesById[activeIndoorBuilding.id] ??
+                activeIndoorBuilding.name
+              }
+              route={activeIndoor.route}
+              onBackToCampus={() => setActiveIndoor(null)}
+              onSetOriginFromRoom={(nodeId, label) => {
+                setFromTargetId(nodeId);
+                setFromInput(label);
+                setActiveIndoor(null);
+                setMode("navigate");
+              }}
+            />
+          ) : null}
         </div>
 
         {/* EDGE-ATTACHED LEFT PANEL (DESKTOP) / DRAGGABLE BOTTOM SHEET (PHONE) */}
@@ -417,7 +573,6 @@ export function AppShell() {
             .filter(Boolean)
             .join(" ")}
         >
-          {/* Desktop collapse/expand mechanical latch */}
           <button
             type="button"
             className={styles.dockLatchBtn}
@@ -432,7 +587,6 @@ export function AppShell() {
             )}
           </button>
 
-          {/* Single Phone Drag/Tap Handle (cycles peek -> half -> expanded) */}
           <button
             type="button"
             className={styles.mobileGrabHeader}
@@ -482,12 +636,12 @@ export function AppShell() {
               onSelectOption={(opt) => {
                 setWhereToQuery(opt.name);
                 setToInput(opt.name);
+                setToTargetId(opt.id);
                 focusLandmarkOnMap(opt.landmarkId);
               }}
             />
           </div>
 
-          {/* Main Scrollable Body with 3-Level Visual Hierarchy & Numbered Sections */}
           <div className={styles.dockScroll}>
             {mode === "navigate" ? (
               <>
@@ -505,6 +659,7 @@ export function AppShell() {
                         options={searchOptions}
                         onSelectOption={(opt) => {
                           setFromInput(opt.name);
+                          setFromTargetId(opt.id);
                           focusLandmarkOnMap(opt.landmarkId);
                         }}
                       />
@@ -517,6 +672,7 @@ export function AppShell() {
                         options={searchOptions}
                         onSelectOption={(opt) => {
                           setToInput(opt.name);
+                          setToTargetId(opt.id);
                           focusLandmarkOnMap(opt.landmarkId);
                         }}
                       />
@@ -530,6 +686,18 @@ export function AppShell() {
                       <SwapIcon size={16} />
                     </IconButton>
                   </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    chamfer
+                    loading={isRouting}
+                    leadingIcon={<RouteIcon size={14} />}
+                    onClick={() =>
+                      void runNavigation(fromTargetId, toTargetId, algo, stepFree)
+                    }
+                  >
+                    Compute route
+                  </Button>
                 </section>
 
                 {/* 02 ALGORITHM */}
@@ -545,6 +713,7 @@ export function AppShell() {
                       { value: "astar", label: "A*" },
                       { value: "bfs", label: "BFS" },
                       { value: "bellmanford", label: "Bellman" },
+                      { value: "floyd", label: "Floyd" },
                     ]}
                   />
                 </section>
@@ -562,24 +731,31 @@ export function AppShell() {
                   />
                 </section>
 
-                {/* 04 SUMMARY */}
+                {/* 04 SUMMARY & ROUTE LEGS */}
                 <section className={styles.sectionCard} style={{ zIndex: 10 }}>
                   <SectionHeader number="04" title="SUMMARY" />
+                  {routeError ? (
+                    <Badge variant="hazard">{routeError}</Badge>
+                  ) : null}
                   <div className={styles.readoutGrid}>
                     <StatReadout
                       size="sm"
                       label="Distance"
-                      value={312.4}
+                      value={routeResult?.found ? routeResult.distance : 0}
                       decimals={1}
                       unit="m"
-                      sublabel="Shortest path"
+                      sublabel={routeResult?.found ? "Shortest path" : "Waiting"}
                       tone="vermilion"
                       icon={<DistanceIcon size={14} />}
                     />
                     <StatReadout
                       size="sm"
                       label="Walk time"
-                      value={4}
+                      value={
+                        routeResult?.found
+                          ? Math.max(1, Math.round(routeResult.distance / 78))
+                          : 0
+                      }
                       unit="min"
                       sublabel={stepFree ? "Step-free pace" : "Standard pace"}
                       tone="teal"
@@ -588,25 +764,88 @@ export function AppShell() {
                     <StatReadout
                       size="sm"
                       label="Floors"
-                      value={0}
+                      value={indoorFloorCount}
                       unit="fl"
-                      sublabel="Ground level"
+                      sublabel={indoorFloorCount > 0 ? "Indoor legs" : "Ground level"}
                       tone="safe"
                       icon={<FloorIcon size={14} />}
                     />
                     <StatReadout
                       size="sm"
-                      label="Visited"
-                      value={42}
-                      unit="nodes"
-                      sublabel={`${algo.toUpperCase()} search`}
+                      label="Steps"
+                      value={maneuvers.length}
+                      unit="turns"
+                      sublabel={`${algo.toUpperCase()} active`}
                       tone="neutral"
                       icon={<GraphIcon size={14} />}
                     />
                   </div>
+
+                  {routeLegs.length > 0 ? (
+                    <div className={styles.legList}>
+                      {routeLegs.map((leg, idx) => (
+                        <div key={`${leg.kind}-${leg.buildingId ?? idx}`} className={styles.legCard}>
+                          <div className={styles.legMeta}>
+                            <span className={styles.legTitle}>
+                              {leg.kind === "outdoor"
+                                ? "Campus walkways"
+                                : leg.buildingName}
+                            </span>
+                            <span className={styles.legSub}>
+                              {leg.nodeIds.length} nodes
+                            </span>
+                          </div>
+                          {leg.kind === "indoor" && leg.buildingId ? (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              chamfer
+                              leadingIcon={<BuildingIcon size={14} />}
+                              onClick={() =>
+                                setActiveIndoor({
+                                  buildingId: leg.buildingId!,
+                                  route: leg.nodeIds,
+                                })
+                              }
+                            >
+                              Enter {leg.buildingName}?
+                            </Button>
+                          ) : (
+                            <Badge variant="teal" numeric>
+                              OUTDOOR
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </section>
 
-                {/* 05 LANDMARKS (Collapsible + Full-Height Scrollable List) */}
+                {/* 05 DIRECTIONS */}
+                {maneuvers.length > 0 ? (
+                  <section className={styles.sectionCard} style={{ zIndex: 8 }}>
+                    <SectionHeader number="05" title="DIRECTIONS" />
+                    <div className={styles.directionsList}>
+                      {maneuvers.map((m, idx) => (
+                        <div key={`${m.atNodeId}-${idx}`} className={styles.maneuverRow}>
+                          <div className={styles.maneuverLeft}>
+                            <span className={styles.maneuverIcon} aria-hidden="true">
+                              {renderManeuverIcon(m.type)}
+                            </span>
+                            <span className={styles.maneuverText}>{m.text}</span>
+                          </div>
+                          {m.distanceM > 0 ? (
+                            <span className={styles.maneuverDist}>
+                              {m.distanceM.toFixed(0)} m
+                            </span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {/* 06 LANDMARKS */}
                 <section
                   className={[
                     styles.sectionCard,
@@ -617,7 +856,7 @@ export function AppShell() {
                   style={{ zIndex: 5 }}
                 >
                   <SectionHeader
-                    number="05"
+                    number="06"
                     title="LANDMARKS"
                     rightSlot={
                       <button
@@ -641,7 +880,7 @@ export function AppShell() {
                       {orderedLandmarks.map((lm) => {
                         const cleanName = formatLandmarkName(lm);
                         const isSelected = selectedLandmarkId === lm.id;
-                        const isDest = toInput === cleanName;
+                        const isDest = toTargetId === lm.id;
                         return (
                           <div
                             key={lm.id}
@@ -722,64 +961,101 @@ export function AppShell() {
                   </div>
                 </section>
 
+                {selectedExploreLandmark ? (
+                  <section className={styles.sectionCard}>
+                    <SectionHeader number="02" title="DETAILS" />
+                    <div className={styles.landmarkItemTop}>
+                      <div className={styles.landmarkItemIdentity}>
+                        {selectedExploreLandmark.number ? (
+                          <Badge variant="building">
+                            {selectedExploreLandmark.number}
+                          </Badge>
+                        ) : null}
+                        <span className={styles.landmarkItemName}>
+                          {selectedExploreLandmark.name}
+                        </span>
+                      </div>
+                      <Badge variant="neutral">
+                        {selectedExploreLandmark.category}
+                      </Badge>
+                    </div>
+                    {indoorBuildings[selectedExploreLandmark.id] ? (
+                      <span className={styles.legSub}>
+                        {indoorBuildings[selectedExploreLandmark.id].floors.length}{" "}
+                        FLOORS //{" "}
+                        {
+                          indoorBuildings[selectedExploreLandmark.id].rooms
+                            .length
+                        }{" "}
+                        ROOMS INDOOR
+                      </span>
+                    ) : null}
+                    <div className={styles.exploreActionsRow}>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        chamfer
+                        leadingIcon={<RouteIcon size={14} />}
+                        onClick={() => {
+                          handleSetDestination(selectedExploreLandmark);
+                          setMode("navigate");
+                        }}
+                      >
+                        Directions to here
+                      </Button>
+                      {indoorBuildings[selectedExploreLandmark.id] ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          leadingIcon={<BuildingIcon size={14} />}
+                          onClick={() =>
+                            setActiveIndoor({
+                              buildingId: selectedExploreLandmark.id,
+                              route: [],
+                            })
+                          }
+                        >
+                          Open indoor map
+                        </Button>
+                      ) : null}
+                    </div>
+                  </section>
+                ) : null}
+
                 <section
                   className={[styles.sectionCard, styles.sectionCardFill].join(" ")}
                 >
-                  <SectionHeader number="02" title="LANDMARKS" />
-                  <div className={styles.landmarksScrollList} style={{ maxHeight: "420px" }}>
+                  <SectionHeader number="03" title="LANDMARKS" />
+                  <div
+                    className={styles.landmarksScrollList}
+                    style={{ maxHeight: "360px" }}
+                  >
                     {exploreLandmarks.map((lm) => {
                       const cleanName = formatLandmarkName(lm);
                       const isSelected = selectedLandmarkId === lm.id;
-                      const isDest = toInput === cleanName;
+                      const hasIndoor = Boolean(indoorBuildings[lm.id]);
                       return (
-                        <div
+                        <ListRow
                           key={lm.id}
-                          className={[
-                            styles.landmarkItem,
-                            isSelected ? styles.landmarkItemSelected : "",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          <div className={styles.landmarkItemTop}>
-                            <div className={styles.landmarkItemIdentity}>
-                              {lm.number ? (
-                                <Badge variant="building">{lm.number}</Badge>
-                              ) : (
-                                <Badge variant="neutral" numeric>
-                                  --
-                                </Badge>
-                              )}
-                              <span
-                                className={styles.landmarkItemName}
-                                title={lm.name}
-                              >
-                                {cleanName}
-                              </span>
-                            </div>
-                            <span className={styles.landmarkItemCategory}>
-                              {lm.category}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleSetDestination(lm)}
-                            className={[
-                              styles.setDestBtn,
-                              isDest ? styles.setDestBtnActive : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                          >
-                            <RouteIcon size={13} />
-                            <span>
-                              {isDest
-                                ? "Selected destination"
-                                : "Set as destination"}
-                            </span>
-                          </button>
-                        </div>
+                          selected={isSelected}
+                          onClick={() => focusLandmarkOnMap(lm.id)}
+                          leading={
+                            lm.number ? (
+                              <Badge variant="building">{lm.number}</Badge>
+                            ) : (
+                              <Badge variant="neutral" numeric>
+                                --
+                              </Badge>
+                            )
+                          }
+                          title={cleanName}
+                          subtitle={
+                            hasIndoor
+                              ? `${lm.category} · Indoor map`
+                              : lm.category
+                          }
+                          trailing={hasIndoor ? <span>INDOOR</span> : undefined}
+                        />
                       );
                     })}
                   </div>

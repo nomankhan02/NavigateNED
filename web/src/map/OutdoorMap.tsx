@@ -913,8 +913,8 @@ export function OutdoorMap({
       interactive: false,
     }).addTo(rtGroup);
 
-    if (coords.length >= 2) {
-      map.fitBounds(L.latLngBounds(coords), {
+    if (coords.length >= 2 && mapRef.current) {
+      mapRef.current.fitBounds(L.latLngBounds(coords), {
         padding: [48, 48],
         maxZoom: 19,
         animate: true,
