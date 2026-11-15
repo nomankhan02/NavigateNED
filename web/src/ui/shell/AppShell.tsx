@@ -875,7 +875,7 @@ export function AppShell() {
                   <SectionHeader
                     number="02"
                     title="OPTIONS"
-                    right={
+                    rightSlot={
                       <button
                         type="button"
                         className={styles.sectionToggleBtn}

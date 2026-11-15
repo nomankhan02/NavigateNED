@@ -740,6 +740,12 @@ export function OutdoorMap({
         const isSelected = lm.id === selectedLandmarkId;
         const isHovered = lm.id === hoveredLandmarkId;
         const isFocused = isSelected || isHovered;
+        const isRouteEndpoint = Boolean(
+          route &&
+            route.length >= 1 &&
+            lm.nodeId &&
+            (lm.nodeId === route[0] || lm.nodeId === route[route.length - 1]),
+        );
         const isOnRoute =
           activeRouteNodes.has(lm.nodeId) ||
           Boolean(route && lm.nodeId && route.includes(lm.nodeId));
@@ -760,20 +766,26 @@ export function OutdoorMap({
           }
         }
 
-        // Show only badge at zoomed out & mid zoom (< 18) unless focused or on route
-        const showFullName = isFocused || isOnRoute || zoomLevel >= 18;
+        // Zoom <= 17: number badges only; Zoom 18: short names;
+        // Zoom >= 19 or selected/hovered/route start/end: full names.
+        const showFullName = isFocused || isRouteEndpoint || zoomLevel >= 19;
+        const showShortName = !showFullName && zoomLevel === 18;
+        const showNameText = showFullName || showShortName;
 
         const numText = lm.number || lm.short;
         if (badgeEl.textContent !== numText) {
           badgeEl.textContent = numText;
         }
 
-        if (showFullName) {
+        if (showNameText) {
           nameEl.style.display = "";
-          const fullName =
-            isCompactViewport && lm.name.length > 28 ? lm.short : lm.name;
-          if (nameEl.textContent !== fullName) {
-            nameEl.textContent = fullName;
+          const labelText = showFullName
+            ? isCompactViewport && lm.name.length > 28
+              ? lm.short
+              : lm.name
+            : lm.short || lm.name;
+          if (nameEl.textContent !== labelText) {
+            nameEl.textContent = labelText;
           }
           el.classList.remove("ned-landmark-label--badge-only");
         } else {
@@ -790,7 +802,7 @@ export function OutdoorMap({
         }
 
         const pt = map.latLngToContainerPoint(center);
-        const estW = showFullName
+        const estW = showNameText
           ? Math.max(26, numText.length * 7.5 + 8) +
             (nameEl.textContent || "").length * 6.4 +
             16
