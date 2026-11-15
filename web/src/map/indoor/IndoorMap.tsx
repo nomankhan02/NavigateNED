@@ -382,6 +382,36 @@ export function IndoorMap({
     return extractFloorRoute(route, building?.nodes ?? [], activeFloor);
   }, [route, building?.nodes, activeFloor]);
 
+  const startBadgePos = useMemo<[number, number] | null>(() => {
+    if (!floorRoute.startPoint) return null;
+    if (route && route.length > 0) {
+      const startRoom = floorRooms.find((r) => r.nodeId === route[0]);
+      if (startRoom) {
+        return [
+          startRoom.rect[0] + startRoom.rect[2] - 1.5,
+          startRoom.rect[1] + 1.5,
+        ];
+      }
+    }
+    return floorRoute.startPoint;
+  }, [floorRoute.startPoint, floorRooms, route]);
+
+  const endBadgePos = useMemo<[number, number] | null>(() => {
+    if (!floorRoute.endPoint) return null;
+    if (route && route.length > 0) {
+      const endRoom = floorRooms.find(
+        (r) => r.nodeId === route[route.length - 1],
+      );
+      if (endRoom) {
+        return [
+          endRoom.rect[0] + endRoom.rect[2] - 1.5,
+          endRoom.rect[1] + 1.5,
+        ];
+      }
+    }
+    return floorRoute.endPoint;
+  }, [floorRoute.endPoint, floorRooms, route]);
+
   // User location node on active floor
   const currentUserNode = useMemo(() => {
     if (!userNode) return null;
@@ -887,59 +917,59 @@ export function IndoorMap({
               );
             })}
 
-            {/* Route Start Badge */}
-            {floorRoute.startPoint && (
+            {/* Route Start Badge (top-right corner of room so label stays readable) */}
+            {startBadgePos && (
               <g
-                transform={`translate(${floorRoute.startPoint[0]}, ${floorRoute.startPoint[1]})`}
+                transform={`translate(${startBadgePos[0]}, ${startBadgePos[1]})`}
                 className="ned-indoor-symbol-marker"
               >
                 <circle
                   cx="0"
                   cy="0"
-                  r="3.2"
+                  r="2.0"
                   className="ned-indoor-symbol-hit-area"
                 />
                 <g className="ned-indoor-symbol-visual">
                   <circle
                     cx="0"
                     cy="0"
-                    r="2.0"
+                    r="1.25"
                     fill="var(--map-landmark-fill, #185a44)"
                     stroke="#ffffff"
-                    strokeWidth="0.4"
+                    strokeWidth="0.3"
                   />
-                  <circle cx="0" cy="0" r="0.7" fill="#ffffff" />
+                  <circle cx="0" cy="0" r="0.45" fill="#ffffff" />
                 </g>
                 <title>Route Start</title>
               </g>
             )}
 
-            {/* Route End Badge */}
-            {floorRoute.endPoint && (
+            {/* Route End Badge (top-right corner of room so label stays readable) */}
+            {endBadgePos && (
               <g
-                transform={`translate(${floorRoute.endPoint[0]}, ${floorRoute.endPoint[1]})`}
+                transform={`translate(${endBadgePos[0]}, ${endBadgePos[1]})`}
                 className="ned-indoor-symbol-marker"
               >
                 <circle
                   cx="0"
                   cy="0"
-                  r="3.4"
+                  r="2.1"
                   className="ned-indoor-symbol-hit-area"
                 />
                 <g className="ned-indoor-symbol-visual">
                   <circle
                     cx="0"
                     cy="0"
-                    r="2.2"
+                    r="1.3"
                     fill="var(--map-route-stroke, #b85d19)"
                     stroke="#ffffff"
-                    strokeWidth="0.4"
+                    strokeWidth="0.3"
                   />
-                  {/* Finish flag symbol */}
+                  {/* Compact finish flag symbol */}
                   <path
-                    d="M-0.8 1.1 v-2.2 M-0.8 -1.1 h1.6 l-0.4 0.6 l0.4 0.6 h-1.6"
+                    d="M-0.45 0.65 v-1.3 M-0.45 -0.65 h0.95 l-0.25 0.35 l0.25 0.35 h-0.95"
                     stroke="#ffffff"
-                    strokeWidth="0.35"
+                    strokeWidth="0.24"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"

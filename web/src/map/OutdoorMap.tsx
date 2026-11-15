@@ -1457,23 +1457,6 @@ export function OutdoorMap({
           <path d="M3 5a2 2 0 012-2h11v14H5a2 2 0 00-2 2V5z" />
           <path d="M7 6h7M7 10h7M7 14h4" />
         </svg>
-        <span>Campus Key</span>
-        {isKeyOpen && (
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ marginLeft: "2px" }}
-          >
-            <line x1="15" y1="5" x2="5" y2="15" />
-            <line x1="5" y1="5" x2="15" y2="15" />
-          </svg>
-        )}
       </button>
 
       {/* Collapsible Key Panel (Desktop Side Panel / Mobile Bottom Drawer) */}
