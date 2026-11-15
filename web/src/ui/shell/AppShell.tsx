@@ -16,6 +16,7 @@ import {
   type CampusLandmark,
   type EvacuationOverlayData,
   type IndoorBuilding,
+  type IndoorEvacuationData,
   OutdoorMap,
   useTraceReplay,
 } from "@/map";
@@ -27,11 +28,13 @@ import {
   type EvacDataset,
   type EvacuateResponse,
   type EvacuationCompareResponse,
+  findNearestAssembly,
   getDirections,
   INDOOR_BUILDING_IDS,
   type Maneuver,
   type ManeuverType,
   type NavAlgo,
+  type NearestAssemblyResponse,
   type RouteResponse,
 } from "@/core/navcore";
 import {
@@ -202,6 +205,14 @@ export function AppShell() {
     useState<EvacuationCompareResponse | null>(null);
   const [isEvacRunning, setIsEvacRunning] = useState<boolean>(false);
   const [evacError, setEvacError] = useState<string | null>(null);
+  const [myLocationId, setMyLocationId] = useState<string>("");
+  const [myLocationLabel, setMyLocationLabel] = useState<string>("");
+  const [myAssemblyResult, setMyAssemblyResult] =
+    useState<NearestAssemblyResponse | null>(null);
+  const [myAssemblyManeuvers, setMyAssemblyManeuvers] = useState<Maneuver[]>([]);
+  const [myAssemblyLoading, setMyAssemblyLoading] = useState<boolean>(false);
+  const [indoorEvacOverlay, setIndoorEvacOverlay] =
+    useState<IndoorEvacuationData | null>(null);
 
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
@@ -490,6 +501,76 @@ export function AppShell() {
       }
     },
     [wasmReady, evacGroups, evacMode, blockedNodes, blockedEdges],
+  );
+
+  const runMyAssembly = useCallback(
+    async (fromId: string, fromLabel: string) => {
+      if (!wasmReady || !fromId) return;
+      setMyLocationId(fromId);
+      setMyLocationLabel(fromLabel);
+      setMyAssemblyLoading(true);
+      try {
+        const res = await findNearestAssembly({
+          from: fromId,
+          blocked: { nodes: blockedNodes, edges: blockedEdges },
+          disableLifts: true,
+        });
+        setMyAssemblyResult(res);
+        if (res.found) {
+          const dirRes = await getDirections({
+            route: {
+              found: true,
+              distance: res.distance,
+              path: res.path,
+              steps: res.steps,
+              trace: [],
+            },
+          });
+          setMyAssemblyManeuvers(dirRes.maneuvers ?? []);
+          setActiveStepIndex(0);
+          setIndoorStepIndex(0);
+
+          if (fromId.includes(":")) {
+            const bid = fromId.split(":")[0];
+            const indoorNodes = res.path.filter((id) =>
+              id.startsWith(`${bid}:`),
+            );
+            setIndoorEvacOverlay({
+              exitNodes: res.exitNodeId ? [res.exitNodeId] : [],
+              assignmentPaths: [
+                {
+                  from: fromId,
+                  exitId: res.exitNodeId ?? "",
+                  path: indoorNodes,
+                },
+              ],
+            });
+            await openIndoorBuilding(bid, indoorNodes, fromId);
+          } else {
+            setIndoorEvacOverlay(null);
+          }
+        } else {
+          setMyAssemblyManeuvers([]);
+        }
+      } catch (err) {
+        setMyAssemblyResult({
+          found: false,
+          from: fromId,
+          assemblyId: "",
+          assemblyName: "",
+          nodeId: "",
+          capacity: 0,
+          distance: 0,
+          path: [],
+          steps: [],
+          error: err instanceof Error ? err.message : String(err),
+        });
+        setMyAssemblyManeuvers([]);
+      } finally {
+        setMyAssemblyLoading(false);
+      }
+    },
+    [wasmReady, blockedNodes, blockedEdges],
   );
 
   const evacOverlay: EvacuationOverlayData | null = useMemo(() => {
@@ -783,11 +864,15 @@ export function AppShell() {
               <OutdoorMap
                 graph={graph}
                 route={
-                  replayOpen &&
-                  traceReplay.totalEvents > 0 &&
-                  traceReplay.currentIndex < traceReplay.totalEvents - 1
-                    ? []
-                    : outdoorRoutePath
+                  mode === "evacuate"
+                    ? myAssemblyResult?.found
+                      ? extractOutdoorPath(myAssemblyResult.path)
+                      : []
+                    : replayOpen &&
+                        traceReplay.totalEvents > 0 &&
+                        traceReplay.currentIndex < traceReplay.totalEvents - 1
+                      ? []
+                      : outdoorRoutePath
                 }
                 trace={replayOpen ? traceReplay : null}
                 activeManeuver={activeManeuverForMap}
@@ -815,22 +900,43 @@ export function AppShell() {
           )}
 
           {(() => {
-            if (!routeResult?.found || maneuvers.length === 0) return null;
+            const isEvacRoute =
+              mode === "evacuate" &&
+              Boolean(myAssemblyResult?.found) &&
+              myAssemblyManeuvers.length > 0;
+            const activeManeuverSource = isEvacRoute
+              ? myAssemblyManeuvers
+              : routeResult?.found
+                ? maneuvers
+                : [];
+            if (activeManeuverSource.length === 0) return null;
             const indoorManeuvers = activeIndoor
-              ? maneuvers.filter((m) =>
+              ? activeManeuverSource.filter((m) =>
                   m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
                 )
               : [];
             const displayedManeuvers = activeIndoor
               ? indoorManeuvers
-              : maneuvers;
+              : activeManeuverSource;
             if (displayedManeuvers.length === 0) return null;
             const currentIdx = activeIndoor ? indoorStepIndex : activeStepIndex;
             return (
               <RouteCard
-                fromLabel={fromInput || "Origin"}
-                toLabel={toInput || "Destination"}
-                distanceM={routeResult.distance}
+                fromLabel={
+                  isEvacRoute
+                    ? myLocationLabel || "My location"
+                    : fromInput || "Origin"
+                }
+                toLabel={
+                  isEvacRoute
+                    ? myAssemblyResult?.assemblyName || "Assembly Point"
+                    : toInput || "Destination"
+                }
+                distanceM={
+                  isEvacRoute
+                    ? (myAssemblyResult?.distance ?? 0)
+                    : (routeResult?.distance ?? 0)
+                }
                 algo={algo}
                 maneuvers={displayedManeuvers}
                 activeStepIndex={currentIdx}
@@ -905,10 +1011,11 @@ export function AppShell() {
               route={activeIndoor.route}
               initialSelectedRoomId={activeIndoor.selectedRoomId}
               activeStepNodeId={
-                maneuvers.filter((m) =>
-                  m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+                (mode === "evacuate" ? myAssemblyManeuvers : maneuvers).filter(
+                  (m) => m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
                 )[indoorStepIndex]?.atNodeId ?? null
               }
+              evacuation={mode === "evacuate" ? indoorEvacOverlay : null}
               onBackToCampus={() => setActiveIndoor(null)}
               onSetOriginFromRoom={(nodeId, label) => {
                 setFromTargetId(nodeId);
@@ -1592,6 +1699,11 @@ export function AppShell() {
                 evacDataset={evacDataset}
                 evacResult={evacResult}
                 evacCompare={evacCompare}
+                myLocationId={myLocationId}
+                myLocationLabel={myLocationLabel}
+                onSelectMyLocation={(id, label) => void runMyAssembly(id, label)}
+                myAssemblyResult={myAssemblyResult}
+                myAssemblyLoading={myAssemblyLoading}
               />
             ) : null}
           </div>

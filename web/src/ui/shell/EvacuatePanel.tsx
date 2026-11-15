@@ -5,8 +5,10 @@ import type {
   EvacDataset,
   EvacuateResponse,
   EvacuationCompareResponse,
+  NearestAssemblyResponse,
 } from "@/core/navcore";
 import {
+  AssemblyPointIcon,
   Badge,
   Button,
   CloseIcon,
@@ -50,6 +52,11 @@ export interface EvacuatePanelProps {
   evacDataset: EvacDataset | null;
   evacResult: EvacuateResponse | null;
   evacCompare: EvacuationCompareResponse | null;
+  myLocationId: string;
+  myLocationLabel: string;
+  onSelectMyLocation: (id: string, label: string) => void;
+  myAssemblyResult: NearestAssemblyResponse | null;
+  myAssemblyLoading: boolean;
 }
 
 export function EvacuatePanel({
@@ -74,11 +81,17 @@ export function EvacuatePanel({
   evacDataset,
   evacResult,
   evacCompare,
+  myLocationId,
+  myLocationLabel,
+  onSelectMyLocation,
+  myAssemblyResult,
+  myAssemblyLoading,
 }: EvacuatePanelProps) {
   const [groupQuery, setGroupQuery] = useState("");
   const [selectedAt, setSelectedAt] = useState("");
   const [selectedLabel, setSelectedLabel] = useState("");
   const [groupCount, setGroupCount] = useState(150);
+  const [myQuery, setMyQuery] = useState(myLocationLabel);
 
   const totalBlocked = blockedNodes.length + blockedEdges.length;
   const totalPeople = groups.reduce((acc, g) => acc + g.count, 0);
@@ -309,6 +322,44 @@ export function EvacuatePanel({
         result={evacResult}
         compare={evacCompare}
       />
+
+      <section className={styles.sectionCard}>
+        <h3 className={styles.sectionTitle}>My assembly point</h3>
+        <SearchField
+          id="evac-my-location"
+          label="Your location"
+          placeholder="Building or room..."
+          value={myQuery}
+          onChange={(val) => setMyQuery(val)}
+          options={searchOptions}
+          onSelectOption={(opt) => {
+            setMyQuery(opt.label);
+            onSelectMyLocation(opt.id, opt.label);
+          }}
+        />
+        {myAssemblyLoading ? (
+          <p className={styles.emptyHint}>Finding nearest assembly point...</p>
+        ) : myAssemblyResult ? (
+          myAssemblyResult.found ? (
+            <div className={styles.itemRow}>
+              <span className={styles.itemLabel}>
+                <AssemblyPointIcon size={13} /> {myAssemblyResult.assemblyName}
+              </span>
+              <span className={styles.numValue}>
+                {myAssemblyResult.distance.toFixed(1)} m
+              </span>
+            </div>
+          ) : (
+            <p className={styles.emptyHint} role="alert">
+              {myAssemblyResult.error || "No reachable assembly area."}
+            </p>
+          )
+        ) : myLocationId ? null : (
+          <p className={styles.emptyHint}>
+            Select your building or room to get step-by-step egress directions.
+          </p>
+        )}
+      </section>
     </>
   );
 }

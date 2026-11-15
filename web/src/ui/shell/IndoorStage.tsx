@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { type IndoorBuilding, IndoorMap, type IndoorNode } from "@/map";
+import {
+  type IndoorBuilding,
+  type IndoorEvacuationData,
+  IndoorMap,
+  type IndoorNode,
+} from "@/map";
 import {
   Badge,
   Button,
@@ -16,6 +21,7 @@ export interface IndoorStageProps {
   route?: string[];
   initialSelectedRoomId?: string;
   activeStepNodeId?: string | null;
+  evacuation?: IndoorEvacuationData | null;
   onBackToCampus: () => void;
   onSetOriginFromRoom: (nodeId: string, label: string) => void;
 }
@@ -26,6 +32,7 @@ export function IndoorStage({
   route = [],
   initialSelectedRoomId,
   activeStepNodeId = null,
+  evacuation = null,
   onBackToCampus,
   onSetOriginFromRoom,
 }: IndoorStageProps) {
@@ -135,6 +142,7 @@ export function IndoorStage({
           selectedRoomId={selectedRoomId}
           onRoomClick={(roomId) => setSelectedRoomId(roomId)}
           userNode={userNode}
+          evacuation={evacuation}
         />
       </div>
     </div>

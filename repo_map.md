@@ -100,7 +100,7 @@
 - `web/src/ui/shell/traceReplayPanel.module.css`: Scoped token styles for `TraceReplayPanel`.
 - `web/src/ui/shell/routeCard.module.css`: Scoped frosted vellum styles for `RouteCard` on desktop bottom-center and phone above-sheet.
 - `web/src/ui/shell/routeLegs.ts`: Splits combined outdoor+indoor WASM paths into ordered `RouteLeg` segments and extracts outdoor node IDs for `OutdoorMap`.
-- `web/src/ui/shell/IndoorStage.tsx`: `IndoorMap` stage container with `"Back to campus"`, floor badge, Next/Back route stepper, and `"I'm here"` origin recomputation.
+- `web/src/ui/shell/IndoorStage.tsx`: `IndoorMap` stage container with `"Back to campus"`, floor badge, `"I'm here"` origin recomputation, and optional `evacuation` overlay.
 - `web/src/ui/shell/shell.module.css`: Scoped 3-level surface hierarchy, numbered section rules, leg/direction cards, indoor toolbar, and intro keyframes for `AppShell`.
 - `web/src/ui/index.ts`: Barrel export for all UI components and icons.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
