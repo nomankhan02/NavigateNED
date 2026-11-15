@@ -1,7 +1,6 @@
 "use client";
 
-import type { TraceEvent } from "@/core/navcore";
-import type { TraceReplayState } from "@/map";
+import type { TraceEvent, TraceReplayState } from "@/map";
 import {
   Button,
   ChevronLeftIcon,

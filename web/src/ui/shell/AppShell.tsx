@@ -63,6 +63,7 @@ import {
   ThemeSwitch,
   Toggle,
 } from "@/ui";
+import { AlgoCompareCard } from "./AlgoCompareCard";
 import { IndoorStage } from "./IndoorStage";
 import { RouteCard } from "./RouteCard";
 import { extractOutdoorPath, splitRouteIntoLegs } from "./routeLegs";
@@ -180,6 +181,8 @@ export function AppShell() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState<boolean>(false);
   const [replayOpen, setReplayOpen] = useState<boolean>(false);
+  const [compareOpen, setCompareOpen] = useState<boolean>(false);
+  const pendingReplayRef = useRef<boolean>(false);
 
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
@@ -310,10 +313,14 @@ export function AppShell() {
         if (res.found) {
           const dirRes = await getDirections({ route: res });
           setManeuvers(dirRes.maneuvers ?? []);
+          if (pendingReplayRef.current) {
+            setReplayOpen(true);
+          }
           if (typeof window !== "undefined" && window.innerWidth <= 768) {
             setMobileSnap("peek");
           }
         } else {
+          pendingReplayRef.current = false;
           setManeuvers([]);
           setRouteError(res.error ?? "No valid path found for the selected options.");
         }
@@ -341,6 +348,14 @@ export function AppShell() {
     [routeResult],
   );
   const traceReplay = useTraceReplay(outdoorTraceEvents, 1);
+
+  useEffect(() => {
+    if (pendingReplayRef.current && replayOpen && outdoorTraceEvents.length > 0) {
+      pendingReplayRef.current = false;
+      traceReplay.seek(0);
+      traceReplay.play();
+    }
+  }, [replayOpen, outdoorTraceEvents, traceReplay]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -698,9 +713,31 @@ export function AppShell() {
                     traceReplay.play();
                   }
                 }}
+                onOpenCompare={() => setCompareOpen(true)}
               />
             );
           })()}
+
+          {compareOpen && fromTargetId && toTargetId ? (
+            <AlgoCompareCard
+              fromId={fromTargetId}
+              toId={toTargetId}
+              accessible={stepFree}
+              currentAlgo={algo}
+              onSelectAlgo={(selectedAlgo) => {
+                setCompareOpen(false);
+                if (selectedAlgo === algo) {
+                  setReplayOpen(true);
+                  traceReplay.seek(0);
+                  traceReplay.play();
+                } else {
+                  pendingReplayRef.current = true;
+                  setAlgo(selectedAlgo);
+                }
+              }}
+              onClose={() => setCompareOpen(false)}
+            />
+          ) : null}
 
           {activeIndoor && activeIndoorBuilding ? (
             <IndoorStage

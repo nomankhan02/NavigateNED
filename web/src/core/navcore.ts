@@ -94,6 +94,7 @@ export interface CompareAlgoEntry {
   timeUs: number;
   timeMs: number;
   hops: number;
+  edgesRelaxed?: number;
 }
 
 export interface CompareResponse {

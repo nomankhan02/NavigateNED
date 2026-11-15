@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Maneuver, ManeuverType, NavAlgo, TraceEvent } from "@/core/navcore";
-import type { TraceReplayState } from "@/map";
+import type { Maneuver, ManeuverType, NavAlgo } from "@/core/navcore";
+import type { TraceEvent, TraceReplayState } from "@/map";
 import {
   Badge,
   BuildingIcon,

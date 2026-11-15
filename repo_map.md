@@ -89,7 +89,9 @@
 - `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with type-colored left edge, icon slot, and optional tick-up animation (`prefers-reduced-motion` safe).
 - `web/src/ui/Sheet.tsx`: Responsive left edge panel on desktop and draggable 3-snap bottom sheet (`peek`, `half`, `expanded`) on phone.
 - `web/src/ui/Toast.tsx`: `Toast` notification banner and `SurveyLoader` calibration bar.
-- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, floating search dropdowns, `RouteCard`, live `OutdoorMap`, and `IndoorStage` transitions.
+- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, floating search dropdowns, `RouteCard`, `AlgoCompareCard`, live `OutdoorMap`, and `IndoorStage` transitions.
+- `web/src/ui/shell/AlgoCompareCard.tsx`: Floating frosted-vellum comparison dialog calling `compareAlgorithms()` with 4 hand-built SVG bar charts and click-to-select + replay.
+- `web/src/ui/shell/algoCompare.module.css`: Scoped token styles for `AlgoCompareCard`.
 - `web/src/ui/shell/RouteCard.tsx`: Frosted vellum floating route card over the map with current maneuver, Prev/Next stepper, expandable directions list, `"Watch the search"` / `"Compare algorithms"` triggers, and indoor `"Enter <building>?"` / `"Open indoor map"` actions.
 - `web/src/ui/shell/TraceReplayPanel.tsx`: Search trace replay controls (Play/Pause, step back/forward, `0.5x`/`1x`/`2x`/`5x` speeds, scrubber, `Azeret Mono` visited/frontier/distance readouts, indoor-leg note).
 - `web/src/ui/shell/traceReplayPanel.module.css`: Scoped token styles for `TraceReplayPanel`.
