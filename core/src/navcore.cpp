@@ -72,8 +72,12 @@
  *                "directions", "progress", "reroute"
  *              - Exception-safe C ABI entry point & #ifdef __EMSCRIPTEN__ export
  *
- *   SECTION 14: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
- *              - Terminal commands demonstrating every algorithm including directions & progress
+ *   SECTION 14: CLI SHOWCASE (#ifdef NAVCORE_CLI)
+ *              - ANSI color engine (with Windows SetConsoleMode & --no-color / --json)
+ *              - Labeled DSA concept headers for every algorithm & data structure
+ *              - 100x40 ASCII campus map renderer & --animate / --speed trace replay
+ *              - Benchmark comparison table & evacuation load-bar comparison
+ *              - Interactive & automated viva "demo" showcase
  * ============================================================================
  */
 
@@ -316,6 +320,21 @@ struct RouteOptions {
         }
         return (h == 0ULL) ? 1ULL : h;
     }
+};
+
+/**
+ * Optional lightweight telemetry counters for algorithm instrumentation
+ * (nodes visited, edges relaxed, priority-queue/queue pushes & pops, elapsed us).
+ * Passed as an optional `AlgoStats* stats = nullptr` so normal calls have zero overhead.
+ */
+struct AlgoStats {
+    int nodesVisited = 0;
+    int edgesRelaxed = 0;
+    int heapPushes = 0;
+    int heapPops = 0;
+    double elapsedUs = 0.0;
+
+    int heapOps() const { return heapPushes + heapPops; }
 };
 
 /**
@@ -1476,7 +1495,13 @@ inline void populatePathAndSteps(const Graph& g, int from, int to,
  *   Default optimal campus & indoor route planner when "dijkstra" is selected,
  *   pairwise leg generator for TSP, and ground-truth distance baseline.
  */
-inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOptions& opts) {
+inline RouteResult runDijkstra(const Graph& g, int from, int to,
+                               const RouteOptions& opts,
+                               AlgoStats* stats = nullptr) {
+    const auto t0 = stats ? std::chrono::high_resolution_clock::now()
+                          : std::chrono::high_resolution_clock::time_point{};
+    if (stats) *stats = AlgoStats{};
+
     RouteResult res;
     const int n = g.nodeCount();
     if (from < 0 || to < 0 || from >= n || to >= n) {
@@ -1496,11 +1521,13 @@ inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOpti
 
     dist[from] = 0.0;
     pq.push({0.0, from});
+    if (stats) stats->heapPushes++;
     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[from].id, 0.0);
 
     while (!pq.empty()) {
         const auto [d, u] = pq.top();
         pq.pop();
+        if (stats) stats->heapPops++;
 
         if (closed[u]) continue;
         closed[u] = true;
@@ -1523,6 +1550,10 @@ inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOpti
                 dist[e.to] = nd;
                 parent[e.to] = u;
                 pq.push({nd, e.to});
+                if (stats) {
+                    stats->edgesRelaxed++;
+                    stats->heapPushes++;
+                }
                 if (wasInf) {
                     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[e.to].id, nd);
                 }
@@ -1533,6 +1564,11 @@ inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOpti
 
     if (res.found) {
         populatePathAndSteps(g, from, to, parent, opts, res);
+    }
+    if (stats) {
+        stats->nodesVisited = res.visitedCount;
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
     }
     return res;
 }
@@ -1555,7 +1591,13 @@ inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOpti
  *   Interactive point-to-point outdoor and building-to-building navigation,
  *   and live trace visualization contrasting directional search against Dijkstra.
  */
-inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions& opts) {
+inline RouteResult runAStar(const Graph& g, int from, int to,
+                            const RouteOptions& opts,
+                            AlgoStats* stats = nullptr) {
+    const auto t0 = stats ? std::chrono::high_resolution_clock::now()
+                          : std::chrono::high_resolution_clock::time_point{};
+    if (stats) *stats = AlgoStats{};
+
     RouteResult res;
     const int n = g.nodeCount();
     if (from < 0 || to < 0 || from >= n || to >= n) {
@@ -1587,11 +1629,13 @@ inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions
     gScore[from] = 0.0;
     const double h0 = g.heuristic(from, to);
     openSet.push(AStarNode{h0, 0.0, from});
+    if (stats) stats->heapPushes++;
     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[from].id, 0.0);
 
     while (!openSet.empty()) {
         const AStarNode current = openSet.top();
         openSet.pop();
+        if (stats) stats->heapPops++;
 
         const int u = current.u;
         if (current.g > gScore[u] + 1e-12) {
@@ -1617,6 +1661,10 @@ inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions
                 parent[e.to] = u;
                 const double fScore = tentativeG + g.heuristic(e.to, to);
                 openSet.push(AStarNode{fScore, tentativeG, e.to});
+                if (stats) {
+                    stats->edgesRelaxed++;
+                    stats->heapPushes++;
+                }
                 if (wasInf) {
                     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[e.to].id, tentativeG);
                 }
@@ -1627,6 +1675,11 @@ inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions
 
     if (res.found) {
         populatePathAndSteps(g, from, to, parent, opts, res);
+    }
+    if (stats) {
+        stats->nodesVisited = res.visitedCount;
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
     }
     return res;
 }
@@ -1647,7 +1700,13 @@ inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions
  *   Fewest-turn / fewest-corridor navigation mode and educational algorithm
  *   comparison demonstrating why fewest hops differs from shortest metric distance.
  */
-inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& opts) {
+inline RouteResult runBFS(const Graph& g, int from, int to,
+                          const RouteOptions& opts,
+                          AlgoStats* stats = nullptr) {
+    const auto t0 = stats ? std::chrono::high_resolution_clock::now()
+                          : std::chrono::high_resolution_clock::time_point{};
+    if (stats) *stats = AlgoStats{};
+
     RouteResult res;
     const int n = g.nodeCount();
     if (from < 0 || to < 0 || from >= n || to >= n) {
@@ -1666,11 +1725,13 @@ inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& 
     visited[from] = true;
     distMeters[from] = 0.0;
     q.push(from);
+    if (stats) stats->heapPushes++;
     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[from].id, 0.0);
 
     while (!q.empty()) {
         const int u = q.front();
         q.pop();
+        if (stats) stats->heapPops++;
 
         res.visitedCount++;
         recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[u].id, distMeters[u]);
@@ -1688,6 +1749,10 @@ inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& 
                 parent[e.to] = u;
                 distMeters[e.to] = distMeters[u] + e.w;
                 q.push(e.to);
+                if (stats) {
+                    stats->edgesRelaxed++;
+                    stats->heapPushes++;
+                }
                 recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[e.to].id, distMeters[e.to]);
             }
         }
@@ -1695,6 +1760,11 @@ inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& 
 
     if (res.found) {
         populatePathAndSteps(g, from, to, parent, opts, res);
+    }
+    if (stats) {
+        stats->nodesVisited = res.visitedCount;
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
     }
     return res;
 }
@@ -1715,7 +1785,13 @@ inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& 
  *   Algorithm benchmark & educational trace mode ("bellmanford"), verifying
  *   distance agreement with Dijkstra/A* and detecting negative cycles.
  */
-inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteOptions& opts) {
+inline RouteResult runBellmanFord(const Graph& g, int from, int to,
+                                  const RouteOptions& opts,
+                                  AlgoStats* stats = nullptr) {
+    const auto t0 = stats ? std::chrono::high_resolution_clock::now()
+                          : std::chrono::high_resolution_clock::time_point{};
+    if (stats) *stats = AlgoStats{};
+
     RouteResult res;
     const int n = g.nodeCount();
     if (from < 0 || to < 0 || from >= n || to >= n) {
@@ -1748,6 +1824,7 @@ inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteO
                     parent[e.to] = u;
                     everVisited[e.to] = true;
                     anyRelaxed = true;
+                    if (stats) stats->edgesRelaxed++;
                     if (firstReach) {
                         recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[e.to].id, nd);
                     }
@@ -1785,6 +1862,11 @@ inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteO
         res.found = true;
         res.distance = dist[to];
         populatePathAndSteps(g, from, to, parent, opts, res);
+    }
+    if (stats) {
+        stats->nodesVisited = res.visitedCount;
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
     }
     return res;
 }
@@ -1945,6 +2027,7 @@ struct FloydTable {
     std::unordered_map<int, int> graphToOutdoorIdx; // Graph node idx -> matrix idx
     std::vector<std::vector<double>> dist;
     std::vector<std::vector<int>> next;
+    int dpRelaxations = 0;
 };
 
 inline FloydTable computeFloydWarshallTable(const Graph& g, const RouteOptions& opts) {
@@ -1992,6 +2075,7 @@ inline FloydTable computeFloydWarshallTable(const Graph& g, const RouteOptions& 
                 if (cand + 1e-12 < table.dist[i][j]) {
                     table.dist[i][j] = cand;
                     table.next[i][j] = table.next[i][k];
+                    table.dpRelaxations++;
                 }
             }
         }
@@ -2019,7 +2103,12 @@ inline FloydTable& cachedFloydTable(const Graph& g, const RouteOptions& opts, bo
  */
 inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
                                          const RouteOptions& opts,
-                                         bool forceFreshComputation = false) {
+                                         bool forceFreshComputation = false,
+                                         AlgoStats* stats = nullptr) {
+    const auto t0 = stats ? std::chrono::high_resolution_clock::now()
+                          : std::chrono::high_resolution_clock::time_point{};
+    if (stats) *stats = AlgoStats{};
+
     RouteResult res;
     const int n = g.nodeCount();
     if (from < 0 || to < 0 || from >= n || to >= n) {
@@ -2038,9 +2127,17 @@ inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
         const int u = itFrom->second;
         const int v = itTo->second;
         res.visitedCount = static_cast<int>(fw.outdoorToGraphIdx.size());
+        if (stats) {
+            stats->nodesVisited = res.visitedCount;
+            stats->edgesRelaxed = fw.dpRelaxations;
+        }
 
         if (fw.next[u][v] == -1 || std::isinf(fw.dist[u][v])) {
             res.found = false;
+            if (stats) {
+                const auto t1 = std::chrono::high_resolution_clock::now();
+                stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
+            }
             return res;
         }
 
@@ -2071,6 +2168,10 @@ inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
         recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[endGIdx].id, res.distance);
 
         buildStepsFromPathIndices(g, opts, res);
+        if (stats) {
+            const auto t1 = std::chrono::high_resolution_clock::now();
+            stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
+        }
         return res;
     }
 
@@ -2078,6 +2179,7 @@ inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
     const int totalN = g.nodeCount();
     std::vector<std::vector<double>> dist(totalN, std::vector<double>(totalN, kInf));
     std::vector<std::vector<int>> next(totalN, std::vector<int>(totalN, -1));
+    int fullRelaxations = 0;
 
     for (int i = 0; i < totalN; ++i) {
         if (opts.isNodeBlocked(i)) continue;
@@ -2101,14 +2203,23 @@ inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
                 if (cand + 1e-12 < dist[i][j]) {
                     dist[i][j] = cand;
                     next[i][j] = next[i][k];
+                    fullRelaxations++;
                 }
             }
         }
     }
 
     res.visitedCount = totalN;
+    if (stats) {
+        stats->nodesVisited = res.visitedCount;
+        stats->edgesRelaxed = fullRelaxations;
+    }
     if (next[from][to] == -1 || std::isinf(dist[from][to])) {
         res.found = false;
+        if (stats) {
+            const auto t1 = std::chrono::high_resolution_clock::now();
+            stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
+        }
         return res;
     }
 
@@ -2126,6 +2237,10 @@ inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
     res.pathIndices.push_back(to);
     recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[to].id, res.distance);
     buildStepsFromPathIndices(g, opts, res);
+    if (stats) {
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        stats->elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
+    }
     return res;
 }
 
@@ -2202,19 +2317,20 @@ inline json computeAllPairsMatrixJson(const Graph& g, const RouteOptions& opts) 
  */
 inline RouteResult computeRoute(const Graph& g, int from, int to,
                                 const RouteOptions& opts,
-                                bool forceFreshFloyd = false) {
+                                bool forceFreshFloyd = false,
+                                AlgoStats* stats = nullptr) {
     const std::string algo = toLowerCopy(opts.algo);
 
     if (algo == "dijkstra" || algo.empty()) {
-        return runDijkstra(g, from, to, opts);
+        return runDijkstra(g, from, to, opts, stats);
     } else if (algo == "astar" || algo == "a*") {
-        return runAStar(g, from, to, opts);
+        return runAStar(g, from, to, opts, stats);
     } else if (algo == "bfs") {
-        return runBFS(g, from, to, opts);
+        return runBFS(g, from, to, opts, stats);
     } else if (algo == "bellmanford" || algo == "bellman-ford" || algo == "bf") {
-        return runBellmanFord(g, from, to, opts);
+        return runBellmanFord(g, from, to, opts, stats);
     } else if (algo == "floyd" || algo == "floyd-warshall" || algo == "floydwarshall") {
-        return runFloydWarshallRoute(g, from, to, opts, forceFreshFloyd);
+        return runFloydWarshallRoute(g, from, to, opts, forceFreshFloyd, stats);
     } else {
         RouteResult err;
         err.error = "Unknown routing algorithm: " + opts.algo;
@@ -4613,8 +4729,9 @@ inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptio
         opts.algo = algoName;
         opts.maxTrace = 0;
 
+        AlgoStats st;
         const auto t0 = std::chrono::high_resolution_clock::now();
-        const RouteResult r = computeRoute(g, from, to, opts, false);
+        const RouteResult r = computeRoute(g, from, to, opts, false, &st);
         const auto t1 = std::chrono::high_resolution_clock::now();
         const double elapsedUs =
             std::chrono::duration<double, std::micro>(t1 - t0).count();
@@ -4627,6 +4744,10 @@ inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptio
             {"timeMs", elapsedMs},
             {"visitedCount", r.visitedCount},
             {"nodesVisited", r.visitedCount},
+            {"edgesRelaxed", st.edgesRelaxed},
+            {"heapPushes", st.heapPushes},
+            {"heapPops", st.heapPops},
+            {"heapOps", st.heapOps()},
             {"hops", r.path.empty() ? 0 : static_cast<int>(r.path.size()) - 1},
             {"negativeCycle", r.negativeCycle}
         };
@@ -5575,49 +5696,1422 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
 } // extern "C"
 
 // ============================================================================
-// SECTION 14: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+// SECTION 14: CLI SHOWCASE (#ifdef NAVCORE_CLI)
+// ============================================================================
+//
+// Viva Terminal Showcase & Interactive DSA Demonstrator:
+//   - Human-readable ANSI-colored output by default; `--json` for raw JSON,
+//     `--no-color` to disable ANSI escape codes.
+//   - Enables Windows Virtual Terminal Processing via `SetConsoleMode` when
+//     `_WIN32` is defined.
+//   - Labeled DSA Concept Header on every command (Algorithm, Data Structure,
+//     Time & Space Complexity, and Why Used in NavigateNED).
+//   - 100x40 ASCII Campus Map Renderer scaling outdoor `(lat, lng)` coordinates
+//     with walkway edges, outdoor nodes (`.`), numbered landmarks + legend,
+//     routes (`#`), Start (`S`), End (`E`), numbered TSP stops (`1`..`9`),
+//     MST tree edges (`*`), and evacuation assembly areas (`A`) & groups (`G`).
+//   - `--animate` (and `--speed <mult>`) live trace replay on `route` and
+//     `compare` (~60 ms per frame at 1x speed, `o` visited, `+` frontier).
+//   - `compare` benchmark table with per-column best highlights and
+//     `evacuationCompare` with visual capacity load bars.
+//   - `demo` (and `demo --auto`) scripted 8-stage viva walkthrough.
 // ============================================================================
 
 #ifdef NAVCORE_CLI
+
+#include <thread>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
+namespace cli_showcase {
+
+using json = nlohmann::json;
+using namespace navcore;
+
+// ----------------------------------------------------------------------------
+// 14.1 ANSI Color & Console Initialization
+// ----------------------------------------------------------------------------
+
+struct AnsiTheme {
+    bool enabled = true;
+
+    void initConsole(bool noColorFlag) {
+        if (noColorFlag) {
+            enabled = false;
+            return;
+        }
+#ifdef _WIN32
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE && hOut != nullptr) {
+            DWORD mode = 0;
+            if (GetConsoleMode(hOut, &mode)) {
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+                SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            }
+        }
+        SetConsoleOutputCP(65001);
+#endif
+    }
+
+    const char* reset()     const { return enabled ? "\x1b[0m"    : ""; }
+    const char* bold()      const { return enabled ? "\x1b[1m"    : ""; }
+    const char* dim()       const { return enabled ? "\x1b[2m"    : ""; }
+    const char* cyan()      const { return enabled ? "\x1b[36m"   : ""; }
+    const char* boldCyan()  const { return enabled ? "\x1b[1;36m" : ""; }
+    const char* green()     const { return enabled ? "\x1b[32m"   : ""; }
+    const char* boldGreen() const { return enabled ? "\x1b[1;32m" : ""; }
+    const char* yellow()    const { return enabled ? "\x1b[33m"   : ""; }
+    const char* boldYel()   const { return enabled ? "\x1b[1;33m" : ""; }
+    const char* red()       const { return enabled ? "\x1b[31m"   : ""; }
+    const char* boldRed()   const { return enabled ? "\x1b[1;31m" : ""; }
+    const char* magenta()   const { return enabled ? "\x1b[35m"   : ""; }
+    const char* boldMag()   const { return enabled ? "\x1b[1;35m" : ""; }
+    const char* blue()      const { return enabled ? "\x1b[34m"   : ""; }
+    const char* boldBlue()  const { return enabled ? "\x1b[1;34m" : ""; }
+    const char* white()     const { return enabled ? "\x1b[97m"   : ""; }
+};
+
+inline std::string fmtFixed(double val, int decimals = 1) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(decimals) << val;
+    return oss.str();
+}
+
+// ----------------------------------------------------------------------------
+// 14.2 Labeled DSA Concept Header Printer
+// ----------------------------------------------------------------------------
+
+struct DsaHeaderSpec {
+    std::string title;
+    std::string dataStructure;
+    std::string timeComplexity;
+    std::string spaceComplexity;
+    std::string whyUsed;
+};
+
+inline DsaHeaderSpec getRouteDsaSpec(const std::string& rawAlgo) {
+    const std::string a = toLowerCopy(rawAlgo);
+    if (a == "astar" || a == "a*") {
+        return {
+            "A* (A-Star) Heuristic-Guided Search",
+            "Binary Min-Heap Priority Queue + Admissible Haversine Heuristic h(u)",
+            "O((V + E) log V)",
+            "O(V)",
+            "Directs frontier expansion toward the destination to visit fewer nodes while guaranteeing exact shortest distance."
+        };
+    } else if (a == "bfs") {
+        return {
+            "Breadth-First Search (BFS — Fewest Hops)",
+            "FIFO Queue (std::queue<int>) + Visited Bitset",
+            "O(V + E)",
+            "O(V)",
+            "Finds routes with the minimum number of turns/corridor transitions and contrasts hop count vs metric distance."
+        };
+    } else if (a == "bellmanford" || a == "bellman-ford" || a == "bf") {
+        return {
+            "Bellman-Ford Edge Relaxation & Negative Cycle Detector",
+            "Distance Table + Iterative Edge-List Relaxation (V - 1 passes + cycle check)",
+            "O(V * E)",
+            "O(V)",
+            "Verifies shortest-path optimality across general weighted graphs and detects negative-weight cycles."
+        };
+    } else if (a == "floyd" || a == "floyd-warshall" || a == "floydwarshall") {
+        return {
+            "Floyd-Warshall All-Pairs Dynamic Programming",
+            "2D Dense Distance Matrix dist[V][V] + Next-Hop Matrix next[V][V]",
+            "O(V^3) build, O(hops) path reconstruction",
+            "O(V^2)",
+            "Precomputes all-pairs outdoor shortest distances and reconstructs any campus route in O(hops)."
+        };
+    }
+    return {
+        "Dijkstra's Single-Source Shortest Path",
+        "Binary Min-Heap Priority Queue (std::priority_queue) + Adjacency List",
+        "O((V + E) log V)",
+        "O(V)",
+        "Default optimal campus & multi-floor indoor router across non-negative weighted footpaths, stairs, and lifts."
+    };
+}
+
+inline DsaHeaderSpec getCommandDsaSpec(const std::string& cmd, const std::string& subMode = "") {
+    const std::string sub = toLowerCopy(subMode);
+    if (cmd == "route") {
+        return getRouteDsaSpec(subMode);
+    } else if (cmd == "compare") {
+        return {
+            "Multi-Algorithm Shortest-Path Benchmark (Dijkstra vs A* vs BFS vs Bellman-Ford vs Floyd-Warshall)",
+            "Binary Min-Heap, FIFO Queue, Edge-Relaxation Table, and 2D All-Pairs DP Matrix",
+            "O((V + E) log V + V * E + V_out^3)",
+            "O(V^2)",
+            "Compares distance optimality, frontier efficiency (nodes visited & heap ops), and microsecond latency side-by-side."
+        };
+    } else if (cmd == "search") {
+        return {
+            "Prefix Trie Autocomplete Index & Deterministic Ranker",
+            "Multi-way Character Prefix Tree (PrefixTrie) over Names, Short Codes & Building Numbers",
+            "O(|P| + K log K) query, O(N * L) build",
+            "O(N * L)",
+            "Powers instant case-insensitive prefix lookup for 55 campus landmarks, building numbers, and 240 indoor rooms."
+        };
+    } else if (cmd == "cacheStats") {
+        return {
+            "LRU (Least Recently Used) Route Cache",
+            "Hash Map (std::unordered_map) + Doubly Linked List (std::list) with O(1) Splice",
+            "O(1) average lookup, insertion, promotion & eviction",
+            "O(C) where C = cache capacity (128 routes)",
+            "Memoizes repeated route queries and automatically invalidates in O(1) when blocked hazard sets change."
+        };
+    } else if (cmd == "allPairs") {
+        return {
+            "Floyd-Warshall Landmark-to-Landmark Distance Matrix",
+            "2D Dynamic Programming Matrix dist[V_out][V_out] + Next-Hop Pointers",
+            "O(V_out^3)",
+            "O(V_out^2)",
+            "Computes the complete 55x55 campus landmark distance matrix for instant cross-campus proximity analysis."
+        };
+    } else if (cmd == "mst") {
+        if (sub == "prim") {
+            return {
+                "Prim's Minimum Spanning Tree (MST)",
+                "Binary Min-Heap Priority Queue over Cut Frontier Edges",
+                "O((V + E) log V)",
+                "O(V + E)",
+                "Grows the minimum-length campus fiber/walkway backbone from a root vertex and cross-checks Kruskal's weight."
+            };
+        }
+        return {
+            "Kruskal's Minimum Spanning Tree (MST) with Disjoint Set Union",
+            "Sorted Edge List + Union-Find (Path Compression & Union by Rank)",
+            "O(E log E) sort + O(E alpha(V)) Union-Find",
+            "O(V + E)",
+            "Designs the minimum total length campus fiber/walkway backbone connecting all outdoor junctions without cycles."
+        };
+    } else if (cmd == "tsp") {
+        return {
+            "Multi-Stop Traveling Salesperson Tour (Held-Karp Bitmask DP vs Nearest-Neighbor)",
+            "Pairwise Dijkstra Leg Matrix + Bitmask DP Table dp[2^K][K] + Greedy Heuristic",
+            "O(K * (V + E) log V + 2^K * K^2) exact DP, O(K^2) greedy NN",
+            "O(2^K * K)",
+            "Plans optimal multi-building campus tours and quantifies the exact optimality gap (%) of greedy nearest-neighbor."
+        };
+    } else if (cmd == "criticalPoints") {
+        return {
+            "Tarjan's Articulation Points & Bridges (Single-Pass DFS)",
+            "DFS Discovery Time disc[u] & Low-Link Value low[u] Arrays",
+            "O(V + E) single-pass DFS",
+            "O(V)",
+            "Identifies single-point-of-failure campus junctions and bottleneck walkway bridges whose closure disconnects NED."
+        };
+    } else if (cmd == "nearestAssembly") {
+        return {
+            "Multi-Source Reversed Dijkstra (Nearest Evacuation Assembly Area)",
+            "Reversed Adjacency List + Multi-Root Binary Min-Heap seeded with all Assembly Areas",
+            "O((V + E) log V) single pass for all vertices",
+            "O(V + E)",
+            "Finds every room and junction's closest safe assembly area and building exit in one reversed graph pass."
+        };
+    } else if (cmd == "evacuate") {
+        if (sub == "capacity") {
+            return {
+                "Capacity-Constrained Evacuation (Min-Cost Max-Flow via Successive Shortest Paths / SPFA)",
+                "Directed Bipartite Residual Flow Network + Bellman-Ford/SPFA Augmenting Paths",
+                "O(A * (V + E) log V + F * V_f * E_f)",
+                "O(V + P * A)",
+                "Splits evacuee groups across assembly areas to minimize total walking distance without exceeding area capacities."
+            };
+        }
+        return {
+            "Nearest-Assembly Evacuation (Multi-Source Reversed Dijkstra)",
+            "Reversed Adjacency List + Multi-Source Binary Min-Heap Priority Queue",
+            "O((V + E) log V)",
+            "O(V + E)",
+            "Routes every evacuee group directly to its nearest reachable assembly area (with lifts disabled by default)."
+        };
+    } else if (cmd == "evacuationCompare") {
+        return {
+            "Evacuation Mode Comparison (Multi-Source Reversed Dijkstra vs Min-Cost Max-Flow SPFA)",
+            "Multi-Source Min-Heap + Bipartite Residual Flow Network (SPFA Augmenting Paths)",
+            "O(A * (V + E) log V + F * V_f * E_f)",
+            "O(V + P * A)",
+            "Contrasts uncapacitated nearest-area congestion against capacity-respecting Min-Cost Max-Flow load balancing."
+        };
+    } else if (cmd == "directions") {
+        return {
+            "Geometry-Aware Turn-by-Turn Directions & Spatial Landmark Naming",
+            "Oriented Edge Polyline Bearings + Turn Angle Classifier + 40 m Nearest-Landmark Lookup",
+            "O(P * L + H) where H = path hops, L = landmarks",
+            "O(P)",
+            "Converts raw node paths into human-readable maneuvers with landmark names, floor transitions, and turn angles."
+        };
+    } else if (cmd == "progress") {
+        return {
+            "GPS Polyline Segment Projection & Monotonic Noise Filter",
+            "Flat-Earth Metric Segment Projector + FNV-1a Route State Tracker",
+            "O(S + M) per GPS fix (S = polyline segments, M = maneuvers)",
+            "O(S + M)",
+            "Snaps live GPS coordinates onto the route polyline, detects off-route drift, and filters backward GPS jitter."
+        };
+    } else if (cmd == "reroute") {
+        return {
+            "Live Off-Route GPS Graph Snapper & Dynamic Rerouter",
+            "Spatial Node/Polyline Projector + Dijkstra/A* Router + Turn Classifier",
+            "O(E_geom + (V + E) log V)",
+            "O(V + E)",
+            "Snaps an off-route user's GPS position to the nearest accessible walkway and recomputes route + directions."
+        };
+    }
+    return {
+        "NavigateNED C++17 DSA Engine",
+        "Adjacency List Graph + Priority Queues + Prefix Trie + LRU Cache",
+        "O(1)",
+        "O(V + E)",
+        "Unified C++17 algorithmic engine powering both WebAssembly UI and terminal viva showcase."
+    };
+}
+
+inline void printDsaHeader(const AnsiTheme& c, const DsaHeaderSpec& spec) {
+    const std::string bar(98, '=');
+    std::cout << c.boldCyan() << "+" << bar << "+\n" << c.reset();
+    std::cout << c.boldCyan() << "| " << c.boldYel() << "DSA CONCEPT : " << c.white() << c.bold()
+              << spec.title << c.reset() << "\n";
+    std::cout << c.boldCyan() << "| " << c.cyan()    << "Structure   : " << c.reset()
+              << spec.dataStructure << "\n";
+    std::cout << c.boldCyan() << "| " << c.green()   << "Complexity  : " << c.reset()
+              << "Time: " << c.boldGreen() << spec.timeComplexity << c.reset()
+              << "  |  Space: " << c.boldGreen() << spec.spaceComplexity << c.reset() << "\n";
+    std::cout << c.boldCyan() << "| " << c.magenta() << "App Role    : " << c.reset()
+              << spec.whyUsed << "\n";
+    std::cout << c.boldCyan() << "+" << bar << "+\n" << c.reset();
+}
+
+// ----------------------------------------------------------------------------
+// 14.3 100x40 ASCII Campus Map Renderer & Live Trace Animation
+// ----------------------------------------------------------------------------
+
+struct AsciiMapOverlay {
+    std::vector<int> routePathIndices;
+    std::vector<std::pair<int, int>> mstEdges;       // pairs of graph node indices (u, v)
+    std::vector<std::pair<int, int>> highlightEdges; // e.g. bridges or evac paths
+    std::vector<std::vector<int>> evacPaths;         // multiple evacuation paths
+    std::unordered_set<int> visitedNodes;
+    std::unordered_set<int> frontierNodes;
+    std::unordered_set<int> criticalNodes;
+    std::unordered_set<int> assemblyNodes;
+    std::unordered_set<int> groupNodes;
+    std::unordered_set<int> blockedNodes;
+    std::vector<int> orderedStopNodes;               // for TSP: numbered 1..K
+    int startNode = -1;
+    int endNode = -1;
+    std::string subtitle;
+};
+
+struct ProjectedGrid {
+    int width = 96;
+    int height = 34;
+    double minLat = 0.0, maxLat = 0.0;
+    double minLng = 0.0, maxLng = 0.0;
+
+    bool hasBounds = false;
+
+    void computeBounds(const Graph& g) {
+        minLat = 1e9;
+        maxLat = -1e9;
+        minLng = 1e9;
+        maxLng = -1e9;
+        for (const auto& n : g.nodes) {
+            if (!n.isIndoor && n.hasCoords) {
+                minLat = std::min(minLat, n.lat);
+                maxLat = std::max(maxLat, n.lat);
+                minLng = std::min(minLng, n.lng);
+                maxLng = std::max(maxLng, n.lng);
+            }
+        }
+        if (minLat <= maxLat && minLng <= maxLng) {
+            const double latPad = std::max(1e-5, (maxLat - minLat) * 0.05);
+            const double lngPad = std::max(1e-5, (maxLng - minLng) * 0.05);
+            minLat -= latPad;
+            maxLat += latPad;
+            minLng -= lngPad;
+            maxLng += lngPad;
+            hasBounds = true;
+        }
+    }
+
+    std::pair<int, int> toCell(double lat, double lng) const {
+        if (!hasBounds) return {0, 0};
+        const double xFrac = (lng - minLng) / std::max(1e-9, maxLng - minLng);
+        const double yFrac = (maxLat - lat) / std::max(1e-9, maxLat - minLat); // North at top (row 0)
+        int col = static_cast<int>(std::round(xFrac * (width - 1)));
+        int row = static_cast<int>(std::round(yFrac * (height - 1)));
+        col = std::max(0, std::min(width - 1, col));
+        row = std::max(0, std::min(height - 1, row));
+        return {row, col};
+    }
+
+    std::pair<int, int> nodeCell(const Graph& g, int u) const {
+        if (u < 0 || u >= g.nodeCount()) return {0, 0};
+        const Node& n = g.nodes[u];
+        if (n.hasCoords) {
+            return toCell(n.lat, n.lng);
+        }
+        return {height / 2, width / 2};
+    }
+};
+
+inline void drawBresenhamLine(std::vector<std::string>& grid,
+                              std::vector<std::vector<int>>& prio,
+                              int r0, int c0, int r1, int c1,
+                              char ch, int layerPrio) {
+    const int H = static_cast<int>(grid.size());
+    const int W = H > 0 ? static_cast<int>(grid[0].size()) : 0;
+    int dc = std::abs(c1 - c0), sc = c0 < c1 ? 1 : -1;
+    int dr = -std::abs(r1 - r0), sr = r0 < r1 ? 1 : -1;
+    int err = dc + dr;
+
+    while (true) {
+        if (r0 >= 0 && r0 < H && c0 >= 0 && c0 < W) {
+            if (layerPrio >= prio[r0][c0]) {
+                grid[r0][c0] = ch;
+                prio[r0][c0] = layerPrio;
+            }
+        }
+        if (r0 == r1 && c0 == c1) break;
+        const int e2 = 2 * err;
+        if (e2 >= dr) { err += dr; c0 += sc; }
+        if (e2 <= dc) { err += dc; r0 += sr; }
+    }
+}
+
+inline void renderAsciiCampusMap(std::ostream& os,
+                                 const Graph& g,
+                                 const AnsiTheme& c,
+                                 const AsciiMapOverlay& ov,
+                                 bool showLandmarkLegend = true) {
+    ProjectedGrid pg;
+    pg.width = 96;
+    pg.height = 32;
+    pg.computeBounds(g);
+    if (!pg.hasBounds) return;
+
+    std::vector<std::string> grid(pg.height, std::string(pg.width, ' '));
+    std::vector<std::vector<int>> prio(pg.height, std::vector<int>(pg.width, 0));
+
+    // Layer 1: faint walkway edges (':' / '-')
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (g.nodes[u].isIndoor || !g.nodes[u].hasCoords) continue;
+        const auto [r0, c0] = pg.nodeCell(g, u);
+        for (const auto& e : g.adj[u]) {
+            if (e.to <= u || g.nodes[e.to].isIndoor || !g.nodes[e.to].hasCoords) continue;
+            const auto [r1, c1] = pg.nodeCell(g, e.to);
+            drawBresenhamLine(grid, prio, r0, c0, r1, c1, '.', 1);
+        }
+    }
+
+    // Layer 2: outdoor graph vertices ('.')
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (g.nodes[u].isIndoor || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        if (2 >= prio[r][col]) {
+            grid[r][col] = '.';
+            prio[r][col] = 2;
+        }
+    }
+
+    // Layer 3: key numbered landmarks ('1'..'9') with compact legend
+    struct LegendEntry {
+        char symbol;
+        std::string label;
+        std::string nodeId;
+    };
+    std::vector<LegendEntry> legend;
+    const std::vector<std::string> keyLandmarkIds = {
+        "b-admin", "b-library", "b-csit", "b-auditorium",
+        "b-dean-offices", "b-csit-labs", "b-mosque", "b-medical", "b-cafeteria"
+    };
+    char nextLmChar = '1';
+    for (const auto& lmId : keyLandmarkIds) {
+        auto it = g.landmarkIdToIndex.find(lmId);
+        if (it == g.landmarkIdToIndex.end()) continue;
+        const Landmark& lm = g.landmarks[it->second];
+        const int nIdx = g.getNodeIndex(lm.nodeId);
+        if (nIdx < 0 || !g.nodes[nIdx].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, nIdx);
+        const char sym = nextLmChar++;
+        if (3 >= prio[r][col]) {
+            grid[r][col] = sym;
+            prio[r][col] = 3;
+        }
+        legend.push_back({sym, lm.shortName.empty() ? lm.name : lm.shortName, lm.id});
+        if (nextLmChar > '9') break;
+    }
+
+    // Layer 4: MST tree edges ('*')
+    for (const auto& [u, v] : ov.mstEdges) {
+        if (u < 0 || v < 0 || u >= g.nodeCount() || v >= g.nodeCount()) continue;
+        if (!g.nodes[u].hasCoords || !g.nodes[v].hasCoords) continue;
+        const auto [r0, c0] = pg.nodeCell(g, u);
+        const auto [r1, c1] = pg.nodeCell(g, v);
+        drawBresenhamLine(grid, prio, r0, c0, r1, c1, '*', 4);
+    }
+
+    // Layer 5: highlighted edges / bridges ('=')
+    for (const auto& [u, v] : ov.highlightEdges) {
+        if (u < 0 || v < 0 || u >= g.nodeCount() || v >= g.nodeCount()) continue;
+        if (!g.nodes[u].hasCoords || !g.nodes[v].hasCoords) continue;
+        const auto [r0, c0] = pg.nodeCell(g, u);
+        const auto [r1, c1] = pg.nodeCell(g, v);
+        drawBresenhamLine(grid, prio, r0, c0, r1, c1, '=', 5);
+    }
+
+    // Layer 6: trace replay frontier ('+') and visited ('o') nodes
+    for (int u : ov.frontierNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        if (6 >= prio[r][col]) {
+            grid[r][col] = '+';
+            prio[r][col] = 6;
+        }
+    }
+    for (int u : ov.visitedNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        if (7 >= prio[r][col]) {
+            grid[r][col] = 'o';
+            prio[r][col] = 7;
+        }
+    }
+
+    // Layer 8: evacuation assigned paths ('#')
+    for (const auto& epath : ov.evacPaths) {
+        for (size_t i = 0; i + 1 < epath.size(); ++i) {
+            const int u = epath[i];
+            const int v = epath[i + 1];
+            if (u < 0 || v < 0 || !g.nodes[u].hasCoords || !g.nodes[v].hasCoords) continue;
+            const auto [r0, c0] = pg.nodeCell(g, u);
+            const auto [r1, c1] = pg.nodeCell(g, v);
+            drawBresenhamLine(grid, prio, r0, c0, r1, c1, '#', 8);
+        }
+    }
+
+    // Layer 9: active route polyline ('#')
+    for (size_t i = 0; i + 1 < ov.routePathIndices.size(); ++i) {
+        const int u = ov.routePathIndices[i];
+        const int v = ov.routePathIndices[i + 1];
+        if (u < 0 || v < 0 || u >= g.nodeCount() || v >= g.nodeCount()) continue;
+        if (!g.nodes[u].hasCoords || !g.nodes[v].hasCoords) continue;
+        const auto [r0, c0] = pg.nodeCell(g, u);
+        const auto [r1, c1] = pg.nodeCell(g, v);
+        drawBresenhamLine(grid, prio, r0, c0, r1, c1, '#', 9);
+    }
+
+    // Layer 10: critical articulation points ('!')
+    for (int u : ov.criticalNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        if (10 >= prio[r][col]) {
+            grid[r][col] = '!';
+            prio[r][col] = 10;
+        }
+    }
+
+    // Layer 11: evacuation people groups ('G'), assembly areas ('A'), blocked nodes ('X')
+    for (int u : ov.groupNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        grid[r][col] = 'G';
+        prio[r][col] = 11;
+    }
+    for (int u : ov.assemblyNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        grid[r][col] = 'A';
+        prio[r][col] = 12;
+    }
+    for (int u : ov.blockedNodes) {
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        grid[r][col] = 'X';
+        prio[r][col] = 13;
+    }
+
+    // Layer 14: TSP numbered stops ('1'..'9')
+    for (size_t k = 0; k < ov.orderedStopNodes.size() && k < 9; ++k) {
+        const int u = ov.orderedStopNodes[k];
+        if (u < 0 || u >= g.nodeCount() || !g.nodes[u].hasCoords) continue;
+        const auto [r, col] = pg.nodeCell(g, u);
+        grid[r][col] = static_cast<char>('1' + k);
+        prio[r][col] = 14;
+    }
+
+    // Layer 15: Start ('S') and Destination ('E')
+    int startIdx = ov.startNode;
+    int endIdx = ov.endNode;
+    if (startIdx < 0 && !ov.routePathIndices.empty()) startIdx = ov.routePathIndices.front();
+    if (endIdx < 0 && !ov.routePathIndices.empty()) endIdx = ov.routePathIndices.back();
+
+    if (startIdx >= 0 && startIdx < g.nodeCount() && g.nodes[startIdx].hasCoords) {
+        const auto [r, col] = pg.nodeCell(g, startIdx);
+        grid[r][col] = 'S';
+        prio[r][col] = 15;
+    }
+    if (endIdx >= 0 && endIdx < g.nodeCount() && g.nodes[endIdx].hasCoords) {
+        const auto [r, col] = pg.nodeCell(g, endIdx);
+        grid[r][col] = 'E';
+        prio[r][col] = 16;
+    }
+
+    const std::string border(pg.width, '-');
+    os << c.boldBlue() << "  +" << border << "+  [N]\n" << c.reset();
+    if (!ov.subtitle.empty()) {
+        std::string sub = ov.subtitle;
+        if (static_cast<int>(sub.size()) > pg.width - 2) {
+            sub = sub.substr(0, pg.width - 2);
+        }
+        os << c.boldBlue() << "  | " << c.boldYel() << std::left << std::setw(pg.width - 2) << sub
+           << c.boldBlue() << " |\n" << c.reset();
+        os << c.boldBlue() << "  +" << border << "+\n" << c.reset();
+    }
+
+    for (int r = 0; r < pg.height; ++r) {
+        os << c.boldBlue() << "  |" << c.reset();
+        for (int col = 0; col < pg.width; ++col) {
+            const char ch = grid[r][col];
+            const int p = prio[r][col];
+            if (ch == 'S') {
+                os << c.boldGreen() << 'S' << c.reset();
+            } else if (ch == 'E') {
+                os << c.boldRed() << 'E' << c.reset();
+            } else if (ch == 'A') {
+                os << c.boldGreen() << 'A' << c.reset();
+            } else if (ch == 'G') {
+                os << c.boldYel() << 'G' << c.reset();
+            } else if (ch == 'X' || ch == '!') {
+                os << c.boldRed() << ch << c.reset();
+            } else if (p == 14) {
+                os << c.boldMag() << ch << c.reset();
+            } else if (ch == '#') {
+                os << c.boldYel() << '#' << c.reset();
+            } else if (ch == '*') {
+                os << c.boldCyan() << '*' << c.reset();
+            } else if (ch == '=') {
+                os << c.boldRed() << '=' << c.reset();
+            } else if (ch == 'o') {
+                os << c.cyan() << 'o' << c.reset();
+            } else if (ch == '+') {
+                os << c.magenta() << '+' << c.reset();
+            } else if (p == 3) {
+                os << c.boldCyan() << ch << c.reset();
+            } else if (ch == '.') {
+                os << c.dim() << '.' << c.reset();
+            } else {
+                os << ' ';
+            }
+        }
+        os << c.boldBlue() << "|\n" << c.reset();
+    }
+    os << c.boldBlue() << "  +" << border << "+\n" << c.reset();
+
+    // Symbol key
+    os << "  " << c.bold() << "Map Key: " << c.reset()
+       << c.boldGreen() << "S" << c.reset() << "=Start  "
+       << c.boldRed()   << "E" << c.reset() << "=End  "
+       << c.boldYel()   << "#" << c.reset() << "=Route  "
+       << c.dim()       << "." << c.reset() << "=Graph Node/Edge  "
+       << c.cyan()      << "o" << c.reset() << "=Visited  "
+       << c.magenta()   << "+" << c.reset() << "=Frontier  "
+       << c.boldGreen() << "A" << c.reset() << "=Assembly  "
+       << c.boldYel()   << "G" << c.reset() << "=Evac Group\n";
+
+    if (showLandmarkLegend && !legend.empty()) {
+        os << "  " << c.bold() << "Landmarks: " << c.reset();
+        for (size_t i = 0; i < legend.size(); ++i) {
+            os << c.boldCyan() << "[" << legend[i].symbol << "]" << c.reset() << " "
+               << legend[i].label;
+            if (i + 1 < legend.size()) os << "  ";
+            if ((i + 1) % 5 == 0 && i + 1 < legend.size()) os << "\n             ";
+        }
+        os << "\n";
+    }
+}
+
+/**
+ * Replays an algorithm's trace events (`visit` -> `o`, `frontier` -> `+`) on the
+ * ASCII campus map with ~60 ms / speedMultiplier between frames, using ANSI
+ * cursor-home `\x1b[H` to animate smoothly in place.
+ */
+inline void animateRouteTraceOnAsciiMap(const Graph& g,
+                                        const AnsiTheme& c,
+                                        const RouteResult& r,
+                                        int fromIdx,
+                                        int toIdx,
+                                        const std::string& algoLabel,
+                                        double speedMultiplier) {
+    const double clampedSpeed = std::max(0.1, std::min(20.0, speedMultiplier));
+    const int sleepMs = static_cast<int>(std::max(10.0, std::round(60.0 / clampedSpeed)));
+
+    const size_t totalEvents = r.trace.size();
+    const size_t maxFrames = 24;
+    const size_t stride = std::max<size_t>(1, totalEvents / maxFrames);
+
+    AsciiMapOverlay ov;
+    ov.startNode = fromIdx;
+    ov.endNode = toIdx;
+
+    if (c.enabled) {
+        std::cout << "\x1b[2J\x1b[H" << std::flush;
+    }
+
+    for (size_t idx = 0; idx < totalEvents; ++idx) {
+        const auto& ev = r.trace[idx];
+        const int u = g.getNodeIndex(ev.node);
+        if (u >= 0) {
+            if (ev.type == "visit") {
+                ov.visitedNodes.insert(u);
+                ov.frontierNodes.erase(u);
+            } else if (ev.type == "frontier" && ov.visitedNodes.find(u) == ov.visitedNodes.end()) {
+                ov.frontierNodes.insert(u);
+            }
+        }
+
+        const bool isLast = (idx + 1 == totalEvents);
+        if (idx % stride == 0 || isLast) {
+            std::ostringstream frameBuf;
+            if (c.enabled) {
+                frameBuf << "\x1b[H";
+            }
+            ov.subtitle = "LIVE TRACE REPLAY [" + algoLabel + "]  Step " +
+                          std::to_string(idx + 1) + "/" + std::to_string(totalEvents) +
+                          "  |  Visited (o): " + std::to_string(ov.visitedNodes.size()) +
+                          "  |  Frontier (+): " + std::to_string(ov.frontierNodes.size());
+            renderAsciiCampusMap(frameBuf, g, c, ov, false);
+            std::cout << frameBuf.str() << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+        }
+    }
+
+    // Final frame with the discovered shortest path overlaid on the explored search tree
+    ov.routePathIndices = r.pathIndices;
+    ov.subtitle = "FINAL ROUTE [" + algoLabel + "]  Distance: " + fmtFixed(r.distance, 1) +
+                  " m  |  Visited: " + std::to_string(r.visitedCount) + " nodes";
+    std::ostringstream finalBuf;
+    if (c.enabled) {
+        finalBuf << "\x1b[H";
+    }
+    renderAsciiCampusMap(finalBuf, g, c, ov, true);
+    std::cout << finalBuf.str() << std::flush;
+}
+
+// ----------------------------------------------------------------------------
+// 14.4 Pretty Printers for Every CLI Command
+// ----------------------------------------------------------------------------
+
+inline void printRoutePretty(const Graph& g,
+                             const AnsiTheme& c,
+                             const std::string& fromId,
+                             const std::string& toId,
+                             const RouteOptions& opts,
+                             bool animate,
+                             double speed) {
+    printDsaHeader(c, getRouteDsaSpec(opts.algo));
+
+    const int fromIdx = detail::resolveEndpointIndex(g, fromId);
+    const int toIdx = detail::resolveEndpointIndex(g, toId);
+    if (fromIdx < 0 || toIdx < 0) {
+        std::cout << c.boldRed() << "  [Error] Unknown endpoint ID (" << fromId << " -> " << toId << ")\n" << c.reset();
+        return;
+    }
+
+    AlgoStats st;
+    const RouteResult r = computeRoute(g, fromIdx, toIdx, opts, false, &st);
+
+    if (!r.found) {
+        std::cout << c.boldRed() << "  [Unreachable] No route found from " << fromId << " to " << toId << ".\n" << c.reset();
+        return;
+    }
+
+    if (animate && !r.trace.empty()) {
+        animateRouteTraceOnAsciiMap(g, c, r, fromIdx, toIdx, opts.algo, speed);
+    } else {
+        AsciiMapOverlay ov;
+        ov.routePathIndices = r.pathIndices;
+        ov.startNode = fromIdx;
+        ov.endNode = toIdx;
+        for (const auto& ev : r.trace) {
+            const int u = g.getNodeIndex(ev.node);
+            if (u >= 0 && ev.type == "visit") ov.visitedNodes.insert(u);
+        }
+        ov.subtitle = "ROUTE [" + toLowerCopy(opts.algo) + "] " + fromId + " -> " + toId +
+                      " (" + fmtFixed(r.distance, 1) + " m, " +
+                      std::to_string(r.path.size() > 0 ? r.path.size() - 1 : 0) + " hops)";
+        renderAsciiCampusMap(std::cout, g, c, ov, true);
+    }
+
+    std::cout << "\n  " << c.boldCyan() << "Route Summary & Telemetry:" << c.reset() << "\n"
+              << "    From           : " << c.bold() << describeHumanNodeLocation(g, fromIdx) << " [" << g.nodes[fromIdx].id << "]" << c.reset() << "\n"
+              << "    To             : " << c.bold() << describeHumanNodeLocation(g, toIdx) << " [" << g.nodes[toIdx].id << "]" << c.reset() << "\n"
+              << "    Algorithm      : " << c.boldYel() << opts.algo << c.reset()
+              << (opts.accessibleOnly ? " (Step-Free Accessible Mode)" : "") << "\n"
+              << "    Total Distance : " << c.boldGreen() << fmtFixed(r.distance, 1) << " m" << c.reset()
+              << "  (" << (r.path.empty() ? 0 : r.path.size() - 1) << " edges / hops)\n"
+              << "    Instrumentation: "
+              << "Nodes Visited = " << c.boldCyan() << st.nodesVisited << c.reset()
+              << " | Edges Relaxed = " << c.boldCyan() << st.edgesRelaxed << c.reset()
+              << " | Heap Ops = " << c.boldCyan() << st.heapOps() << c.reset()
+              << " (" << st.heapPushes << " push / " << st.heapPops << " pop)"
+              << " | Time = " << c.boldGreen() << fmtFixed(st.elapsedUs, 1) << " us" << c.reset() << "\n";
+
+    if (!r.steps.empty()) {
+        std::cout << "\n  " << c.boldCyan() << "Navigation Steps (" << r.steps.size() << "):" << c.reset() << "\n";
+        for (size_t i = 0; i < r.steps.size(); ++i) {
+            std::cout << "    " << c.boldYel() << std::setw(2) << (i + 1) << ". " << c.reset()
+                      << r.steps[i] << "\n";
+        }
+    }
+}
+
+inline void printComparePretty(const Graph& g,
+                               const AnsiTheme& c,
+                               const std::string& fromId,
+                               const std::string& toId,
+                               const RouteOptions& baseOpts,
+                               bool animate,
+                               double speed) {
+    printDsaHeader(c, getCommandDsaSpec("compare"));
+
+    const int fromIdx = detail::resolveEndpointIndex(g, fromId);
+    const int toIdx = detail::resolveEndpointIndex(g, toId);
+    if (fromIdx < 0 || toIdx < 0) {
+        std::cout << c.boldRed() << "  [Error] Unknown endpoint ID (" << fromId << " -> " << toId << ")\n" << c.reset();
+        return;
+    }
+
+    const std::vector<std::string> algos = {"dijkstra", "astar", "bfs", "bellmanford", "floyd"};
+    struct Row {
+        std::string name;
+        bool found = false;
+        double dist = -1.0;
+        int visited = 0;
+        int relaxed = 0;
+        int heapOps = 0;
+        double timeUs = 0.0;
+        RouteResult route;
+    };
+
+    cachedFloydTable(g, baseOpts, false);
+
+    std::vector<Row> rows;
+    for (const auto& a : algos) {
+        RouteOptions opts = baseOpts;
+        opts.algo = a;
+        AlgoStats st;
+        const auto t0 = std::chrono::high_resolution_clock::now();
+        RouteResult r = computeRoute(g, fromIdx, toIdx, opts, false, &st);
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        st.elapsedUs = std::chrono::duration<double, std::micro>(t1 - t0).count();
+
+        rows.push_back(Row{
+            a, r.found, r.distance, st.nodesVisited, st.edgesRelaxed, st.heapOps(), st.elapsedUs, std::move(r)
+        });
+    }
+
+    if (animate) {
+        // Replay Dijkstra and A* traces back-to-back to showcase heuristic pruning
+        for (const auto& row : rows) {
+            if ((row.name == "dijkstra" || row.name == "astar") && row.found && !row.route.trace.empty()) {
+                animateRouteTraceOnAsciiMap(g, c, row.route, fromIdx, toIdx, row.name, speed);
+                std::this_thread::sleep_for(std::chrono::milliseconds(350));
+            }
+        }
+        printDsaHeader(c, getCommandDsaSpec("compare"));
+    } else if (!rows.empty() && rows[0].found) {
+        AsciiMapOverlay ov;
+        ov.routePathIndices = rows[0].route.pathIndices;
+        ov.startNode = fromIdx;
+        ov.endNode = toIdx;
+        ov.subtitle = "BENCHMARK ROUTE: " + fromId + " -> " + toId +
+                      " (Shortest Distance: " + fmtFixed(rows[0].dist, 1) + " m)";
+        renderAsciiCampusMap(std::cout, g, c, ov, false);
+    }
+
+    double bestDist = 1e18;
+    int bestVisited = 1000000000;
+    int bestRelaxed = 1000000000;
+    int bestHeapOps = 1000000000;
+    double bestTime = 1e18;
+
+    for (const auto& r : rows) {
+        if (!r.found) continue;
+        bestDist = std::min(bestDist, r.dist);
+        bestVisited = std::min(bestVisited, r.visited);
+        bestRelaxed = std::min(bestRelaxed, r.relaxed);
+        if (r.heapOps > 0) bestHeapOps = std::min(bestHeapOps, r.heapOps);
+        bestTime = std::min(bestTime, r.timeUs);
+    }
+
+    std::cout << "\n  " << c.boldCyan() << "Algorithm Comparison Table (" << fromId << " -> " << toId << "):"
+              << c.reset() << "  " << c.boldGreen() << "[* = Best in Column]" << c.reset() << "\n";
+    const std::string sep = "  +---------------+---------------+---------------+---------------+---------------+---------------+";
+    std::cout << c.boldBlue() << sep << "\n"
+              << "  | " << c.bold() << std::left
+              << std::setw(13) << "Algorithm"     << " | "
+              << std::setw(13) << "Distance (m)"  << " | "
+              << std::setw(13) << "Nodes Visited" << " | "
+              << std::setw(13) << "Edges Relaxed" << " | "
+              << std::setw(13) << "Heap/Q Ops"    << " | "
+              << std::setw(13) << "Time (us)"     << c.boldBlue() << " |\n"
+              << sep << c.reset() << "\n";
+
+    auto fmtCell = [&](const std::string& val, bool isBest) -> std::string {
+        const std::string tagged = isBest ? (val + " *") : val;
+        std::ostringstream cell;
+        if (isBest) cell << c.boldGreen();
+        cell << std::left << std::setw(13) << tagged;
+        if (isBest) cell << c.reset();
+        return cell.str();
+    };
+
+    for (const auto& r : rows) {
+        const bool isBestDist = r.found && std::abs(r.dist - bestDist) < 1e-6;
+        const bool isBestVis  = r.found && (r.visited == bestVisited);
+        const bool isBestRel  = r.found && (r.relaxed == bestRelaxed);
+        const bool isBestHeap = r.found && (r.heapOps > 0 && r.heapOps == bestHeapOps);
+        const bool isBestTime = r.found && std::abs(r.timeUs - bestTime) < 1e-6;
+
+        std::cout << c.boldBlue() << "  | " << c.boldYel() << std::left << std::setw(13) << r.name << c.reset()
+                  << c.boldBlue() << " | " << c.reset()
+                  << fmtCell(r.found ? fmtFixed(r.dist, 1) : "unreachable", isBestDist)
+                  << c.boldBlue() << " | " << c.reset()
+                  << fmtCell(std::to_string(r.visited), isBestVis)
+                  << c.boldBlue() << " | " << c.reset()
+                  << fmtCell(std::to_string(r.relaxed), isBestRel)
+                  << c.boldBlue() << " | " << c.reset()
+                  << fmtCell(r.heapOps > 0 ? std::to_string(r.heapOps) : "0 (matrix)", isBestHeap)
+                  << c.boldBlue() << " | " << c.reset()
+                  << fmtCell(fmtFixed(r.timeUs, 1), isBestTime)
+                  << c.boldBlue() << " |\n" << c.reset();
+    }
+    std::cout << c.boldBlue() << sep << c.reset() << "\n";
+}
+
+inline void printSearchPretty(const AnsiTheme& c, const std::string& query, const json& resJson) {
+    printDsaHeader(c, getCommandDsaSpec("search"));
+    const auto& results = resJson["results"];
+    std::cout << "  " << c.boldCyan() << "Prefix Trie Results for query \"" << c.boldYel() << query
+              << c.boldCyan() << "\" (" << results.size() << " matches):" << c.reset() << "\n";
+
+    for (size_t i = 0; i < results.size(); ++i) {
+        const auto& item = results[i];
+        const std::string kind = item.value("kind", "landmark");
+        const std::string badge = (kind == "landmark") ? "[LANDMARK]" : "[ROOM]    ";
+        std::cout << "    " << c.boldYel() << std::setw(2) << (i + 1) << ". " << c.reset()
+                  << (kind == "landmark" ? c.boldGreen() : c.boldCyan()) << badge << c.reset() << " "
+                  << c.bold() << std::left << std::setw(38) << item.value("label", "") << c.reset()
+                  << " id=" << c.cyan() << item.value("id", "") << c.reset();
+        if (item.contains("number") && !item["number"].get<std::string>().empty()) {
+            std::cout << "  bldg#=" << c.boldYel() << item["number"].get<std::string>() << c.reset();
+        }
+        if (item.contains("buildingId") && !item["buildingId"].get<std::string>().empty()) {
+            std::cout << "  building=" << c.magenta() << item["buildingId"].get<std::string>() << c.reset();
+        }
+        std::cout << "\n";
+    }
+}
+
+inline void printCacheStatsPretty(const AnsiTheme& c, const json& statsJson) {
+    printDsaHeader(c, getCommandDsaSpec("cacheStats"));
+    std::cout << "  " << c.boldCyan() << "LRU Route Cache Telemetry:" << c.reset() << "\n"
+              << "    Cache Hits    : " << c.boldGreen() << statsJson.value("hits", 0) << c.reset() << "\n"
+              << "    Cache Misses  : " << c.boldYel()   << statsJson.value("misses", 0) << c.reset() << "\n"
+              << "    Current Size  : " << c.boldCyan()  << statsJson.value("size", 0) << " / "
+              << statsJson.value("capacity", 128) << " entries" << c.reset() << "\n"
+              << "    LRU Evictions : " << statsJson.value("evictions", 0) << "\n"
+              << "    Invalidations : " << statsJson.value("invalidations", 0) << " (on blocked-set change)\n";
+}
+
+inline void printAllPairsPretty(const Graph& g, const AnsiTheme& c, const json& apJson) {
+    printDsaHeader(c, getCommandDsaSpec("allPairs"));
+    std::cout << "  " << c.boldCyan() << "Floyd-Warshall All-Pairs Summary:" << c.reset() << "\n"
+              << "    Outdoor Graph Vertices : " << c.boldGreen() << apJson.value("outdoorNodeCount", 0) << c.reset() << "\n"
+              << "    Indexed Landmarks      : " << c.boldGreen() << apJson.value("landmarkCount", 0) << c.reset() << "\n";
+
+    const std::vector<std::string> sampleIds = {
+        "b-admin", "b-library", "b-csit", "b-auditorium", "b-dean-offices", "b-csit-labs"
+    };
+    const auto& matrix = apJson["matrix"];
+    std::cout << "\n  " << c.boldCyan() << "Sample 6x6 Key Academic Building Distance Sub-Matrix (meters):" << c.reset() << "\n";
+    std::cout << "    " << std::left << std::setw(16) << "From \\ To";
+    for (const auto& id : sampleIds) {
+        std::cout << std::right << std::setw(13) << id.substr(2);
+    }
+    std::cout << "\n    " << std::string(16 + 13 * sampleIds.size(), '-') << "\n";
+
+    for (const auto& rId : sampleIds) {
+        if (!matrix.contains(rId)) continue;
+        std::cout << "    " << c.boldYel() << std::left << std::setw(16) << rId << c.reset();
+        for (const auto& cId : sampleIds) {
+            if (matrix[rId].contains(cId) && !matrix[rId][cId].is_null()) {
+                const double d = matrix[rId][cId].get<double>();
+                std::cout << std::right << std::setw(13) << fmtFixed(d, 1);
+            } else {
+                std::cout << std::right << std::setw(13) << "null";
+            }
+        }
+        std::cout << "\n";
+    }
+    (void)g;
+}
+
+inline void printMSTPretty(const Graph& g, const AnsiTheme& c, const json& mstJson) {
+    const std::string algo = mstJson.value("algo", "kruskal");
+    printDsaHeader(c, getCommandDsaSpec("mst", algo));
+
+    AsciiMapOverlay ov;
+    ov.subtitle = "MINIMUM SPANNING TREE [" + algo + "]  Edges: " +
+                  std::to_string(mstJson.value("edgeCount", 0)) +
+                  "  |  Total Backbone Length: " + fmtFixed(mstJson.value("totalWeight", 0.0), 1) + " m";
+    if (mstJson.contains("edges") && mstJson["edges"].is_array()) {
+        for (const auto& e : mstJson["edges"]) {
+            const int u = g.getNodeIndex(e.value("a", ""));
+            const int v = g.getNodeIndex(e.value("b", ""));
+            if (u >= 0 && v >= 0) ov.mstEdges.push_back({u, v});
+        }
+    }
+    renderAsciiCampusMap(std::cout, g, c, ov, true);
+
+    std::cout << "\n  " << c.boldCyan() << "MST Summary (" << algo << "):" << c.reset() << "\n"
+              << "    Spanning Tree Edges : " << c.boldGreen() << mstJson.value("edgeCount", 0) << c.reset() << "\n"
+              << "    Total Backbone Cost : " << c.boldGreen() << fmtFixed(mstJson.value("totalWeight", 0.0), 1) << " m" << c.reset() << "\n";
+}
+
+inline void printTSPPretty(const Graph& g, const AnsiTheme& c, const json& tspJson) {
+    printDsaHeader(c, getCommandDsaSpec("tsp"));
+
+    AsciiMapOverlay ov;
+    if (tspJson.contains("path") && tspJson["path"].is_array()) {
+        for (const auto& nid : tspJson["path"]) {
+            const int u = g.getNodeIndex(nid.get<std::string>());
+            if (u >= 0) ov.routePathIndices.push_back(u);
+        }
+    }
+    if (tspJson.contains("orderedStops") && tspJson["orderedStops"].is_array()) {
+        for (const auto& sid : tspJson["orderedStops"]) {
+            const int u = detail::resolveEndpointIndex(g, sid.get<std::string>());
+            if (u >= 0) ov.orderedStopNodes.push_back(u);
+        }
+    }
+    ov.subtitle = "MULTI-STOP TSP TOUR [" + tspJson.value("algo", "dp") + "]  Total: " +
+                  fmtFixed(tspJson.value("totalDistance", 0.0), 1) + " m  |  Stops numbered 1.." +
+                  std::to_string(ov.orderedStopNodes.size());
+    renderAsciiCampusMap(std::cout, g, c, ov, false);
+
+    std::cout << "\n  " << c.boldCyan() << "TSP Tour Order & Optimality Comparison:" << c.reset() << "\n    ";
+    if (tspJson.contains("orderedStops")) {
+        const auto& stops = tspJson["orderedStops"];
+        for (size_t i = 0; i < stops.size(); ++i) {
+            std::cout << c.boldMag() << "[" << (i + 1) << "] " << c.bold() << stops[i].get<std::string>() << c.reset();
+            if (i + 1 < stops.size()) std::cout << c.boldYel() << " -> " << c.reset();
+        }
+        std::cout << "\n";
+    }
+    std::cout << "    Held-Karp Bitmask DP (Exact) : " << c.boldGreen()
+              << fmtFixed(tspJson.value("dpDistance", 0.0), 1) << " m" << c.reset() << "\n"
+              << "    Nearest-Neighbor (Greedy)    : " << c.boldYel()
+              << fmtFixed(tspJson.value("nnDistance", 0.0), 1) << " m" << c.reset() << "\n"
+              << "    Heuristic Optimality Gap     : " << c.boldCyan()
+              << fmtFixed(tspJson.value("heuristicGapPercent", 0.0), 2) << " %" << c.reset() << "\n";
+}
+
+inline void printCriticalPointsPretty(const Graph& g, const AnsiTheme& c, const json& cpJson) {
+    printDsaHeader(c, getCommandDsaSpec("criticalPoints"));
+
+    AsciiMapOverlay ov;
+    if (cpJson.contains("articulationPoints") && cpJson["articulationPoints"].is_array()) {
+        for (const auto& nid : cpJson["articulationPoints"]) {
+            const int u = g.getNodeIndex(nid.get<std::string>());
+            if (u >= 0) ov.criticalNodes.insert(u);
+        }
+    }
+    if (cpJson.contains("bridges") && cpJson["bridges"].is_array()) {
+        for (const auto& br : cpJson["bridges"]) {
+            if (br.is_array() && br.size() >= 2) {
+                const int u = g.getNodeIndex(br[0].get<std::string>());
+                const int v = g.getNodeIndex(br[1].get<std::string>());
+                if (u >= 0 && v >= 0) ov.highlightEdges.push_back({u, v});
+            }
+        }
+    }
+    ov.subtitle = "TARJAN CRITICAL INFRASTRUCTURE  |  Articulation Points (!): " +
+                  std::to_string(ov.criticalNodes.size()) +
+                  "  |  Bridge Walkways (=): " + std::to_string(ov.highlightEdges.size());
+    renderAsciiCampusMap(std::cout, g, c, ov, false);
+
+    std::cout << "\n  " << c.boldCyan() << "Critical Infrastructure Vulnerability Report:" << c.reset() << "\n"
+              << "    Articulation Points (" << cpJson["articulationPoints"].size() << "): ";
+    for (size_t i = 0; i < cpJson["articulationPoints"].size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << c.boldRed() << cpJson["articulationPoints"][i].get<std::string>() << c.reset();
+    }
+    std::cout << "\n    Bridge Walkways     (" << cpJson["bridges"].size() << "): ";
+    for (size_t i = 0; i < cpJson["bridges"].size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        const auto& br = cpJson["bridges"][i];
+        std::cout << c.boldYel() << br[0].get<std::string>() << "-" << br[1].get<std::string>() << c.reset();
+    }
+    std::cout << "\n";
+}
+
+inline void printLoadBar(std::ostream& os, const AnsiTheme& c, int assigned, int capacity, int width = 22) {
+    const double ratio = (capacity > 0) ? (static_cast<double>(assigned) / capacity) : 0.0;
+    const int filled = std::max(0, std::min(width, static_cast<int>(std::round(ratio * width))));
+    const bool overloaded = (assigned > capacity);
+    const char* barColor = overloaded ? c.boldRed() : (ratio >= 0.85 ? c.boldYel() : c.boldGreen());
+
+    os << "[" << barColor << std::string(filled, '#') << c.dim() << std::string(width - filled, '.') << c.reset() << "] "
+       << barColor << std::right << std::setw(4) << assigned << "/" << std::left << std::setw(4) << capacity << c.reset();
+    if (overloaded) {
+        os << " " << c.boldRed() << "OVERLOADED (+" << (assigned - capacity) << ")" << c.reset();
+    }
+}
+
+inline void printEvacuatePretty(const Graph& g, const AnsiTheme& c, const json& evacJson, const json& blockedJson = json::object()) {
+    const std::string mode = evacJson.value("mode", "nearest");
+    printDsaHeader(c, getCommandDsaSpec("evacuate", mode));
+
+    AsciiMapOverlay ov;
+    for (const auto& area : g.assemblyAreas) {
+        const int u = g.getNodeIndex(area.nodeId);
+        if (u >= 0) ov.assemblyNodes.insert(u);
+    }
+    if (blockedJson.contains("nodes") && blockedJson["nodes"].is_array()) {
+        for (const auto& bn : blockedJson["nodes"]) {
+            const int u = detail::resolveEndpointIndex(g, bn.get<std::string>());
+            if (u >= 0) ov.blockedNodes.insert(u);
+        }
+    }
+    if (evacJson.contains("assignments") && evacJson["assignments"].is_array()) {
+        for (const auto& a : evacJson["assignments"]) {
+            const int gIdx = detail::resolveEndpointIndex(g, a.value("from", ""));
+            if (gIdx >= 0) ov.groupNodes.insert(gIdx);
+            if (a.contains("path") && a["path"].is_array()) {
+                std::vector<int> p;
+                for (const auto& nid : a["path"]) {
+                    const int u = g.getNodeIndex(nid.get<std::string>());
+                    if (u >= 0) p.push_back(u);
+                }
+                ov.evacPaths.push_back(std::move(p));
+            }
+        }
+    }
+    ov.subtitle = "EMERGENCY EVACUATION [" + mode + "]  |  A=Assembly Area  G=Evacuee Group  #=Assigned Path";
+    renderAsciiCampusMap(std::cout, g, c, ov, false);
+
+    std::cout << "\n  " << c.boldCyan() << "Evacuation Assignments (mode: " << mode << "):" << c.reset() << "\n";
+    for (const auto& a : evacJson["assignments"]) {
+        std::cout << "    Group " << c.boldYel() << std::left << std::setw(16) << a.value("from", "") << c.reset()
+                  << " (" << std::right << std::setw(4) << a.value("count", 0) << " ppl) -> "
+                  << c.boldGreen() << std::left << std::setw(34) << a.value("assemblyName", "") << c.reset()
+                  << " dist=" << c.boldCyan() << fmtFixed(a.value("distance", 0.0), 1) << " m" << c.reset();
+        if (a.contains("exitNodeId")) {
+            std::cout << "  exit=" << c.magenta() << a["exitNodeId"].get<std::string>() << c.reset();
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "\n  " << c.boldCyan() << "Assembly Area Utilization:" << c.reset() << "\n";
+    for (const auto& load : evacJson["assemblyLoad"]) {
+        std::cout << "    " << std::left << std::setw(34) << load.value("name", load.value("id", "")) << " ";
+        printLoadBar(std::cout, c, load.value("assigned", 0), load.value("capacity", 0));
+        std::cout << "\n";
+    }
+    std::cout << "  " << c.bold() << "Total Person-Distance: " << c.boldGreen()
+              << fmtFixed(evacJson.value("totalDistance", 0.0), 0) << " person-m" << c.reset()
+              << "  |  Overloaded Areas: "
+              << (evacJson.value("overloadedAreasCount", 0) > 0 ? c.boldRed() : c.boldGreen())
+              << evacJson.value("overloadedAreasCount", 0) << c.reset()
+              << "  |  Unassigned: " << evacJson.value("unassigned", 0) << "\n";
+}
+
+inline void printEvacuationComparePretty(const Graph& g, const AnsiTheme& c, const json& cmpJson, const json& blockedJson = json::object()) {
+    printDsaHeader(c, getCommandDsaSpec("evacuationCompare"));
+
+    const auto& nearest  = cmpJson["nearest"];
+    const auto& capacity = cmpJson["capacity"];
+
+    AsciiMapOverlay ov;
+    for (const auto& area : g.assemblyAreas) {
+        const int u = g.getNodeIndex(area.nodeId);
+        if (u >= 0) ov.assemblyNodes.insert(u);
+    }
+    if (blockedJson.contains("nodes") && blockedJson["nodes"].is_array()) {
+        for (const auto& bn : blockedJson["nodes"]) {
+            const int u = detail::resolveEndpointIndex(g, bn.get<std::string>());
+            if (u >= 0) ov.blockedNodes.insert(u);
+        }
+    }
+    if (capacity.contains("assignments")) {
+        for (const auto& a : capacity["assignments"]) {
+            const int gIdx = detail::resolveEndpointIndex(g, a.value("from", ""));
+            if (gIdx >= 0) ov.groupNodes.insert(gIdx);
+            if (a.contains("path")) {
+                std::vector<int> p;
+                for (const auto& nid : a["path"]) {
+                    const int u = g.getNodeIndex(nid.get<std::string>());
+                    if (u >= 0) p.push_back(u);
+                }
+                ov.evacPaths.push_back(std::move(p));
+            }
+        }
+    }
+    ov.subtitle = "EVACUATION COMPARISON (Nearest vs Capacity-Constrained Min-Cost Max-Flow)";
+    renderAsciiCampusMap(std::cout, g, c, ov, false);
+
+    for (const char* modeKey : {"nearest", "capacity"}) {
+        const auto& mJson = cmpJson[modeKey];
+        const std::string title = (std::string(modeKey) == "nearest")
+                                      ? "MODE 1: NEAREST ASSEMBLY (Multi-Source Reversed Dijkstra — Uncapacitated)"
+                                      : "MODE 2: CAPACITY-CONSTRAINED (Min-Cost Max-Flow SPFA — Load Balanced)";
+        std::cout << "\n  " << c.boldYel() << title << c.reset() << "\n";
+        for (const auto& a : mJson["assignments"]) {
+            std::cout << "    Group " << c.bold() << std::left << std::setw(15) << a.value("from", "") << c.reset()
+                      << " (" << std::right << std::setw(4) << a.value("count", 0) << " ppl) -> "
+                      << c.cyan() << std::left << std::setw(33) << a.value("assemblyName", "") << c.reset()
+                      << " (" << fmtFixed(a.value("distance", 0.0), 1) << " m)\n";
+        }
+        std::cout << "    " << c.boldCyan() << "Per-Area Load Bars:" << c.reset() << "\n";
+        for (const auto& l : mJson["assemblyLoad"]) {
+            if (l.value("assigned", 0) == 0 && l.value("capacity", 0) > 650) continue;
+            std::cout << "      " << std::left << std::setw(33) << l.value("name", l.value("id", "")) << " ";
+            printLoadBar(std::cout, c, l.value("assigned", 0), l.value("capacity", 0));
+            std::cout << "\n";
+        }
+        std::cout << "    Total Distance: " << c.boldGreen() << fmtFixed(mJson.value("totalDistance", 0.0), 0)
+                  << " person-m" << c.reset()
+                  << "  |  Max Area Load: " << mJson.value("maxAssemblyLoad", 0)
+                  << "  |  Overloaded Areas: "
+                  << (mJson.value("overloadedAreasCount", 0) > 0 ? c.boldRed() : c.boldGreen())
+                  << mJson.value("overloadedAreasCount", 0) << c.reset() << "\n";
+    }
+}
+
+inline void printDirectionsPretty(const Graph& g,
+                                  const AnsiTheme& c,
+                                  const std::string& fromId,
+                                  const std::string& toId,
+                                  const RouteOptions& opts,
+                                  const json& dirJson) {
+    printDsaHeader(c, getCommandDsaSpec("directions"));
+
+    const int fromIdx = detail::resolveEndpointIndex(g, fromId);
+    const int toIdx = detail::resolveEndpointIndex(g, toId);
+    if (fromIdx >= 0 && toIdx >= 0) {
+        const RouteResult r = computeRoute(g, fromIdx, toIdx, opts);
+        if (r.found) {
+            AsciiMapOverlay ov;
+            ov.routePathIndices = r.pathIndices;
+            ov.startNode = fromIdx;
+            ov.endNode = toIdx;
+            ov.subtitle = "TURN-BY-TURN DIRECTIONS: " + fromId + " -> " + toId +
+                          " (" + fmtFixed(r.distance, 1) + " m)";
+            renderAsciiCampusMap(std::cout, g, c, ov, true);
+        }
+    }
+
+    const auto& maneuvers = dirJson["maneuvers"];
+    std::cout << "\n  " << c.boldCyan() << "Turn-by-Turn Maneuvers (" << maneuvers.size() << " steps):" << c.reset() << "\n";
+    for (size_t i = 0; i < maneuvers.size(); ++i) {
+        const auto& m = maneuvers[i];
+        const std::string t = m.value("type", "straight");
+        std::string badge = "[" + t + "]";
+        std::cout << "    " << c.boldYel() << std::setw(2) << (i + 1) << ". " << c.reset()
+                  << c.boldCyan() << std::left << std::setw(17) << badge << c.reset()
+                  << std::left << std::setw(58) << m.value("text", "")
+                  << c.dim() << " (" << fmtFixed(m.value("distanceM", 0.0), 1) << " m)" << c.reset() << "\n";
+    }
+}
+
+// ----------------------------------------------------------------------------
+// 14.5 Scripted Viva "demo" Showcase (Interactive & --auto)
+// ----------------------------------------------------------------------------
+
+inline void pauseBetweenDemoSections(const AnsiTheme& c, bool autoMode, int sectionNum, int totalSections) {
+    if (sectionNum >= totalSections) return;
+    if (autoMode) {
+        std::cout << "\n  " << c.dim() << "[--auto] Advancing to section "
+                  << (sectionNum + 1) << "/" << totalSections << "..." << c.reset() << "\n\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(450));
+    } else {
+        std::cout << "\n  " << c.boldYel() << "[Viva Section " << sectionNum << "/" << totalSections
+                  << " Complete] Press Enter to continue..." << c.reset() << std::flush;
+        std::string dummy;
+        std::getline(std::cin, dummy);
+        std::cout << "\n";
+    }
+}
+
+inline void printVivaNarrationBanner(const AnsiTheme& c, int stepNum, int totalSteps,
+                                     const std::string& title, const std::string& narrationLine) {
+    const std::string line(98, '-');
+    std::cout << "\n" << c.boldMag() << "+" << line << "+\n"
+              << "| VIVA SHOWCASE [" << stepNum << "/" << totalSteps << "]: " << c.boldYel() << title << c.reset() << "\n"
+              << c.boldMag() << "| Narration: " << c.white() << narrationLine << c.reset() << "\n"
+              << c.boldMag() << "+" << line << "+\n" << c.reset();
+}
+
+inline void runVivaDemo(const Graph& g, const AnsiTheme& c, bool autoMode, double speed) {
+    const int kTotal = 8;
+
+    // 1. Route with 3 algorithms including an indoor 2nd-floor room destination
+    printVivaNarrationBanner(
+        c, 1, kTotal,
+        "Multi-Floor Indoor + Outdoor Routing (Dijkstra, A*, and Fewest-Hops BFS)",
+        "We route from Main Gate (n1) into CSIT 2nd-Floor Lab (b-csit:201) across 3 algorithms, comparing metric vs hop-count paths.");
+    for (const char* algo : {"dijkstra", "astar", "bfs"}) {
+        RouteOptions opts;
+        opts.algo = algo;
+        printRoutePretty(g, c, "n1", "b-csit:201", opts, false, speed);
+        std::cout << "\n";
+    }
+    pauseBetweenDemoSections(c, autoMode, 1, kTotal);
+
+    // 2. Animated Multi-Algorithm Benchmark Compare
+    printVivaNarrationBanner(
+        c, 2, kTotal,
+        "Animated Trace Replay & 5-Algorithm Benchmark Table (compare --animate)",
+        "Watch Dijkstra's radial frontier vs A*'s Haversine-guided search live on the ASCII campus map, followed by the 5-algorithm table.");
+    {
+        RouteOptions opts;
+        printComparePretty(g, c, "n1", "b-library", opts, true, autoMode ? std::max(2.5, speed) : speed);
+    }
+    pauseBetweenDemoSections(c, autoMode, 2, kTotal);
+
+    // 3. Prefix Trie Autocomplete Search
+    printVivaNarrationBanner(
+        c, 3, kTotal,
+        "Prefix Trie Search (Landmarks, Building Numbers & Indoor Rooms)",
+        "The character PrefixTrie indexes full names, word tokens, short names, and building numbers with deterministic ranking.");
+    for (const char* q : {"library", "11", "network"}) {
+        json sArgs = {{"query", q}, {"limit", 5}};
+        const auto sRes = json::parse(call("search", sArgs.dump().c_str()));
+        printSearchPretty(c, q, sRes);
+        std::cout << "\n";
+    }
+    pauseBetweenDemoSections(c, autoMode, 3, kTotal);
+
+    // 4. Turn-by-Turn Directions
+    printVivaNarrationBanner(
+        c, 4, kTotal,
+        "Geometry-Aware Turn-by-Turn Directions (Indoor Room -> Campus Gate)",
+        "Computes polyline bearings along curved walkways, merges straight segments, names nearby landmarks within 40 m, and formats floor transitions.");
+    {
+        json dArgs = {{"from", "b-csit:201"}, {"to", "n1"}, {"algo", "dijkstra"}, {"accessible", false}};
+        const auto dRes = json::parse(call("directions", dArgs.dump().c_str()));
+        RouteOptions opts;
+        printDirectionsPretty(g, c, "b-csit:201", "n1", opts, dRes);
+    }
+    pauseBetweenDemoSections(c, autoMode, 4, kTotal);
+
+    // 5. Minimum Spanning Tree (Kruskal Union-Find & Prim Binary Heap)
+    printVivaNarrationBanner(
+        c, 5, kTotal,
+        "Minimum Spanning Tree Campus Backbone (Kruskal Union-Find vs Prim Min-Heap)",
+        "Kruskal's O(E log E) Union-Find and Prim's O((V+E) log V) min-heap both construct the exact same minimum-weight campus backbone.");
+    {
+        const auto kRes = json::parse(call("mst", R"({"algo":"kruskal"})"));
+        const auto pRes = json::parse(call("mst", R"({"algo":"prim"})"));
+        printMSTPretty(g, c, kRes);
+        std::cout << "    Prim Cross-Check Total Weight : " << c.boldGreen()
+                  << fmtFixed(pRes.value("totalWeight", 0.0), 1) << " m" << c.reset()
+                  << " (" << pRes.value("edgeCount", 0) << " edges — exact match)\n";
+    }
+    pauseBetweenDemoSections(c, autoMode, 5, kTotal);
+
+    // 6. Traveling Salesperson Tour (Held-Karp Bitmask DP vs Nearest Neighbor)
+    printVivaNarrationBanner(
+        c, 6, kTotal,
+        "Multi-Stop Campus Tour (Held-Karp O(2^K * K^2) Bitmask DP vs Greedy Nearest-Neighbor)",
+        "Computes an optimal 5-stop campus orientation tour and quantifies the suboptimality gap of the greedy nearest-neighbor heuristic.");
+    {
+        json tspArgs = {
+            {"stops", json::array({"n1", "b-admin", "b-csit", "b-library", "b-auditorium"})},
+            {"algo", "dp"},
+            {"returnToStart", true}
+        };
+        const auto tspRes = json::parse(call("tsp", tspArgs.dump().c_str()));
+        printTSPPretty(g, c, tspRes);
+    }
+    pauseBetweenDemoSections(c, autoMode, 6, kTotal);
+
+    // 7. Tarjan's Articulation Points & Bridges
+    printVivaNarrationBanner(
+        c, 7, kTotal,
+        "Tarjan's Single-Pass O(V + E) DFS Articulation Points & Bridges",
+        "Identifies critical campus junctions and bridge walkways whose closure would disconnect buildings from the campus network.");
+    {
+        const auto cpRes = json::parse(call("criticalPoints", "{}"));
+        printCriticalPointsPretty(g, c, cpRes);
+    }
+    pauseBetweenDemoSections(c, autoMode, 7, kTotal);
+
+    // 8. Emergency Evacuation: Nearest vs Capacity-Constrained with a Blocked Gate/Corridor
+    printVivaNarrationBanner(
+        c, 8, kTotal,
+        "Emergency Evacuation with Blocked Gate (Multi-Source Reversed Dijkstra vs Min-Cost Max-Flow)",
+        "With Courtyard Plaza / Main Gate (n28, n1) blocked and 1,900 evacuees, Nearest mode overloads Main Masjid Plaza (1500/900) while Min-Cost Max-Flow splits groups across areas with 0 overloads.");
+    {
+        json blockedObj = {{"nodes", json::array({"n28", "n1"})}, {"edges", json::array()}};
+        json cmpArgs = {
+            {"disableLifts", true},
+            {"blocked", blockedObj},
+            {"people", json::array({
+                {{"at", "b-library:204"}, {"count", 600}},
+                {{"at", "b-library:101"}, {"count", 500}},
+                {{"at", "b-admin:102"},   {"count", 400}},
+                {{"at", "b-csit:201"},    {"count", 400}}
+            })}
+        };
+        const auto ecRes = json::parse(call("evacuationCompare", cmpArgs.dump().c_str()));
+        printEvacuationComparePretty(g, c, ecRes, blockedObj);
+    }
+}
+
+} // namespace cli_showcase
+
 int main(int argc, char* argv[]) {
     using json = nlohmann::json;
+    using namespace cli_showcase;
 
-    if (argc < 2) {
-        std::cerr << "Usage:\n"
-                  << "  navcore_cli ping\n"
-                  << "  navcore_cli route <from> <to> [dijkstra|astar|bfs|bellmanford|floyd] [--accessible] [--data <dirOrFile>]\n"
-                  << "  navcore_cli compare <from> <to> [--accessible] [--data <dirOrFile>]\n"
-                  << "  navcore_cli search <query> [limit] [--data <dirOrFile>]\n"
-                  << "  navcore_cli cacheStats [--data <dirOrFile>]\n"
-                  << "  navcore_cli allPairs [--data <dirOrFile>]\n"
-                  << "  navcore_cli mst [kruskal|prim] [--data <dirOrFile>]\n"
-                  << "  navcore_cli tsp <stop1> <stop2> [stop3 ...] [--algo dp|nn] [--return] [--data <dirOrFile>]\n"
-                  << "  navcore_cli criticalPoints [--data <dirOrFile>]\n"
-                  << "  navcore_cli nearestAssembly <from> [--allow-lifts] [--data <dirOrFile>]\n"
-                  << "  navcore_cli evacuate [nearest|capacity] [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n"
-                  << "  navcore_cli evacuationCompare [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n"
-                  << "  navcore_cli directions <from> <to> [--accessible] [--data <dirOrFile>]\n"
-                  << "  navcore_cli progress <from> <to> <lat> <lng> [--accessible] [--data <dirOrFile>]\n"
-                  << "  navcore_cli reroute <lat> <lng> <to> [--accessible] [--data <dirOrFile>]\n";
-        return 1;
-    }
-
-    const std::string cmd = argv[1];
-    if (cmd == "ping") {
-        std::cout << call("ping", "{}") << "\n";
-        return 0;
-    }
-
+    bool rawJson = false;
+    bool noColor = false;
+    bool animate = false;
+    bool autoDemo = false;
+    double speed = 1.0;
     std::string dataTarget = "data";
     bool accessible = false;
     bool returnToStart = false;
     bool disableLifts = true;
     std::string algoOverride;
+    std::vector<std::string> blockedNodesArg;
     std::vector<std::string> positional;
 
     for (int i = 2; i < argc; ++i) {
         const std::string arg = argv[i];
-        if (arg == "--accessible" || arg == "--step-free") {
+        if (arg == "--json") {
+            rawJson = true;
+        } else if (arg == "--no-color") {
+            noColor = true;
+        } else if (arg == "--animate") {
+            animate = true;
+        } else if (arg == "--auto") {
+            autoDemo = true;
+        } else if (arg == "--speed" && i + 1 < argc) {
+            try { speed = std::stod(argv[++i]); } catch (...) { speed = 1.0; }
+        } else if (arg == "--accessible" || arg == "--step-free") {
             accessible = true;
         } else if (arg == "--return" || arg == "--return-to-start") {
             returnToStart = true;
@@ -5625,11 +7119,48 @@ int main(int argc, char* argv[]) {
             disableLifts = false;
         } else if (arg == "--algo" && i + 1 < argc) {
             algoOverride = argv[++i];
+        } else if (arg == "--block" && i + 1 < argc) {
+            blockedNodesArg.push_back(argv[++i]);
         } else if (arg == "--data" && i + 1 < argc) {
             dataTarget = argv[++i];
         } else {
             positional.push_back(arg);
         }
+    }
+
+    AnsiTheme theme;
+    theme.initConsole(noColor);
+
+    if (argc < 2) {
+        std::cerr << theme.boldCyan() << "NavigateNED C++17 DSA & Viva CLI Showcase\n" << theme.reset()
+                  << "Usage:\n"
+                  << "  navcore_cli demo [--auto] [--speed <mult>] [--no-color]\n"
+                  << "  navcore_cli route <from> <to> [dijkstra|astar|bfs|bellmanford|floyd] [--animate] [--speed <x>] [--accessible] [--json] [--no-color]\n"
+                  << "  navcore_cli compare <from> <to> [--animate] [--speed <x>] [--accessible] [--json] [--no-color]\n"
+                  << "  navcore_cli search <query> [limit] [--json] [--no-color]\n"
+                  << "  navcore_cli cacheStats [--json] [--no-color]\n"
+                  << "  navcore_cli allPairs [--json] [--no-color]\n"
+                  << "  navcore_cli mst [kruskal|prim] [--json] [--no-color]\n"
+                  << "  navcore_cli tsp <stop1> <stop2> [stop3 ...] [--algo dp|nn] [--return] [--json] [--no-color]\n"
+                  << "  navcore_cli criticalPoints [--json] [--no-color]\n"
+                  << "  navcore_cli nearestAssembly <from> [--allow-lifts] [--json] [--no-color]\n"
+                  << "  navcore_cli evacuate [nearest|capacity] [node:count ...] [--block <node>] [--allow-lifts] [--json] [--no-color]\n"
+                  << "  navcore_cli evacuationCompare [node:count ...] [--block <node>] [--allow-lifts] [--json] [--no-color]\n"
+                  << "  navcore_cli directions <from> <to> [--accessible] [--json] [--no-color]\n"
+                  << "  navcore_cli progress <from> <to> <lat> <lng> [--accessible] [--json] [--no-color]\n"
+                  << "  navcore_cli reroute <lat> <lng> <to> [--accessible] [--json] [--no-color]\n";
+        return 1;
+    }
+
+    const std::string cmd = argv[1];
+    if (cmd == "ping") {
+        if (rawJson) {
+            std::cout << call("ping", "{}") << "\n";
+        } else {
+            printDsaHeader(theme, getCommandDsaSpec("ping"));
+            std::cout << "  Status: " << theme.boldGreen() << "pong (v1.0.0)" << theme.reset() << "\n";
+        }
+        return 0;
     }
 
     namespace fs = std::filesystem;
@@ -5652,6 +7183,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    const Graph& g = navcore::detail::globalGraph();
+
     auto buildEvacPeopleJson = [&](size_t startIdx) -> json {
         json people = json::array();
         for (size_t i = startIdx; i < positional.size(); ++i) {
@@ -5660,8 +7193,8 @@ int main(int argc, char* argv[]) {
             if (lastColon != std::string::npos && lastColon > 0) {
                 const std::string tail = token.substr(lastColon + 1);
                 bool allDigits = !tail.empty();
-                for (unsigned char c : tail) {
-                    if (!std::isdigit(c)) {
+                for (unsigned char ch : tail) {
+                    if (!std::isdigit(ch)) {
                         allDigits = false;
                         break;
                     }
@@ -5676,18 +7209,22 @@ int main(int argc, char* argv[]) {
             }
         }
         if (people.empty()) {
-            // Default campus evacuation demo scenario (1,600 people across academic buildings)
             people = json::array({
                 {{"at", "b-library:204"}, {"count", 450}},
                 {{"at", "b-library:101"}, {"count", 350}},
-                {{"at", "b-csit:201"}, {"count", 450}},
+                {{"at", "b-csit:201"},    {"count", 450}},
                 {{"at", "b-auditorium:g01"}, {"count", 350}}
             });
         }
         return people;
     };
 
-    if (cmd == "route") {
+    json blockedObj = {{"nodes", blockedNodesArg}, {"edges", json::array()}};
+
+    if (cmd == "demo") {
+        runVivaDemo(g, theme, autoDemo, speed);
+        return 0;
+    } else if (cmd == "route") {
         if (positional.size() < 2) {
             std::cerr << "Error: 'route' requires <from> and <to> arguments.\n";
             return 1;
@@ -5699,9 +7236,15 @@ int main(int argc, char* argv[]) {
             {"from", positional[0]},
             {"to", positional[1]},
             {"algo", algo},
-            {"accessible", accessible}
+            {"accessible", accessible},
+            {"avoid", blockedNodesArg}
         };
-        std::cout << json::parse(call("route", routeArgs.dump().c_str())).dump(2) << "\n";
+        if (rawJson) {
+            std::cout << json::parse(call("route", routeArgs.dump().c_str())).dump(2) << "\n";
+        } else {
+            const RouteOptions opts = navcore::detail::parseRouteOptions(g, routeArgs);
+            printRoutePretty(g, theme, positional[0], positional[1], opts, animate, speed);
+        }
         return 0;
     } else if (cmd == "compare") {
         if (positional.size() < 2) {
@@ -5711,9 +7254,15 @@ int main(int argc, char* argv[]) {
         json cmpArgs = {
             {"from", positional[0]},
             {"to", positional[1]},
-            {"accessible", accessible}
+            {"accessible", accessible},
+            {"avoid", blockedNodesArg}
         };
-        std::cout << json::parse(call("compare", cmpArgs.dump().c_str())).dump(2) << "\n";
+        if (rawJson) {
+            std::cout << json::parse(call("compare", cmpArgs.dump().c_str())).dump(2) << "\n";
+        } else {
+            const RouteOptions opts = navcore::detail::parseRouteOptions(g, cmpArgs);
+            printComparePretty(g, theme, positional[0], positional[1], opts, animate, speed);
+        }
         return 0;
     } else if (cmd == "search") {
         if (positional.empty()) {
@@ -5725,20 +7274,40 @@ int main(int argc, char* argv[]) {
             {"query", positional[0]},
             {"limit", limit > 0 ? limit : 10}
         };
-        std::cout << json::parse(call("search", searchArgs.dump().c_str())).dump(2) << "\n";
+        const auto sRes = json::parse(call("search", searchArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << sRes.dump(2) << "\n";
+        } else {
+            printSearchPretty(theme, positional[0], sRes);
+        }
         return 0;
     } else if (cmd == "cacheStats") {
-        std::cout << json::parse(call("cacheStats", "{}")).dump(2) << "\n";
+        const auto csRes = json::parse(call("cacheStats", "{}"));
+        if (rawJson) {
+            std::cout << csRes.dump(2) << "\n";
+        } else {
+            printCacheStatsPretty(theme, csRes);
+        }
         return 0;
     } else if (cmd == "allPairs") {
-        std::cout << json::parse(call("allPairs", "{}")).dump(2) << "\n";
+        const auto apRes = json::parse(call("allPairs", "{}"));
+        if (rawJson) {
+            std::cout << apRes.dump(2) << "\n";
+        } else {
+            printAllPairsPretty(g, theme, apRes);
+        }
         return 0;
     } else if (cmd == "mst") {
         const std::string mstAlgo = !algoOverride.empty()
                                         ? algoOverride
                                         : (positional.empty() ? "kruskal" : positional[0]);
         json mstArgs = {{"algo", mstAlgo}};
-        std::cout << json::parse(call("mst", mstArgs.dump().c_str())).dump(2) << "\n";
+        const auto mRes = json::parse(call("mst", mstArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << mRes.dump(2) << "\n";
+        } else {
+            printMSTPretty(g, theme, mRes);
+        }
         return 0;
     } else if (cmd == "tsp") {
         if (positional.size() < 2) {
@@ -5751,18 +7320,41 @@ int main(int argc, char* argv[]) {
             {"returnToStart", returnToStart},
             {"accessible", accessible}
         };
-        std::cout << json::parse(call("tsp", tspArgs.dump().c_str())).dump(2) << "\n";
+        const auto tRes = json::parse(call("tsp", tspArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << tRes.dump(2) << "\n";
+        } else {
+            printTSPPretty(g, theme, tRes);
+        }
         return 0;
     } else if (cmd == "criticalPoints") {
-        std::cout << json::parse(call("criticalPoints", "{}")).dump(2) << "\n";
+        const auto cpRes = json::parse(call("criticalPoints", "{}"));
+        if (rawJson) {
+            std::cout << cpRes.dump(2) << "\n";
+        } else {
+            printCriticalPointsPretty(g, theme, cpRes);
+        }
         return 0;
     } else if (cmd == "nearestAssembly") {
         const std::string fromNode = positional.empty() ? "b-library:204" : positional[0];
         json naArgs = {
             {"from", fromNode},
-            {"disableLifts", disableLifts}
+            {"disableLifts", disableLifts},
+            {"blocked", blockedObj}
         };
-        std::cout << json::parse(call("nearestAssembly", naArgs.dump().c_str())).dump(2) << "\n";
+        const auto naRes = json::parse(call("nearestAssembly", naArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << naRes.dump(2) << "\n";
+        } else {
+            printDsaHeader(theme, getCommandDsaSpec("nearestAssembly"));
+            std::cout << "  From          : " << theme.bold() << fromNode << theme.reset() << "\n"
+                      << "  Nearest Area  : " << theme.boldGreen() << naRes.value("assemblyName", "")
+                      << " (" << naRes.value("assemblyId", "") << ")" << theme.reset() << "\n"
+                      << "  Distance      : " << theme.boldCyan() << fmtFixed(naRes.value("distance", 0.0), 1) << " m" << theme.reset() << "\n";
+            if (naRes.contains("exitNodeId")) {
+                std::cout << "  Building Exit : " << theme.boldYel() << naRes["exitNodeId"].get<std::string>() << theme.reset() << "\n";
+            }
+        }
         return 0;
     } else if (cmd == "evacuate") {
         std::string mode = "nearest";
@@ -5776,18 +7368,28 @@ int main(int argc, char* argv[]) {
         json evacArgs = {
             {"mode", mode},
             {"disableLifts", disableLifts},
-            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"blocked", blockedObj},
             {"people", buildEvacPeopleJson(startIdx)}
         };
-        std::cout << json::parse(call("evacuate", evacArgs.dump().c_str())).dump(2) << "\n";
+        const auto evRes = json::parse(call("evacuate", evacArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << evRes.dump(2) << "\n";
+        } else {
+            printEvacuatePretty(g, theme, evRes, blockedObj);
+        }
         return 0;
     } else if (cmd == "evacuationCompare") {
         json cmpArgs = {
             {"disableLifts", disableLifts},
-            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"blocked", blockedObj},
             {"people", buildEvacPeopleJson(0)}
         };
-        std::cout << json::parse(call("evacuationCompare", cmpArgs.dump().c_str())).dump(2) << "\n";
+        const auto ecRes = json::parse(call("evacuationCompare", cmpArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << ecRes.dump(2) << "\n";
+        } else {
+            printEvacuationComparePretty(g, theme, ecRes, blockedObj);
+        }
         return 0;
     } else if (cmd == "directions") {
         const std::string fromId = positional.size() >= 1 ? positional[0] : "b-csit:201";
@@ -5798,7 +7400,13 @@ int main(int argc, char* argv[]) {
             {"algo", algoOverride.empty() ? "dijkstra" : algoOverride},
             {"accessible", accessible}
         };
-        std::cout << json::parse(call("directions", dirArgs.dump().c_str())).dump(2) << "\n";
+        const auto dirRes = json::parse(call("directions", dirArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << dirRes.dump(2) << "\n";
+        } else {
+            const RouteOptions opts = navcore::detail::parseRouteOptions(g, dirArgs);
+            printDirectionsPretty(g, theme, fromId, toId, opts, dirRes);
+        }
         return 0;
     } else if (cmd == "progress") {
         const std::string fromId = positional.size() >= 1 ? positional[0] : "b-csit:201";
@@ -5823,7 +7431,18 @@ int main(int argc, char* argv[]) {
             {"lat", lat},
             {"lng", lng}
         };
-        std::cout << json::parse(call("progress", progArgs.dump().c_str())).dump(2) << "\n";
+        const auto pRes = json::parse(call("progress", progArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << pRes.dump(2) << "\n";
+        } else {
+            printDsaHeader(theme, getCommandDsaSpec("progress"));
+            std::cout << "  Distance Along : " << theme.boldGreen() << fmtFixed(pRes.value("distanceAlongM", 0.0), 1) << " m" << theme.reset() << "\n"
+                      << "  Remaining      : " << theme.boldCyan()  << fmtFixed(pRes.value("remainingM", 0.0), 1) << " m" << theme.reset() << "\n"
+                      << "  Off-Route      : " << (pRes.value("offRoute", false) ? theme.boldRed() : theme.boldGreen())
+                      << (pRes.value("offRoute", false) ? "YES" : "NO") << theme.reset()
+                      << " (" << fmtFixed(pRes.value("offRouteDistanceM", 0.0), 1) << " m from polyline)\n"
+                      << "  Arrived        : " << (pRes.value("arrived", false) ? "YES" : "NO") << "\n";
+        }
         return 0;
     } else if (cmd == "reroute") {
         double lat = 24.9333;
@@ -5843,7 +7462,15 @@ int main(int argc, char* argv[]) {
             {"to", toId},
             {"accessible", accessible}
         };
-        std::cout << json::parse(call("reroute", rerouteArgs.dump().c_str())).dump(2) << "\n";
+        const auto rrRes = json::parse(call("reroute", rerouteArgs.dump().c_str()));
+        if (rawJson) {
+            std::cout << rrRes.dump(2) << "\n";
+        } else {
+            printDsaHeader(theme, getCommandDsaSpec("reroute"));
+            std::cout << "  Snapped Node   : " << theme.boldCyan() << rrRes.value("snappedNodeId", "") << theme.reset()
+                      << " (" << fmtFixed(rrRes.value("snapDistanceM", 0.0), 1) << " m snap distance)\n"
+                      << "  New Distance   : " << theme.boldGreen() << fmtFixed(rrRes.value("distance", 0.0), 1) << " m" << theme.reset() << "\n";
+        }
         return 0;
     } else {
         std::cerr << "Unknown CLI command: " << cmd << "\n";

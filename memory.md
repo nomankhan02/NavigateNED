@@ -20,13 +20,13 @@
   - Hover jitter eliminated: Removed conflicting CSS transforms on SVG transform-positioned elements; added transparent hit-area primitives with `pointer-events: none` on inner visuals across stairs, lift, entrance, exit, transition badges, and markers; respected `prefers-reduced-motion`.
   - Room label fitting & clipping: Computed room screen bounds at current zoom; fitted text using 2-line wrapped full names down to 9px min, short names, or short codes; centered labels within room rects; enforced strict clipping via SVG `<clipPath>` to prevent room overflow; recomputes on debounced zoom end (never during pan).
   - Room popover: Floating details tooltip displays full room name, floor, capacity, and ID on room hover or tap.
-- Task B1, B2, B3 & B4 delivered: Single-file C++17 routing, DSA, evacuation, turn-by-turn directions & GPS progress engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
+- Task B1, B2, B3, B4 & B5 delivered: Single-file C++17 routing, DSA, evacuation, turn-by-turn directions, GPS progress & viva CLI showcase engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
   - Merged 697-node graph (`data/graph.json` 86 outdoor nodes + 6 `data/indoor/*.json` 611 indoor nodes) linked via 3 m entrance edges, plus `data/evac.json` (7 assembly areas, 12 building exits) and optional outdoor edge `geometry` polylines.
-  - Routing: Dijkstra, A* (admissible Haversine heuristic), BFS (fewest hops), Bellman-Ford (with negative cycle detection), and Floyd-Warshall (`algo: "floyd"`), all supporting `accessible: true` and `avoid` / `blockedEdges`, memoized by an O(1) LRU cache (invalidated when blocked sets change).
+  - Routing: Dijkstra, A* (admissible Haversine heuristic), BFS (fewest hops), Bellman-Ford (with negative cycle detection), and Floyd-Warshall (`algo: "floyd"`), all supporting `accessible: true`, `avoid` / `blockedEdges`, and optional `AlgoStats*` telemetry (`nodesVisited`, `edgesRelaxed`, `heapPushes`, `heapPops`, `elapsedUs`), memoized by an O(1) LRU cache (invalidated when blocked sets change).
   - Additional DSA: Prefix Trie (`search`), Floyd-Warshall landmark matrix (`allPairs`), Union-Find + Kruskal/Prim (`mst`), Held-Karp bitmask DP & Nearest-Neighbor (`tsp` with heuristic gap %), and Tarjan's articulation points & bridges (`criticalPoints`). Fully deterministic tie-breaking across platforms.
   - Emergency Evacuation (Task B3): Multi-Source Dijkstra on the reversed graph (`nearest` mode & `nearestAssembly`) and Min-Cost Max-Flow via Successive Shortest Paths / Bellman-Ford SPFA (`capacity` mode) with `disableLifts` (default `true`), indoor `exitNodeId` detection, and side-by-side `evacuationCompare`.
   - Turn-by-Turn Directions & GPS Progress (Task B4): Geometry-aware bearing classification (`directions` with `start`, `straight`, `slight-left/right`, `left/right`, `sharp-left/right`, `enter-building`, `stairs-up/down`, `lift`, `arrive` and 40 m nearest-landmark naming without raw node IDs), polyline projection with noise/backward-jump filtering (`progress`), and GPS live rerouting (`reroute`).
-  - CLI (`g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): supports `ping`, `route`, `compare`, `search`, `cacheStats`, `allPairs`, `mst`, `tsp`, `criticalPoints`, `nearestAssembly`, `evacuate`, `evacuationCompare`, `directions`, `progress`, `reroute`.
+  - Viva CLI Showcase (Task B5 — `g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): ANSI-colored human-readable output by default (`--json` for raw JSON, `--no-color` to disable ANSI), labeled DSA concept headers, 100x40 ASCII campus map renderer (`route`, `directions`, `tsp`, `mst`, `evacuate`), live trace animation (`--animate [--speed <x>]` on `route` & `compare`), benchmark comparison table & capacity load bars, and scripted 8-part viva `demo` (`navcore_cli demo [--auto]`).
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -72,7 +72,7 @@
 
 ## Open Tasks
 - [x] Member A (Task A4 & A4b): Indoor floor-plan SVG map component and fixes in `web/src/map/`.
-- [x] Member A/B (Task B1, B2, B3 & B4): Single-file C++17 routing, DSA, evacuation, directions & GPS progress core (`core/src/navcore.cpp`).
+- [x] Member A/B (Task B1–B5): Single-file C++17 routing, DSA, evacuation, directions, GPS progress & viva CLI showcase (`core/src/navcore.cpp`).
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
 ## Known Issues
