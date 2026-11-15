@@ -85,6 +85,7 @@ export interface EvacuationOverlayData {
   blockedNodes?: string[];
   blockedEdges?: [string, string][];
   assignments?: EvacuationAssignment[];
+  assemblyLoad?: Array<{ id: string; assigned: number; capacity: number }>;
 }
 
 export type TraceEventType = "visit" | "relax" | "frontier";

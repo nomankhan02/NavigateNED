@@ -237,6 +237,7 @@ export function OutdoorMap({
   const userLayerRef = useRef<any>(null);
   const evacLayerRef = useRef<any>(null);
   const traceLayerRef = useRef<any>(null);
+  const evacCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [isReady, setIsReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(17);
@@ -1124,16 +1125,19 @@ export function OutdoorMap({
       }
     }
 
-    // Assignment paths with start/end markers
+    // Assignment paths with start/end markers (thickness proportional to group count)
     if (evacuation.assignments) {
       for (const assign of evacuation.assignments) {
         const coords = getPathCoordinates(assign.path, graph.edges, nodeLookup);
         if (coords.length < 2) continue;
 
+        const groupCount = assign.count ?? 100;
+        const lineWeight = Math.max(3, Math.min(10, 2.5 + groupCount / 75));
+
         L.polyline(coords, {
           renderer: svgRenderer,
           color: "var(--map-surface-elevated)",
-          weight: 7,
+          weight: lineWeight + 3,
           opacity: 0.9,
           lineCap: "round",
           lineJoin: "round",
@@ -1143,7 +1147,7 @@ export function OutdoorMap({
         L.polyline(coords, {
           renderer: svgRenderer,
           color: "var(--map-evac-assign)",
-          weight: 4,
+          weight: lineWeight,
           opacity: 0.98,
           dashArray: "9 5",
           lineCap: "round",
@@ -1188,6 +1192,207 @@ export function OutdoorMap({
         }
       }
     }
+    // Assembly area gentle pulse rings matching fill level
+    if (evacuation.assemblyLoad) {
+      for (const area of evacuation.assemblyLoad) {
+        if (area.assigned <= 0) continue;
+        const lm = graph.landmarks.find(
+          (l) => l.id === area.id || l.nodeId === area.id,
+        );
+        const node = lm ? nodeLookup.get(lm.nodeId) : nodeLookup.get(area.id);
+        if (!node) continue;
+        const fillRatio =
+          area.capacity > 0 ? Math.min(1, area.assigned / area.capacity) : 0;
+        const isOver = area.assigned > area.capacity;
+        L.circleMarker([node.lat, node.lng], {
+          renderer: svgRenderer,
+          radius: 11 + fillRatio * 11,
+          color: isOver ? "var(--map-evac-blocked)" : "var(--map-evac-assign)",
+          weight: 2,
+          fillColor: isOver
+            ? "var(--map-evac-blocked)"
+            : "var(--map-evac-assign)",
+          fillOpacity: 0.18 + fillRatio * 0.42,
+          className: "ned-evac-pulse",
+          interactive: false,
+        }).addTo(evGroup);
+      }
+    }
+  }, [isReady, graph, evacuation]);
+
+  // 7b. Evacuation Particle Flow Canvas (density & thickness proportional to count; stops when tab hidden; static arrows for reduced motion)
+  useEffect(() => {
+    const canvas = evacCanvasRef.current;
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!canvas || !map || !container || !isReady || !graph) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const assignments = evacuation?.assignments ?? [];
+    if (assignments.length === 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const nodeLookup = buildNodeLookup(graph.nodes);
+    const preparedPaths = assignments
+      .map((assign) => {
+        const coords = getPathCoordinates(assign.path, graph.edges, nodeLookup);
+        if (coords.length < 2) return null;
+        const count = assign.count ?? 100;
+        const particleCount = Math.max(
+          4,
+          Math.min(60, Math.round(count / 10)),
+        );
+        return { coords, particleCount };
+      })
+      .filter((x): x is { coords: [number, number][]; particleCount: number } =>
+        Boolean(x),
+      );
+
+    if (preparedPaths.length === 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let rafId = 0;
+    let startTime = performance.now();
+
+    const syncSize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w, h };
+    };
+
+    const drawFrame = (now: number) => {
+      const { w, h } = syncSize();
+      ctx.clearRect(0, 0, w, h);
+      const elapsedSec = (now - startTime) / 1000;
+      const computedStyle = getComputedStyle(container);
+      const particleColor =
+        computedStyle.getPropertyValue("--map-evac-assign").trim() || "#157347";
+      const casingColor =
+        computedStyle.getPropertyValue("--map-surface-elevated").trim() ||
+        "#ffffff";
+
+      for (const pathObj of preparedPaths) {
+        const pts = pathObj.coords.map((c) => map.latLngToContainerPoint(c));
+        const segLengths: number[] = [];
+        let totalLen = 0;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const len = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+          segLengths.push(len);
+          totalLen += len;
+        }
+        if (totalLen < 2) continue;
+
+        const sampleAt = (t: number) => {
+          const target = t * totalLen;
+          let acc = 0;
+          for (let i = 0; i < segLengths.length; i++) {
+            const len = segLengths[i];
+            if (acc + len >= target || i === segLengths.length - 1) {
+              const localT = len > 0 ? (target - acc) / len : 0;
+              return {
+                x: pts[i].x + (pts[i + 1].x - pts[i].x) * localT,
+                y: pts[i].y + (pts[i + 1].y - pts[i].y) * localT,
+                angle: Math.atan2(pts[i + 1].y - pts[i].y, pts[i + 1].x - pts[i].x),
+              };
+            }
+            acc += len;
+          }
+          return { x: pts[0].x, y: pts[0].y, angle: 0 };
+        };
+
+        if (reducedMotion) {
+          const arrowCount = Math.min(8, pathObj.particleCount);
+          ctx.fillStyle = particleColor;
+          ctx.strokeStyle = casingColor;
+          ctx.lineWidth = 1.5;
+          for (let i = 1; i <= arrowCount; i++) {
+            const t = i / (arrowCount + 1);
+            const p = sampleAt(t);
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.beginPath();
+            ctx.moveTo(5, 0);
+            ctx.lineTo(-4, -3.5);
+            ctx.lineTo(-4, 3.5);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+            ctx.restore();
+          }
+        } else {
+          ctx.fillStyle = particleColor;
+          ctx.strokeStyle = casingColor;
+          ctx.lineWidth = 1.25;
+          for (let i = 0; i < pathObj.particleCount; i++) {
+            const t = (i / pathObj.particleCount + elapsedSec * 0.16) % 1;
+            const p = sampleAt(t);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+    };
+
+    if (reducedMotion) {
+      drawFrame(performance.now());
+      const onMove = () => drawFrame(performance.now());
+      map.on("move zoom resize", onMove);
+      return () => {
+        map.off("move zoom resize", onMove);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+    }
+
+    const tick = (now: number) => {
+      if (document.visibilityState === "hidden") {
+        rafId = 0;
+        return;
+      }
+      drawFrame(now);
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        if (rafId) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      } else if (!rafId) {
+        startTime = performance.now();
+        rafId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    if (document.visibilityState !== "hidden") {
+      rafId = window.requestAnimationFrame(tick);
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (rafId) window.cancelAnimationFrame(rafId);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
   }, [isReady, graph, evacuation]);
 
   // 8. Trace Replay Layer: Lights visited nodes in visit order and shows the frontier
@@ -1434,6 +1639,11 @@ export function OutdoorMap({
   return (
     <div className="ned-outdoor-map-root" data-basemap={basemapMode}>
       <div ref={containerRef} className="ned-leaflet-viewport" />
+      <canvas
+        ref={evacCanvasRef}
+        className="ned-evac-flow-canvas"
+        aria-hidden="true"
+      />
 
       {/* Campus Key / Directory Toggle Button */}
       <button

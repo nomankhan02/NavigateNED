@@ -585,6 +585,7 @@ export function AppShell() {
         distance: a.distance,
         count: a.count,
       })),
+      assemblyLoad: evacResult?.assemblyLoad,
     };
   }, [mode, blockedNodes, blockedEdges, evacResult]);
 

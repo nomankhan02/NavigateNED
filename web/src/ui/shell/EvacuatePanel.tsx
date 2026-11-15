@@ -141,9 +141,9 @@ export function EvacuatePanel({
               }}
               options={searchOptions}
               onSelectOption={(opt) => {
-                setGroupQuery(opt.label);
+                setGroupQuery(opt.name);
                 setSelectedAt(opt.id);
-                setSelectedLabel(opt.label);
+                setSelectedLabel(opt.name);
               }}
             />
           </div>
@@ -291,7 +291,7 @@ export function EvacuatePanel({
       <section className={styles.sectionCard}>
         <h3 className={styles.sectionTitle}>Evacuation mode</h3>
         <SegmentedControl
-          name="evac-mode"
+          ariaLabel="Evacuation mode"
           value={evacMode}
           onChange={(val) => onChangeEvacMode(val as "nearest" | "capacity")}
           options={[
@@ -333,8 +333,8 @@ export function EvacuatePanel({
           onChange={(val) => setMyQuery(val)}
           options={searchOptions}
           onSelectOption={(opt) => {
-            setMyQuery(opt.label);
-            onSelectMyLocation(opt.id, opt.label);
+            setMyQuery(opt.name);
+            onSelectMyLocation(opt.id, opt.name);
           }}
         />
         {myAssemblyLoading ? (

@@ -69,7 +69,7 @@
 - `web/src/map/indoor/route.ts`: Indoor route processing, floor-specific path extraction, and vertical transitions.
 - `web/src/map/indoor/types.ts`: TypeScript contracts for IndoorBuilding, IndoorMapProps, and indoor nodes/edges.
 - `web/src/map/map.css`: Outdoor map CSS variables (`--map-*`), self-contained Leaflet layout rules, and custom SVG control styles.
-- `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards, and trace replay.
+- `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards & particle flow canvas, and trace replay.
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.
 - `web/src/map/useTraceReplay.ts`: React hook driving play/pause/speed/seek state over `trace[]` algorithm events.
 - `web/src/ui/`: Reusable accessible UI components.
