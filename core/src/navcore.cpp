@@ -10,7 +10,7 @@
  * TABLE OF CONTENTS
  * -----------------
  *   SECTION 1: Types & Graph Representation
- *              - Node, Edge, TraceEvent, RouteOptions, RouteResult structs
+ *              - Node, Edge, Landmark, TraceEvent, RouteOptions, RouteResult
  *              - Geodesic Haversine distance utility
  *              - Graph class (adjacency list, ID <-> index maps, coordinates)
  *
@@ -18,26 +18,55 @@
  *              - Outdoor campus graph parser (data/graph.json)
  *              - Indoor floor-plan parser (data/indoor/<buildingId>.json)
  *              - Entrance coordinate propagation for admissible indoor heuristics
- *              - Filesystem directory loader (merges graph.json + indoor/*.json)
+ *              - Filesystem directory loader (merges graph.json + indoor/<id>.json)
  *
- *   SECTION 3: Routing Algorithms & Path Step Formatting
+ *   SECTION 3: Single-Pair Routing Algorithms & Path Step Formatting
  *              - 3.1 Path Reconstruction & Outdoor/Indoor/Floor Step Builder
  *              - 3.2 Dijkstra's Algorithm (Binary Min-Heap Priority Queue)
  *              - 3.3 A* Search Algorithm (Admissible Haversine Heuristic)
  *              - 3.4 Breadth-First Search / BFS (Fewest-Hops FIFO Queue)
  *              - 3.5 Bellman-Ford Algorithm (Edge Relaxation & Negative Cycle Check)
- *              - 3.6 Multi-Algorithm Benchmark Comparator
  *
- *   SECTION 4: WASM / Native JSON Dispatcher — call(fn, argsJson)
- *              - Request handlers: "ping", "load", "route", "compare"
+ *   SECTION 4: Prefix Trie Search (Landmarks, Short Names, Numbers & Rooms)
+ *              - Character Trie with word-prefix and whole-name indexing
+ *              - Ranked prefix search (exact and shorter matches first)
+ *
+ *   SECTION 5: LRU Route Cache (Hash Map + Doubly Linked List)
+ *              - O(1) lookup, promotion, insertion, and LRU eviction
+ *              - Automatic cache invalidation when blocked sets change
+ *
+ *   SECTION 6: Floyd-Warshall All-Pairs Shortest Paths
+ *              - O(V^3) dynamic programming distance & next-hop tables
+ *              - Landmark-to-landmark distance matrix & path reconstruction
+ *
+ *   SECTION 7: Disjoint Set Union (Union-Find) & Minimum Spanning Tree (MST)
+ *              - 7.1 Union-Find with Path Compression and Union by Rank
+ *              - 7.2 Kruskal's MST Algorithm
+ *              - 7.3 Prim's MST Algorithm (Binary Min-Heap)
+ *
+ *   SECTION 8: Multi-Stop Traveling Salesperson Problem (TSP)
+ *              - 8.1 Pairwise Dijkstra Leg Matrix
+ *              - 8.2 Held-Karp Exact Bitmask DP (up to 12 stops)
+ *              - 8.3 Nearest-Neighbor Greedy Heuristic & Gap Comparison
+ *
+ *   SECTION 9: Tarjan's Articulation Points & Bridges (Critical Infrastructure)
+ *              - Single-pass O(V + E) DFS discovery/low-link analysis
+ *
+ *   SECTION 10: Multi-Algorithm Benchmark Comparator
+ *              - Side-by-side timing (microseconds), visited count, and distance
+ *
+ *   SECTION 11: WASM / Native JSON Dispatcher — call(fn, argsJson)
+ *              - Handlers: "ping", "load", "route", "compare", "search",
+ *                "cacheStats", "allPairs", "mst", "tsp", "criticalPoints"
  *              - Exception-safe C ABI entry point & #ifdef __EMSCRIPTEN__ export
  *
- *   SECTION 5: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
- *              - Command-line interface for "route", "compare", and "ping"
+ *   SECTION 12: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+ *              - Terminal commands demonstrating every algorithm
  * ============================================================================
  */
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -50,6 +79,8 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <list>
+#include <numeric>
 #include <queue>
 #include <sstream>
 #include <string>
@@ -108,6 +139,31 @@ inline std::string formatMeters(double meters) {
 }
 
 /**
+ * Lowercases an ASCII/UTF-8 string for case-insensitive matching.
+ */
+inline std::string toLowerCopy(const std::string& s) {
+    std::string out = s;
+    std::transform(out.begin(), out.end(), out.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return out;
+}
+
+/**
+ * Trims leading and trailing whitespace from a string.
+ */
+inline std::string trimCopy(const std::string& s) {
+    size_t start = 0;
+    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) {
+        ++start;
+    }
+    size_t end = s.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) {
+        --end;
+    }
+    return s.substr(start, end - start);
+}
+
+/**
  * Represents a single vertex in the merged outdoor + indoor navigation graph.
  * - Outdoor nodes have IDs "n<number>" and GPS coordinates (lat, lng).
  * - Indoor nodes have IDs "<buildingId>:<local>", floor level, local planar
@@ -118,6 +174,7 @@ struct Node {
     int index = -1;
     std::string id;
     std::string name;
+    std::string shortName;
     std::string kind = "path"; // path, entrance, gate, assembly, poi, corridor, room, stairs, lift, exit
     bool isIndoor = false;
     std::string buildingId;
@@ -142,6 +199,18 @@ struct Edge {
     bool accessible = true;    // false for stairs, true for ramps/lifts/walkways
     bool oneway = false;
     bool covered = false;
+};
+
+/**
+ * Represents a campus landmark from `data/graph.json`.
+ */
+struct Landmark {
+    std::string id;        // e.g. "b-csit"
+    std::string name;      // e.g. "Department of CS & IT"
+    std::string shortName; // e.g. "CS & IT"
+    std::string number;    // e.g. "5"
+    std::string nodeId;    // Outdoor entrance node ID, e.g. "n21"
+    std::string category;  // e.g. "academic"
 };
 
 /**
@@ -183,6 +252,36 @@ struct RouteOptions {
     bool isEdgeBlocked(int u, int v) const {
         return blockedEdges.find(edgeKey(u, v)) != blockedEdges.end();
     }
+
+    /**
+     * Computes a order-independent 64-bit FNV-1a hash of the blocked nodes and edges
+     * so cache keys and invalidation checks detect any change to the blocked sets.
+     */
+    uint64_t blockedSetHash() const {
+        if (blockedNodes.empty() && blockedEdges.empty()) {
+            return 0ULL;
+        }
+        std::vector<int> sortedNodes(blockedNodes.begin(), blockedNodes.end());
+        std::sort(sortedNodes.begin(), sortedNodes.end());
+
+        std::vector<uint64_t> sortedEdges(blockedEdges.begin(), blockedEdges.end());
+        std::sort(sortedEdges.begin(), sortedEdges.end());
+
+        uint64_t h = 14695981039346656037ULL;
+        auto mix = [&](uint64_t val) {
+            h ^= val;
+            h *= 1099511628211ULL;
+        };
+        mix(static_cast<uint64_t>(sortedNodes.size()));
+        for (int u : sortedNodes) {
+            mix(static_cast<uint64_t>(static_cast<uint32_t>(u)) + 0x9e3779b9ULL);
+        }
+        mix(static_cast<uint64_t>(sortedEdges.size()) ^ 0xabcdefULL);
+        for (uint64_t e : sortedEdges) {
+            mix(e);
+        }
+        return (h == 0ULL) ? 1ULL : h;
+    }
 };
 
 /**
@@ -200,9 +299,267 @@ struct RouteResult {
     std::string error;
 };
 
+// ============================================================================
+// SECTION 4 (Forward Declaration): Prefix Trie Search Structure
+// ============================================================================
+
 /**
- * Adjacency-list graph storing the merged outdoor campus network and all indoor
- * multi-floor building graphs.
+ * Algorithm: Prefix Trie (Character Tree Index for Instant Autocomplete Search)
+ * What it does:
+ *   Indexes campus landmarks (by full name, short name, and building number)
+ *   and indoor rooms (by room name and room code) into a character-by-character
+ *   prefix tree. Supports case-insensitive prefix matching on the whole title
+ *   or any individual word token, ranking exact and shorter matches first.
+ * Time Complexity:
+ *   - Build: O(N * L) where N is number of indexed strings and L is average length.
+ *   - Query: O(|P| + K log K) where |P| is query prefix length and K is number
+ *     of matching candidate entries.
+ * Where the app uses it:
+ *   Unified search bar (`call("search", {query, limit})`) for instant building,
+ *   building-number, and classroom/lab lookup across the campus.
+ */
+struct SearchItem {
+    std::string id;          // Landmark ID ("b-csit") or indoor node ID ("b-csit:101")
+    std::string label;       // Display label
+    std::string shortName;   // Optional short name
+    std::string number;      // Optional building number
+    std::string kind;        // "landmark" | "room"
+    std::string buildingId;  // Set for indoor rooms (e.g. "b-csit")
+    std::string nodeId;      // Entrance node ID for landmarks or room node ID
+    std::string lowerLabel;
+    std::string lowerShort;
+    std::string lowerNumber;
+    std::string lowerCode;
+    std::vector<std::string> lowerWords;
+};
+
+class PrefixTrie {
+public:
+    struct TrieNode {
+        std::unordered_map<char, int> next;
+        std::vector<int> itemIndices;
+    };
+
+    std::vector<TrieNode> pool;
+    std::vector<SearchItem> items;
+
+    PrefixTrie() {
+        clear();
+    }
+
+    void clear() {
+        pool.clear();
+        items.clear();
+        pool.emplace_back(); // Root at index 0
+    }
+
+    /**
+     * Tokenizes a lowercase string into alphanumeric word tokens.
+     */
+    static std::vector<std::string> tokenizeWords(const std::string& lowerStr) {
+        std::vector<std::string> words;
+        std::string cur;
+        for (unsigned char c : lowerStr) {
+            if (std::isalnum(c)) {
+                cur.push_back(static_cast<char>(c));
+            } else if (!cur.empty()) {
+                words.push_back(cur);
+                cur.clear();
+            }
+        }
+        if (!cur.empty()) {
+            words.push_back(cur);
+        }
+        return words;
+    }
+
+    void insertKey(const std::string& rawKey, int itemIdx) {
+        const std::string key = trimCopy(toLowerCopy(rawKey));
+        if (key.empty()) return;
+
+        int curr = 0;
+        for (char ch : key) {
+            auto it = pool[curr].next.find(ch);
+            if (it == pool[curr].next.end()) {
+                const int nextIdx = static_cast<int>(pool.size());
+                pool[curr].next[ch] = nextIdx;
+                pool.emplace_back();
+                curr = nextIdx;
+            } else {
+                curr = it->second;
+            }
+            auto& vec = pool[curr].itemIndices;
+            if (vec.empty() || vec.back() != itemIdx) {
+                vec.push_back(itemIdx);
+            }
+        }
+    }
+
+    void addEntry(SearchItem item) {
+        const int idx = static_cast<int>(items.size());
+        item.lowerLabel = trimCopy(toLowerCopy(item.label));
+        item.lowerShort = trimCopy(toLowerCopy(item.shortName));
+        item.lowerNumber = trimCopy(toLowerCopy(item.number));
+
+        const auto colonPos = item.id.find(':');
+        if (colonPos != std::string::npos) {
+            item.lowerCode = toLowerCopy(item.id.substr(colonPos + 1));
+        } else {
+            item.lowerCode = toLowerCopy(item.id);
+        }
+
+        // Collect all word tokens from label and shortName
+        auto w1 = tokenizeWords(item.lowerLabel);
+        auto w2 = tokenizeWords(item.lowerShort);
+        item.lowerWords = w1;
+        for (const auto& w : w2) {
+            if (std::find(item.lowerWords.begin(), item.lowerWords.end(), w) == item.lowerWords.end()) {
+                item.lowerWords.push_back(w);
+            }
+        }
+
+        // Insert full strings and individual word tokens into the Trie
+        insertKey(item.lowerLabel, idx);
+        insertKey(item.lowerShort, idx);
+        insertKey(item.lowerNumber, idx);
+        insertKey(item.lowerCode, idx);
+        insertKey(item.id, idx);
+        for (const auto& w : item.lowerWords) {
+            insertKey(w, idx);
+        }
+
+        items.push_back(std::move(item));
+    }
+
+    /**
+     * Searches the Trie for `query` and returns up to `limit` ranked items.
+     * Exact and shorter matches are prioritized first.
+     */
+    std::vector<SearchItem> search(const std::string& rawQuery, int limit = 10) const {
+        const std::string q = trimCopy(toLowerCopy(rawQuery));
+        if (q.empty() || limit <= 0 || pool.empty()) {
+            return {};
+        }
+
+        auto traversePrefix = [&](const std::string& prefix) -> const std::vector<int>* {
+            int curr = 0;
+            for (char ch : prefix) {
+                auto it = pool[curr].next.find(ch);
+                if (it == pool[curr].next.end()) {
+                    return nullptr;
+                }
+                curr = it->second;
+            }
+            return &pool[curr].itemIndices;
+        };
+
+        std::unordered_set<int> candidateSet;
+        if (const auto* directList = traversePrefix(q)) {
+            candidateSet.insert(directList->begin(), directList->end());
+        }
+
+        // If query has multiple words, also intersect matches of individual query words
+        const auto qWords = tokenizeWords(q);
+        if (qWords.size() > 1) {
+            std::unordered_set<int> multiMatch;
+            bool firstWord = true;
+            for (const auto& qw : qWords) {
+                const auto* wList = traversePrefix(qw);
+                if (!wList) {
+                    multiMatch.clear();
+                    break;
+                }
+                std::unordered_set<int> wordSet(wList->begin(), wList->end());
+                if (firstWord) {
+                    multiMatch = std::move(wordSet);
+                    firstWord = false;
+                } else {
+                    std::unordered_set<int> nextSet;
+                    for (int id : multiMatch) {
+                        if (wordSet.count(id)) nextSet.insert(id);
+                    }
+                    multiMatch = std::move(nextSet);
+                }
+            }
+            candidateSet.insert(multiMatch.begin(), multiMatch.end());
+        }
+
+        struct RankedCandidate {
+            int itemIdx;
+            int tier;
+            size_t matchLen;
+            int kindOrder;
+        };
+
+        std::vector<RankedCandidate> ranked;
+        ranked.reserve(candidateSet.size());
+
+        for (int idx : candidateSet) {
+            const SearchItem& it = items[idx];
+            int tier = 4;
+            size_t matchLen = it.label.size();
+
+            // Tier 0: Exact match on building number, short name, code, id, or full label
+            if (it.lowerNumber == q || it.lowerShort == q ||
+                it.lowerCode == q || it.lowerLabel == q ||
+                toLowerCopy(it.id) == q) {
+                tier = 0;
+                if (it.lowerNumber == q) matchLen = it.lowerNumber.size();
+                else if (it.lowerShort == q) matchLen = it.lowerShort.size();
+                else if (it.lowerCode == q) matchLen = it.lowerCode.size();
+            }
+            // Tier 1: Prefix of whole label, short name, or building number
+            else if ((!it.lowerNumber.empty() && it.lowerNumber.rfind(q, 0) == 0) ||
+                     (!it.lowerShort.empty() && it.lowerShort.rfind(q, 0) == 0) ||
+                     it.lowerLabel.rfind(q, 0) == 0 ||
+                     it.lowerCode.rfind(q, 0) == 0) {
+                tier = 1;
+                if (!it.lowerNumber.empty() && it.lowerNumber.rfind(q, 0) == 0) {
+                    matchLen = it.lowerNumber.size();
+                } else if (!it.lowerShort.empty() && it.lowerShort.rfind(q, 0) == 0) {
+                    matchLen = it.lowerShort.size();
+                }
+            }
+            // Tier 2: Exact match on any individual word token
+            else {
+                for (const auto& w : it.lowerWords) {
+                    if (w == q) {
+                        tier = 2;
+                        break;
+                    } else if (w.rfind(q, 0) == 0 && tier > 3) {
+                        tier = 3;
+                    }
+                }
+            }
+
+            const int kindOrder = (it.kind == "landmark") ? 0 : 1;
+            ranked.push_back(RankedCandidate{idx, tier, matchLen, kindOrder});
+        }
+
+        std::sort(ranked.begin(), ranked.end(), [&](const RankedCandidate& a, const RankedCandidate& b) {
+            if (a.tier != b.tier) return a.tier < b.tier;
+            if (a.matchLen != b.matchLen) return a.matchLen < b.matchLen;
+            if (a.kindOrder != b.kindOrder) return a.kindOrder < b.kindOrder;
+            const auto& ia = items[a.itemIdx];
+            const auto& ib = items[b.itemIdx];
+            if (ia.label.size() != ib.label.size()) return ia.label.size() < ib.label.size();
+            if (ia.label != ib.label) return ia.label < ib.label;
+            return ia.id < ib.id;
+        });
+
+        std::vector<SearchItem> results;
+        const size_t count = std::min(static_cast<size_t>(limit), ranked.size());
+        results.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            results.push_back(items[ranked[i].itemIdx]);
+        }
+        return results;
+    }
+};
+
+/**
+ * Adjacency-list graph storing the merged outdoor campus network, all indoor
+ * multi-floor building graphs, landmarks, and the prefix search Trie.
  */
 class Graph {
 public:
@@ -210,25 +567,35 @@ public:
     std::unordered_map<std::string, int> idToIndex;
     std::vector<std::vector<Edge>> adj;
 
-    // Metadata maps for linking indoor buildings to outdoor entrance nodes
+    std::vector<Landmark> landmarks;
+    std::unordered_map<std::string, int> landmarkIdToIndex;
     std::unordered_map<std::string, std::string> landmarkToEntranceNode;
+    std::unordered_map<std::string, std::vector<std::string>> nodeToLandmarkNames;
     std::unordered_map<std::string, std::string> buildingNames;
     std::unordered_map<std::string, std::unordered_map<int, std::string>> floorLabels;
+
+    PrefixTrie searchTrie;
 
     int logicalEdgeCount = 0;
     int indoorBuildingCount = 0;
     double heuristicScale = 0.999;
+    uint64_t loadGeneration = 1;
 
     void clear() {
         nodes.clear();
         idToIndex.clear();
         adj.clear();
+        landmarks.clear();
+        landmarkIdToIndex.clear();
         landmarkToEntranceNode.clear();
+        nodeToLandmarkNames.clear();
         buildingNames.clear();
         floorLabels.clear();
+        searchTrie.clear();
         logicalEdgeCount = 0;
         indoorBuildingCount = 0;
         heuristicScale = 0.999;
+        loadGeneration++;
     }
 
     int nodeCount() const {
@@ -244,9 +611,6 @@ public:
         return (it != idToIndex.end()) ? it->second : -1;
     }
 
-    /**
-     * Ensures a node with the given string ID exists in the graph and returns its integer index.
-     */
     int ensureNode(const std::string& id) {
         auto it = idToIndex.find(id);
         if (it != idToIndex.end()) {
@@ -267,9 +631,6 @@ public:
         return idx;
     }
 
-    /**
-     * Adds a single directed edge (u -> v) to the adjacency list, avoiding exact duplicates.
-     */
     void addDirectedEdge(int u, int v, double w, const std::string& kind,
                          bool accessible, bool oneway, bool covered) {
         for (auto& existing : adj[u]) {
@@ -292,9 +653,6 @@ public:
         adj[u].push_back(std::move(e));
     }
 
-    /**
-     * Adds an edge from JSON parameters (adds both directions when oneway is false).
-     */
     void addEdge(const std::string& aId, const std::string& bId, double w,
                  const std::string& kind = "walk", bool accessible = true,
                  bool oneway = false, bool covered = false) {
@@ -307,9 +665,6 @@ public:
         logicalEdgeCount++;
     }
 
-    /**
-     * Returns whether an edge (u -> v) can be traversed under the given RouteOptions.
-     */
     bool canTraverse(int u, const Edge& e, const RouteOptions& opts) const {
         if (opts.isNodeBlocked(e.to)) return false;
         if (opts.isEdgeBlocked(u, e.to)) return false;
@@ -317,14 +672,6 @@ public:
         return true;
     }
 
-    /**
-     * Admissible Haversine heuristic in meters from node u to target node.
-     * Indoor nodes use their building's outdoor entrance coordinates.
-     * Consequently:
-     * - Two nodes in the same building have h = 0 <= true indoor distance.
-     * - An indoor node and an outdoor node have h = Haversine(entrance, outdoor)
-     *   <= outdoor footpath distance < indoor leg + 3m entrance link + outdoor leg.
-     */
     double heuristic(int u, int target) const {
         if (u < 0 || target < 0 || u >= nodeCount() || target >= nodeCount()) {
             return 0.0;
@@ -340,9 +687,6 @@ public:
         return std::max(0.0, rawMeters * heuristicScale - 0.05);
     }
 
-    /**
-     * Returns a human-readable label for a node index.
-     */
     std::string displayNodeName(int idx) const {
         if (idx < 0 || idx >= nodeCount()) return "";
         const Node& n = nodes[idx];
@@ -352,9 +696,6 @@ public:
         return n.id;
     }
 
-    /**
-     * Returns a human-readable floor label for an indoor node index.
-     */
     std::string floorLabel(int idx) const {
         if (idx < 0 || idx >= nodeCount()) return "Floor 0";
         const Node& n = nodes[idx];
@@ -373,21 +714,40 @@ public:
     // SECTION 2: JSON Graph Loading (Outdoor + Multi-Building Indoor Merger)
     // ========================================================================
 
-    /**
-     * Loads an outdoor campus graph JSON object (conforming to data/graph.json).
-     * Ignores optional edge `geometry` arrays for routing; uses honest meter weight `w`.
-     */
     void loadOutdoorJson(const json& j) {
         if (j.contains("landmarks") && j["landmarks"].is_array()) {
             for (const auto& lm : j["landmarks"]) {
-                const std::string lmId = lm.value("id", "");
-                const std::string nodeId = lm.value("nodeId", "");
-                const std::string lmName = lm.value("name", "");
-                if (!lmId.empty() && !nodeId.empty()) {
-                    landmarkToEntranceNode[lmId] = nodeId;
+                Landmark item;
+                item.id = lm.value("id", "");
+                item.name = lm.value("name", "");
+                item.shortName = lm.value("short", "");
+                if (lm.contains("number")) {
+                    if (lm["number"].is_string()) {
+                        item.number = lm["number"].get<std::string>();
+                    } else if (lm["number"].is_number_integer()) {
+                        item.number = std::to_string(lm["number"].get<int>());
+                    }
                 }
-                if (!lmId.empty() && !lmName.empty()) {
-                    buildingNames[lmId] = lmName;
+                item.nodeId = lm.value("nodeId", "");
+                item.category = lm.value("category", "");
+
+                if (!item.id.empty()) {
+                    if (!item.nodeId.empty()) {
+                        landmarkToEntranceNode[item.id] = item.nodeId;
+                        if (!item.name.empty()) {
+                            nodeToLandmarkNames[item.nodeId].push_back(item.name);
+                        }
+                    }
+                    if (!item.name.empty()) {
+                        buildingNames[item.id] = item.name;
+                    }
+                    auto it = landmarkIdToIndex.find(item.id);
+                    if (it == landmarkIdToIndex.end()) {
+                        landmarkIdToIndex[item.id] = static_cast<int>(landmarks.size());
+                        landmarks.push_back(std::move(item));
+                    } else {
+                        landmarks[it->second] = std::move(item);
+                    }
                 }
             }
         }
@@ -404,6 +764,9 @@ public:
                     n.name = nj["name"].get<std::string>();
                 } else if (nj.contains("label") && nj["label"].is_string()) {
                     n.name = nj["label"].get<std::string>();
+                }
+                if (nj.contains("short") && nj["short"].is_string()) {
+                    n.shortName = nj["short"].get<std::string>();
                 }
                 if (nj.contains("lat") && nj.contains("lng") &&
                     nj["lat"].is_number() && nj["lng"].is_number()) {
@@ -428,21 +791,15 @@ public:
                 const bool accessible = ej.value("accessible", defaultAcc);
                 const bool oneway = ej.value("oneway", false);
                 const bool covered = ej.value("covered", false);
-                // Note: ej["geometry"] is optional display-only data and intentionally ignored.
                 addEdge(a, b, w, kind, accessible, oneway, covered);
             }
         }
     }
 
-    /**
-     * Merges an indoor building JSON object (conforming to data/indoor/<id>.json)
-     * into the current graph. Links the building's entrance node to the outdoor
-     * campus graph via the 3 m edge already present in the indoor JSON's edges array.
-     */
     void loadIndoorJson(const json& j) {
         const std::string bId = j.value("id", j.value("landmarkId", ""));
         const std::string bName = j.value("name", bId);
-        if (!bId.empty() && !bName.empty()) {
+        if (!bId.empty() && !bName.empty() && buildingNames.find(bId) == buildingNames.end()) {
             buildingNames[bId] = bName;
         }
 
@@ -472,6 +829,9 @@ public:
                 if (nj.contains("name") && nj["name"].is_string()) {
                     n.name = nj["name"].get<std::string>();
                 }
+                if (nj.contains("short") && nj["short"].is_string()) {
+                    n.shortName = nj["short"].get<std::string>();
+                }
                 n.x = nj.value("x", 0.0);
                 n.y = nj.value("y", 0.0);
             }
@@ -496,12 +856,10 @@ public:
     }
 
     /**
-     * Propagates each building's outdoor entrance (lat, lng) coordinates to all
-     * indoor nodes belonging to that building so A* heuristics remain admissible,
-     * and calibrates heuristicScale so h(u, v) <= w(u, v) across all positive edges.
+     * Propagates building entrance coordinates to indoor nodes, calibrates the
+     * A* heuristic scale, and rebuilds the PrefixTrie search index.
      */
     void finalizeCoordinatesAndHeuristic() {
-        // 1. Discover buildingId -> outdoor entrance node from cross-boundary edges (e.g. b-csit:ent <-> n21)
         for (const auto& uEdges : adj) {
             for (const auto& e : uEdges) {
                 const Node& nu = nodes[e.from];
@@ -514,7 +872,6 @@ public:
             }
         }
 
-        // 2. Assign outdoor entrance (lat, lng) to every indoor node of that building
         for (auto& n : nodes) {
             if (n.isIndoor && !n.buildingId.empty()) {
                 if (n.buildingName.empty()) {
@@ -535,7 +892,6 @@ public:
             }
         }
 
-        // 3. Ensure heuristicScale never overestimates any positive-weight edge
         heuristicScale = 0.999;
         for (const auto& uEdges : adj) {
             for (const auto& e : uEdges) {
@@ -550,15 +906,44 @@ public:
                 }
             }
         }
+
+        rebuildSearchTrie();
+        loadGeneration++;
     }
 
     /**
-     * Loads a JSON value that may be:
-     * - An outdoor campus graph (with optional embedded "indoor" array)
-     * - A single indoor building floor-plan JSON (merged into current graph)
-     * - A bundle {"outdoor": {...}, "indoor": [...]}
-     * - A filesystem loader directive {"dataDir": "data"} or {"graphPath": "..."}
+     * Populates the PrefixTrie with all landmarks (names, short names, building numbers)
+     * and all indoor rooms (room names and codes).
      */
+    void rebuildSearchTrie() {
+        searchTrie.clear();
+
+        // 1. Index campus landmarks
+        for (const auto& lm : landmarks) {
+            SearchItem item;
+            item.id = lm.id;
+            item.label = lm.name.empty() ? lm.id : lm.name;
+            item.shortName = lm.shortName;
+            item.number = lm.number;
+            item.kind = "landmark";
+            item.nodeId = lm.nodeId;
+            searchTrie.addEntry(std::move(item));
+        }
+
+        // 2. Index indoor rooms
+        for (const auto& n : nodes) {
+            if (!n.isIndoor || n.kind != "room") continue;
+            SearchItem item;
+            item.id = n.id;
+            item.label = n.name.empty() ? n.id : n.name;
+            item.shortName = n.shortName;
+            item.kind = "room";
+            item.buildingId = n.buildingId;
+            item.nodeId = n.id;
+            searchTrie.addEntry(std::move(item));
+        }
+    }
+
     void loadFromJsonValue(const json& parsed) {
         if (parsed.is_array()) {
             clear();
@@ -577,7 +962,6 @@ public:
             throw std::runtime_error("Graph JSON must be an object or array");
         }
 
-        // Directive to load from disk directory (e.g. {"dataDir": "data"} or empty {})
         if (parsed.empty() || parsed.contains("dataDir") || parsed.contains("graphPath")) {
             const std::string reqDir = parsed.value("dataDir", "");
             const std::string reqGraphPath = parsed.value("graphPath", "");
@@ -591,7 +975,6 @@ public:
             return;
         }
 
-        // Combined {"outdoor": {...}, "indoor": [...]} bundle
         if (parsed.contains("outdoor") && parsed["outdoor"].is_object()) {
             clear();
             loadOutdoorJson(parsed["outdoor"]);
@@ -604,7 +987,6 @@ public:
             return;
         }
 
-        // Single indoor building JSON: merge into existing graph unless "reset": true
         if (isIndoorJsonObject(parsed)) {
             if (parsed.value("reset", false)) {
                 clear();
@@ -614,7 +996,6 @@ public:
             return;
         }
 
-        // Standard outdoor graph JSON
         if (!parsed.value("append", false)) {
             clear();
         }
@@ -627,9 +1008,6 @@ public:
         finalizeCoordinatesAndHeuristic();
     }
 
-    /**
-     * Reads and parses a JSON file from disk.
-     */
     static json readJsonFile(const std::filesystem::path& filePath) {
         std::ifstream ifs(filePath);
         if (!ifs.is_open()) {
@@ -640,10 +1018,6 @@ public:
         return j;
     }
 
-    /**
-     * Resolves the path to the `data/` directory across different working directories
-     * (e.g., repo root, `core/`, or `core/build-native/`).
-     */
     static std::string resolveDataDirectory(const std::string& hint = "data") {
         namespace fs = std::filesystem;
         const std::vector<fs::path> candidates = {
@@ -661,9 +1035,6 @@ public:
         return hint;
     }
 
-    /**
-     * Loads outdoor `graphPath` and all `*.json` files inside `indoorDir` into one merged graph.
-     */
     void loadFromDiskFiles(const std::string& graphPath, const std::string& indoorDir = "") {
         namespace fs = std::filesystem;
         clear();
@@ -689,9 +1060,6 @@ public:
         finalizeCoordinatesAndHeuristic();
     }
 
-    /**
-     * Loads `<dataDir>/graph.json` plus every `<dataDir>/indoor/*.json` into ONE merged graph.
-     */
     void loadFromDataDirectory(const std::string& dataDir = "data") {
         namespace fs = std::filesystem;
         const fs::path resolved = resolveDataDirectory(dataDir);
@@ -717,16 +1085,13 @@ private:
 };
 
 // ============================================================================
-// SECTION 3: Routing Algorithms & Path Step Formatting
+// SECTION 3: Single-Pair Routing Algorithms & Path Step Formatting
 // ============================================================================
 
 // ----------------------------------------------------------------------------
 // 3.1 Path Reconstruction & Outdoor/Indoor/Floor Step Builder
 // ----------------------------------------------------------------------------
 
-/**
- * Helper to append a trace event while respecting the 2000-event cap.
- */
 inline void recordTrace(std::vector<TraceEvent>& trace, size_t maxEvents,
                         const std::string& type, const std::string& nodeId, double dist) {
     if (trace.size() < maxEvents) {
@@ -734,9 +1099,6 @@ inline void recordTrace(std::vector<TraceEvent>& trace, size_t maxEvents,
     }
 }
 
-/**
- * Finds the best traversed edge between u and v under the active RouteOptions.
- */
 inline const Edge* findTraversedEdge(const Graph& g, int u, int v, const RouteOptions& opts) {
     const Edge* best = nullptr;
     for (const auto& e : g.adj[u]) {
@@ -750,47 +1112,27 @@ inline const Edge* findTraversedEdge(const Graph& g, int u, int v, const RouteOp
 }
 
 /**
- * Reconstructs the sequence of node indices from `from` to `to` using `parent`,
- * populates `res.path` with node IDs, and builds human-readable navigation `res.steps`
- * grouped into outdoor legs, building entrance crossings, indoor floor walks,
- * and stairs/lift floor changes.
+ * Formats an existing `res.pathIndices` sequence into `res.path` (node IDs)
+ * and `res.steps` (grouped outdoor/indoor/entrance/floor-transition instructions).
  */
-inline void populatePathAndSteps(const Graph& g, int from, int to,
-                                 const std::vector<int>& parent,
-                                 const RouteOptions& opts,
-                                 RouteResult& res) {
-    res.pathIndices.clear();
+inline void buildStepsFromPathIndices(const Graph& g, const RouteOptions& opts, RouteResult& res) {
     res.path.clear();
     res.steps.clear();
-
-    int curr = to;
-    int safety = 0;
-    const int maxNodes = g.nodeCount() + 2;
-    while (curr != -1 && safety <= maxNodes) {
-        res.pathIndices.push_back(curr);
-        if (curr == from) break;
-        curr = parent[curr];
-        safety++;
-    }
-
-    if (res.pathIndices.empty() || res.pathIndices.back() != from) {
+    if (res.pathIndices.empty()) {
         res.found = false;
-        res.pathIndices.clear();
         return;
     }
 
-    std::reverse(res.pathIndices.begin(), res.pathIndices.end());
     res.path.reserve(res.pathIndices.size());
     for (int idx : res.pathIndices) {
         res.path.push_back(g.nodes[idx].id);
     }
 
     if (res.pathIndices.size() == 1) {
-        res.steps.push_back("Arrive at " + g.displayNodeName(from) + " (0.0 m)");
+        res.steps.push_back("Arrive at " + g.displayNodeName(res.pathIndices[0]) + " (0.0 m)");
         return;
     }
 
-    // Group consecutive path edges into logical outdoor/indoor/entrance/floor steps
     enum class LegCategory { OutdoorWalk, EntranceCross, IndoorWalk, Stairs, Lift };
 
     struct RawSegment {
@@ -886,7 +1228,6 @@ inline void populatePathAndSteps(const Graph& g, int from, int to,
             continue;
         }
 
-        // OutdoorWalk
         size_t j = i + 1;
         while (j < segments.size() && segments[j].cat == LegCategory::OutdoorWalk) {
             endV = segments[j].v;
@@ -898,6 +1239,34 @@ inline void populatePathAndSteps(const Graph& g, int from, int to,
                             " (" + formatMeters(legDist) + " m)");
         i = j;
     }
+}
+
+inline void populatePathAndSteps(const Graph& g, int from, int to,
+                                 const std::vector<int>& parent,
+                                 const RouteOptions& opts,
+                                 RouteResult& res) {
+    res.pathIndices.clear();
+    res.path.clear();
+    res.steps.clear();
+
+    int curr = to;
+    int safety = 0;
+    const int maxNodes = g.nodeCount() + 2;
+    while (curr != -1 && safety <= maxNodes) {
+        res.pathIndices.push_back(curr);
+        if (curr == from) break;
+        curr = parent[curr];
+        safety++;
+    }
+
+    if (res.pathIndices.empty() || res.pathIndices.back() != from) {
+        res.found = false;
+        res.pathIndices.clear();
+        return;
+    }
+
+    std::reverse(res.pathIndices.begin(), res.pathIndices.end());
+    buildStepsFromPathIndices(g, opts, res);
 }
 
 // ----------------------------------------------------------------------------
@@ -914,8 +1283,7 @@ inline void populatePathAndSteps(const Graph& g, int from, int to,
  *   O((V + E) log V) time, O(V) auxiliary space.
  * Where the app uses it:
  *   Default optimal campus & indoor route planner when "dijkstra" is selected,
- *   ground-truth distance baseline in the multi-algorithm comparator, and
- *   step-free accessibility routing (`accessibleOnly = true`).
+ *   pairwise leg generator for TSP, and ground-truth distance baseline.
  */
 inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOptions& opts) {
     RouteResult res;
@@ -994,8 +1362,7 @@ inline RouteResult runDijkstra(const Graph& g, int from, int to, const RouteOpti
  *   O((V + E) log V) worst-case time, O(V) space.
  * Where the app uses it:
  *   Interactive point-to-point outdoor and building-to-building navigation,
- *   and live trace visualization contrasting directional heuristic search
- *   against Dijkstra's radial exploration.
+ *   and live trace visualization contrasting directional search against Dijkstra.
  */
 inline RouteResult runAStar(const Graph& g, int from, int to, const RouteOptions& opts) {
     RouteResult res;
@@ -1152,8 +1519,7 @@ inline RouteResult runBFS(const Graph& g, int from, int to, const RouteOptions& 
  *   O(V * E) worst-case time, O(V) space.
  * Where the app uses it:
  *   Algorithm benchmark & educational trace mode ("bellmanford"), verifying
- *   distance agreement with Dijkstra/A* and detecting negative cycles in
- *   modified/test graphs.
+ *   distance agreement with Dijkstra/A* and detecting negative cycles.
  */
 inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteOptions& opts) {
     RouteResult res;
@@ -1174,7 +1540,6 @@ inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteO
     everVisited[from] = true;
     recordTrace(res.trace, opts.maxTrace, "frontier", g.nodes[from].id, 0.0);
 
-    // Up to V - 1 relaxation passes
     for (int iter = 0; iter < std::max(0, n - 1); ++iter) {
         bool anyRelaxed = false;
         for (int u = 0; u < n; ++u) {
@@ -1208,7 +1573,6 @@ inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteO
         }
     }
 
-    // V-th pass: check for reachable negative-weight cycles
     for (int u = 0; u < n; ++u) {
         if (opts.isNodeBlocked(u) || std::isinf(dist[u])) continue;
         for (const auto& e : g.adj[u]) {
@@ -1231,13 +1595,409 @@ inline RouteResult runBellmanFord(const Graph& g, int from, int to, const RouteO
     return res;
 }
 
+// ============================================================================
+// SECTION 5: LRU Route Cache (Hash Map + Doubly Linked List)
+// ============================================================================
+
 /**
- * Unified router entry point dispatching to the requested algorithm.
+ * Algorithm: Least Recently Used (LRU) Route Cache
+ * What it does:
+ *   Memoizes computed `RouteResult` objects keyed by `(from, to, algo, accessible,
+ *   blockedSetHash)` using a doubly linked list (`std::list`) ordered from
+ *   most-recently-used (front) to least-recently-used (back) paired with an
+ *   `std::unordered_map` from key to list iterator. Automatically invalidates
+ *   cached entries whenever the active blocked node/edge set changes.
+ * Time Complexity:
+ *   O(1) average time for lookup (`get`), insertion (`put`), promotion, and
+ *   LRU eviction; O(C) space where C is cache capacity.
+ * Where the app uses it:
+ *   Accelerates repeated route queries in `call("route", ...)` and exposes cache
+ *   telemetry (`hits`, `misses`, `size`) via `call("cacheStats", ...)`.
  */
-inline RouteResult computeRoute(const Graph& g, int from, int to, const RouteOptions& opts) {
-    std::string algo = opts.algo;
-    std::transform(algo.begin(), algo.end(), algo.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+class RouteLRUCache {
+public:
+    using ListType = std::list<std::pair<std::string, RouteResult>>;
+
+    explicit RouteLRUCache(size_t cap = 128) : capacity_(cap) {}
+
+    bool get(const std::string& key, uint64_t blockedHash, RouteResult& outResult) {
+        invalidateIfBlockedChanged(blockedHash);
+
+        auto it = map_.find(key);
+        if (it == map_.end()) {
+            misses_++;
+            return false;
+        }
+        // Promote to front (most recently used)
+        items_.splice(items_.begin(), items_, it->second);
+        hits_++;
+        outResult = it->second->second;
+        return true;
+    }
+
+    void put(const std::string& key, uint64_t blockedHash, const RouteResult& value) {
+        invalidateIfBlockedChanged(blockedHash);
+        if (capacity_ == 0) return;
+
+        auto it = map_.find(key);
+        if (it != map_.end()) {
+            it->second->second = value;
+            items_.splice(items_.begin(), items_, it->second);
+            return;
+        }
+
+        if (items_.size() >= capacity_) {
+            const auto& lruKey = items_.back().first;
+            map_.erase(lruKey);
+            items_.pop_back();
+            evictions_++;
+        }
+
+        items_.emplace_front(key, value);
+        map_[key] = items_.begin();
+    }
+
+    void invalidateIfBlockedChanged(uint64_t blockedHash) {
+        if (hasBlockedHash_ && blockedHash != activeBlockedHash_) {
+            items_.clear();
+            map_.clear();
+            invalidations_++;
+        }
+        activeBlockedHash_ = blockedHash;
+        hasBlockedHash_ = true;
+    }
+
+    void invalidateEntries() {
+        items_.clear();
+        map_.clear();
+        hasBlockedHash_ = false;
+        activeBlockedHash_ = 0;
+    }
+
+    void resetAll(size_t newCapacity = 128) {
+        items_.clear();
+        map_.clear();
+        capacity_ = newCapacity;
+        hits_ = 0;
+        misses_ = 0;
+        evictions_ = 0;
+        invalidations_ = 0;
+        hasBlockedHash_ = false;
+        activeBlockedHash_ = 0;
+    }
+
+    void setCapacity(size_t newCapacity) {
+        capacity_ = newCapacity;
+        while (items_.size() > capacity_) {
+            map_.erase(items_.back().first);
+            items_.pop_back();
+            evictions_++;
+        }
+    }
+
+    size_t hits() const { return hits_; }
+    size_t misses() const { return misses_; }
+    size_t size() const { return items_.size(); }
+    size_t capacity() const { return capacity_; }
+    size_t evictions() const { return evictions_; }
+    size_t invalidations() const { return invalidations_; }
+
+    std::vector<std::string> keysMRUFirst() const {
+        std::vector<std::string> keys;
+        keys.reserve(items_.size());
+        for (const auto& kv : items_) {
+            keys.push_back(kv.first);
+        }
+        return keys;
+    }
+
+private:
+    size_t capacity_ = 128;
+    ListType items_;
+    std::unordered_map<std::string, ListType::iterator> map_;
+    size_t hits_ = 0;
+    size_t misses_ = 0;
+    size_t evictions_ = 0;
+    size_t invalidations_ = 0;
+    bool hasBlockedHash_ = false;
+    uint64_t activeBlockedHash_ = 0;
+};
+
+// ============================================================================
+// SECTION 6: Floyd-Warshall All-Pairs Shortest Paths
+// ============================================================================
+
+/**
+ * Algorithm: Floyd-Warshall All-Pairs Shortest Paths & Next-Hop Reconstruction
+ * What it does:
+ *   Computes exact shortest-path distances and next-hop pointers between every
+ *   pair of outdoor campus vertices using dynamic programming over intermediate
+ *   vertices k = 0 .. V_out - 1. Produces the landmark-to-landmark distance
+ *   matrix (`call("allPairs")`) and reconstructs full shortest paths when
+ *   `call("route", {..., algo: "floyd"})` is invoked.
+ * Time Complexity:
+ *   O(V^3) time, O(V^2) space (where V is the number of outdoor graph nodes).
+ * Where the app uses it:
+ *   Campus-wide landmark distance matrix (`call("allPairs")`), route planning
+ *   under `algo: "floyd"`, and multi-algorithm comparison (`call("compare")`).
+ */
+struct FloydTable {
+    uint64_t graphGeneration = 0;
+    uint64_t blockedHash = 0;
+    bool accessibleOnly = false;
+    bool valid = false;
+
+    std::vector<int> outdoorToGraphIdx; // matrix idx [0..M-1] -> Graph node idx
+    std::unordered_map<int, int> graphToOutdoorIdx; // Graph node idx -> matrix idx
+    std::vector<std::vector<double>> dist;
+    std::vector<std::vector<int>> next;
+};
+
+inline FloydTable computeFloydWarshallTable(const Graph& g, const RouteOptions& opts) {
+    FloydTable table;
+    table.graphGeneration = g.loadGeneration;
+    table.blockedHash = opts.blockedSetHash();
+    table.accessibleOnly = opts.accessibleOnly;
+
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (!g.nodes[u].isIndoor) {
+            const int mIdx = static_cast<int>(table.outdoorToGraphIdx.size());
+            table.outdoorToGraphIdx.push_back(u);
+            table.graphToOutdoorIdx[u] = mIdx;
+        }
+    }
+
+    const int m = static_cast<int>(table.outdoorToGraphIdx.size());
+    table.dist.assign(m, std::vector<double>(m, kInf));
+    table.next.assign(m, std::vector<int>(m, -1));
+
+    for (int i = 0; i < m; ++i) {
+        const int u = table.outdoorToGraphIdx[i];
+        if (opts.isNodeBlocked(u)) continue;
+        table.dist[i][i] = 0.0;
+        table.next[i][i] = i;
+
+        for (const auto& e : g.adj[u]) {
+            if (!g.canTraverse(u, e, opts)) continue;
+            auto it = table.graphToOutdoorIdx.find(e.to);
+            if (it == table.graphToOutdoorIdx.end()) continue;
+            const int j = it->second;
+            if (e.w < table.dist[i][j]) {
+                table.dist[i][j] = e.w;
+                table.next[i][j] = j;
+            }
+        }
+    }
+
+    for (int k = 0; k < m; ++k) {
+        for (int i = 0; i < m; ++i) {
+            if (std::isinf(table.dist[i][k])) continue;
+            for (int j = 0; j < m; ++j) {
+                if (std::isinf(table.dist[k][j])) continue;
+                const double cand = table.dist[i][k] + table.dist[k][j];
+                if (cand + 1e-12 < table.dist[i][j]) {
+                    table.dist[i][j] = cand;
+                    table.next[i][j] = table.next[i][k];
+                }
+            }
+        }
+    }
+
+    table.valid = true;
+    return table;
+}
+
+inline FloydTable& cachedFloydTable(const Graph& g, const RouteOptions& opts, bool forceRecompute = false) {
+    static FloydTable cached;
+    const uint64_t bHash = opts.blockedSetHash();
+    if (forceRecompute || !cached.valid ||
+        cached.graphGeneration != g.loadGeneration ||
+        cached.blockedHash != bHash ||
+        cached.accessibleOnly != opts.accessibleOnly) {
+        cached = computeFloydWarshallTable(g, opts);
+    }
+    return cached;
+}
+
+/**
+ * Reconstructs a shortest path between `from` and `to` using the Floyd-Warshall
+ * `next` matrix on the outdoor graph.
+ */
+inline RouteResult runFloydWarshallRoute(const Graph& g, int from, int to,
+                                         const RouteOptions& opts,
+                                         bool forceFreshComputation = false) {
+    RouteResult res;
+    const int n = g.nodeCount();
+    if (from < 0 || to < 0 || from >= n || to >= n) {
+        res.error = "Invalid source or destination node";
+        return res;
+    }
+    if (opts.isNodeBlocked(from) || opts.isNodeBlocked(to)) {
+        return res;
+    }
+
+    const FloydTable& fw = cachedFloydTable(g, opts, forceFreshComputation);
+    auto itFrom = fw.graphToOutdoorIdx.find(from);
+    auto itTo = fw.graphToOutdoorIdx.find(to);
+
+    if (itFrom != fw.graphToOutdoorIdx.end() && itTo != fw.graphToOutdoorIdx.end()) {
+        const int u = itFrom->second;
+        const int v = itTo->second;
+        res.visitedCount = static_cast<int>(fw.outdoorToGraphIdx.size());
+
+        if (fw.next[u][v] == -1 || std::isinf(fw.dist[u][v])) {
+            res.found = false;
+            return res;
+        }
+
+        res.found = true;
+        res.distance = fw.dist[u][v];
+
+        int curr = u;
+        int safety = 0;
+        const int maxSteps = static_cast<int>(fw.outdoorToGraphIdx.size()) + 2;
+        double accumDist = 0.0;
+
+        while (curr != v && safety <= maxSteps) {
+            const int gIdx = fw.outdoorToGraphIdx[curr];
+            res.pathIndices.push_back(gIdx);
+            recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[gIdx].id, accumDist);
+            const int nxt = fw.next[curr][v];
+            if (nxt < 0) {
+                res.found = false;
+                res.pathIndices.clear();
+                return res;
+            }
+            accumDist += fw.dist[curr][nxt];
+            curr = nxt;
+            safety++;
+        }
+        const int endGIdx = fw.outdoorToGraphIdx[v];
+        res.pathIndices.push_back(endGIdx);
+        recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[endGIdx].id, res.distance);
+
+        buildStepsFromPathIndices(g, opts, res);
+        return res;
+    }
+
+    // Fallback when an indoor node is specified with algo="floyd": run full-graph Floyd-Warshall
+    const int totalN = g.nodeCount();
+    std::vector<std::vector<double>> dist(totalN, std::vector<double>(totalN, kInf));
+    std::vector<std::vector<int>> next(totalN, std::vector<int>(totalN, -1));
+
+    for (int i = 0; i < totalN; ++i) {
+        if (opts.isNodeBlocked(i)) continue;
+        dist[i][i] = 0.0;
+        next[i][i] = i;
+        for (const auto& e : g.adj[i]) {
+            if (!g.canTraverse(i, e, opts)) continue;
+            if (e.w < dist[i][e.to]) {
+                dist[i][e.to] = e.w;
+                next[i][e.to] = e.to;
+            }
+        }
+    }
+
+    for (int k = 0; k < totalN; ++k) {
+        for (int i = 0; i < totalN; ++i) {
+            if (std::isinf(dist[i][k])) continue;
+            for (int j = 0; j < totalN; ++j) {
+                if (std::isinf(dist[k][j])) continue;
+                const double cand = dist[i][k] + dist[k][j];
+                if (cand + 1e-12 < dist[i][j]) {
+                    dist[i][j] = cand;
+                    next[i][j] = next[i][k];
+                }
+            }
+        }
+    }
+
+    res.visitedCount = totalN;
+    if (next[from][to] == -1 || std::isinf(dist[from][to])) {
+        res.found = false;
+        return res;
+    }
+
+    res.found = true;
+    res.distance = dist[from][to];
+    int curr = from;
+    int safety = 0;
+    while (curr != to && safety <= totalN + 2) {
+        res.pathIndices.push_back(curr);
+        recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[curr].id, dist[from][curr]);
+        curr = next[curr][to];
+        if (curr < 0) break;
+        safety++;
+    }
+    res.pathIndices.push_back(to);
+    recordTrace(res.trace, opts.maxTrace, "visit", g.nodes[to].id, res.distance);
+    buildStepsFromPathIndices(g, opts, res);
+    return res;
+}
+
+/**
+ * Builds the `call("allPairs")` JSON response containing the landmark-to-landmark
+ * shortest-path distance matrix (using landmark entrance nodes, unreachable as `null`).
+ */
+inline json computeAllPairsMatrixJson(const Graph& g, const RouteOptions& opts) {
+    const FloydTable& fw = cachedFloydTable(g, opts, false);
+    json matrix = json::object();
+
+    if (!g.landmarks.empty()) {
+        for (const auto& lmA : g.landmarks) {
+            json row = json::object();
+            const int gIdxA = g.getNodeIndex(lmA.nodeId);
+            const auto itA = fw.graphToOutdoorIdx.find(gIdxA);
+
+            for (const auto& lmB : g.landmarks) {
+                const int gIdxB = g.getNodeIndex(lmB.nodeId);
+                const auto itB = fw.graphToOutdoorIdx.find(gIdxB);
+                if (itA != fw.graphToOutdoorIdx.end() && itB != fw.graphToOutdoorIdx.end()) {
+                    const double d = fw.dist[itA->second][itB->second];
+                    if (std::isinf(d)) {
+                        row[lmB.id] = nullptr;
+                    } else {
+                        row[lmB.id] = d;
+                    }
+                } else {
+                    row[lmB.id] = nullptr;
+                }
+            }
+            matrix[lmA.id] = std::move(row);
+        }
+    } else {
+        // Fallback when no landmarks exist: index by outdoor node IDs
+        const int m = static_cast<int>(fw.outdoorToGraphIdx.size());
+        for (int i = 0; i < m; ++i) {
+            const std::string& idA = g.nodes[fw.outdoorToGraphIdx[i]].id;
+            json row = json::object();
+            for (int j = 0; j < m; ++j) {
+                const std::string& idB = g.nodes[fw.outdoorToGraphIdx[j]].id;
+                const double d = fw.dist[i][j];
+                if (std::isinf(d)) {
+                    row[idB] = nullptr;
+                } else {
+                    row[idB] = d;
+                }
+            }
+            matrix[idA] = std::move(row);
+        }
+    }
+
+    return json{
+        {"matrix", std::move(matrix)},
+        {"landmarkCount", static_cast<int>(g.landmarks.size())},
+        {"outdoorNodeCount", static_cast<int>(fw.outdoorToGraphIdx.size())}
+    };
+}
+
+/**
+ * Unified router entry point dispatching to Dijkstra, A*, BFS, Bellman-Ford, or Floyd-Warshall.
+ */
+inline RouteResult computeRoute(const Graph& g, int from, int to,
+                                const RouteOptions& opts,
+                                bool forceFreshFloyd = false) {
+    const std::string algo = toLowerCopy(opts.algo);
 
     if (algo == "dijkstra" || algo.empty()) {
         return runDijkstra(g, from, to, opts);
@@ -1247,6 +2007,8 @@ inline RouteResult computeRoute(const Graph& g, int from, int to, const RouteOpt
         return runBFS(g, from, to, opts);
     } else if (algo == "bellmanford" || algo == "bellman-ford" || algo == "bf") {
         return runBellmanFord(g, from, to, opts);
+    } else if (algo == "floyd" || algo == "floyd-warshall" || algo == "floydwarshall") {
+        return runFloydWarshallRoute(g, from, to, opts, forceFreshFloyd);
     } else {
         RouteResult err;
         err.error = "Unknown routing algorithm: " + opts.algo;
@@ -1254,41 +2016,703 @@ inline RouteResult computeRoute(const Graph& g, int from, int to, const RouteOpt
     }
 }
 
+// ============================================================================
+// SECTION 7: Disjoint Set Union (Union-Find) & Minimum Spanning Tree (MST)
+// ============================================================================
+
 // ----------------------------------------------------------------------------
-// 3.6 Multi-Algorithm Benchmark Comparator
+// 7.1 Union-Find with Path Compression and Union by Rank
 // ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Disjoint Set Union (Union-Find with Path Compression & Union by Rank)
+ * What it does:
+ *   Maintains partitioned connected components over N elements, supporting
+ *   near-constant-time component representative lookup (`find`) and component
+ *   merging (`unite`).
+ * Time Complexity:
+ *   O(alpha(V)) amortized time per operation (inverse Ackermann), O(V) space.
+ * Where the app uses it:
+ *   Cycle detection in Kruskal's Minimum Spanning Tree algorithm.
+ */
+class UnionFind {
+public:
+    explicit UnionFind(int n) : parent_(n), rank_(n, 0) {
+        std::iota(parent_.begin(), parent_.end(), 0);
+    }
+
+    int find(int x) {
+        if (parent_[x] != x) {
+            parent_[x] = find(parent_[x]);
+        }
+        return parent_[x];
+    }
+
+    bool unite(int x, int y) {
+        int rx = find(x);
+        int ry = find(y);
+        if (rx == ry) return false;
+        if (rank_[rx] < rank_[ry]) {
+            std::swap(rx, ry);
+        }
+        parent_[ry] = rx;
+        if (rank_[rx] == rank_[ry]) {
+            rank_[rx]++;
+        }
+        return true;
+    }
+
+private:
+    std::vector<int> parent_;
+    std::vector<int> rank_;
+};
+
+struct UndirectedEdge {
+    int u; // Outdoor dense index [0..M-1]
+    int v; // Outdoor dense index [0..M-1]
+    int graphU;
+    int graphV;
+    double w;
+};
+
+struct MSTResult {
+    std::string algo;
+    double totalWeight = 0.0;
+    std::vector<UndirectedEdge> edges;
+};
+
+/**
+ * Extracts deduplicated undirected outdoor edges (picking minimum weight when
+ * parallel edges exist between two outdoor vertices).
+ */
+inline void extractOutdoorUndirectedGraph(const Graph& g,
+                                          std::vector<int>& outdoorToGraph,
+                                          std::vector<UndirectedEdge>& undirectedEdges) {
+    outdoorToGraph.clear();
+    undirectedEdges.clear();
+    std::unordered_map<int, int> graphToOutdoor;
+
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (!g.nodes[u].isIndoor) {
+            const int idx = static_cast<int>(outdoorToGraph.size());
+            outdoorToGraph.push_back(u);
+            graphToOutdoor[u] = idx;
+        }
+    }
+
+    std::unordered_map<uint64_t, double> bestWeight;
+    for (int mU = 0; mU < static_cast<int>(outdoorToGraph.size()); ++mU) {
+        const int gU = outdoorToGraph[mU];
+        for (const auto& e : g.adj[gU]) {
+            auto itV = graphToOutdoor.find(e.to);
+            if (itV == graphToOutdoor.end()) continue;
+            const int mV = itV->second;
+            if (mU == mV) continue;
+            const int a = std::min(mU, mV);
+            const int b = std::max(mU, mV);
+            const uint64_t key = RouteOptions::edgeKey(a, b);
+            auto bwIt = bestWeight.find(key);
+            if (bwIt == bestWeight.end() || e.w < bwIt->second) {
+                bestWeight[key] = e.w;
+            }
+        }
+    }
+
+    undirectedEdges.reserve(bestWeight.size());
+    for (const auto& [key, w] : bestWeight) {
+        const int a = static_cast<int>(static_cast<uint32_t>(key >> 32));
+        const int b = static_cast<int>(static_cast<uint32_t>(key & 0xFFFFFFFFULL));
+        undirectedEdges.push_back(UndirectedEdge{
+            a, b, outdoorToGraph[a], outdoorToGraph[b], w
+        });
+    }
+}
+
+// ----------------------------------------------------------------------------
+// 7.2 Kruskal's MST Algorithm
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Kruskal's Minimum Spanning Tree (using Union-Find)
+ * What it does:
+ *   Sorts all undirected outdoor campus edges by ascending weight and greedily
+ *   adds edges that connect previously disjoint components using Union-Find.
+ * Time Complexity:
+ *   O(E log E) time, O(V + E) space.
+ * Where the app uses it:
+ *   Campus backbone infrastructure planner (`call("mst", {algo: "kruskal"})`),
+ *   computing the minimum total fiber/walkway length needed to connect all outdoor nodes.
+ */
+inline MSTResult runKruskalMST(const Graph& g) {
+    MSTResult res;
+    res.algo = "kruskal";
+
+    std::vector<int> outdoorToGraph;
+    std::vector<UndirectedEdge> allEdges;
+    extractOutdoorUndirectedGraph(g, outdoorToGraph, allEdges);
+
+    std::sort(allEdges.begin(), allEdges.end(), [](const UndirectedEdge& a, const UndirectedEdge& b) {
+        if (std::abs(a.w - b.w) > 1e-12) return a.w < b.w;
+        if (a.u != b.u) return a.u < b.u;
+        return a.v < b.v;
+    });
+
+    UnionFind uf(static_cast<int>(outdoorToGraph.size()));
+    for (const auto& e : allEdges) {
+        if (uf.unite(e.u, e.v)) {
+            res.totalWeight += e.w;
+            res.edges.push_back(e);
+        }
+    }
+    return res;
+}
+
+// ----------------------------------------------------------------------------
+// 7.3 Prim's MST Algorithm (Binary Min-Heap)
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Prim's Minimum Spanning Tree (Binary Min-Heap)
+ * What it does:
+ *   Grows a minimum spanning tree (or spanning forest if disconnected) from a
+ *   starting vertex by repeatedly attaching the lowest-weight frontier edge
+ *   connecting the tree to an unvisited outdoor vertex.
+ * Time Complexity:
+ *   O((V + E) log V) time, O(V + E) space.
+ * Where the app uses it:
+ *   Alternative MST solver (`call("mst", {algo: "prim"})`) verifying total
+ *   backbone length equivalence with Kruskal's algorithm.
+ */
+inline MSTResult runPrimMST(const Graph& g) {
+    MSTResult res;
+    res.algo = "prim";
+
+    std::vector<int> outdoorToGraph;
+    std::vector<UndirectedEdge> allEdges;
+    extractOutdoorUndirectedGraph(g, outdoorToGraph, allEdges);
+
+    const int m = static_cast<int>(outdoorToGraph.size());
+    if (m == 0) return res;
+
+    std::vector<std::vector<std::pair<int, double>>> uAdj(m);
+    for (const auto& e : allEdges) {
+        uAdj[e.u].push_back({e.v, e.w});
+        uAdj[e.v].push_back({e.u, e.w});
+    }
+
+    struct PrimItem {
+        double w;
+        int from;
+        int to;
+        bool operator>(const PrimItem& other) const {
+            if (std::abs(w - other.w) > 1e-12) return w > other.w;
+            if (from != other.from) return from > other.from;
+            return to > other.to;
+        }
+    };
+
+    std::vector<bool> inMST(m, false);
+    std::priority_queue<PrimItem, std::vector<PrimItem>, std::greater<PrimItem>> pq;
+
+    for (int start = 0; start < m; ++start) {
+        if (inMST[start]) continue;
+        pq.push(PrimItem{0.0, -1, start});
+
+        while (!pq.empty()) {
+            const PrimItem cur = pq.top();
+            pq.pop();
+
+            if (inMST[cur.to]) continue;
+            inMST[cur.to] = true;
+
+            if (cur.from != -1) {
+                const int a = std::min(cur.from, cur.to);
+                const int b = std::max(cur.from, cur.to);
+                res.totalWeight += cur.w;
+                res.edges.push_back(UndirectedEdge{
+                    a, b, outdoorToGraph[a], outdoorToGraph[b], cur.w
+                });
+            }
+
+            for (const auto& [nxt, w] : uAdj[cur.to]) {
+                if (!inMST[nxt]) {
+                    pq.push(PrimItem{w, cur.to, nxt});
+                }
+            }
+        }
+    }
+    return res;
+}
+
+// ============================================================================
+// SECTION 8: Multi-Stop Traveling Salesperson Problem (TSP)
+// ============================================================================
+
+struct TSPResult {
+    bool found = false;
+    std::string algo;
+    bool returnToStart = false;
+    double totalDistance = 0.0;
+    double dpDistance = 0.0;
+    double nnDistance = 0.0;
+    double heuristicGapPercent = 0.0;
+    std::vector<std::string> orderedStops;
+    std::vector<std::string> fullPath;
+    std::string error;
+};
+
+// ----------------------------------------------------------------------------
+// 8.1 Pairwise Dijkstra Leg Matrix
+// ----------------------------------------------------------------------------
+
+/**
+ * Precomputes exact shortest-path distances and node sequences between all pairs
+ * of the K requested TSP stops using Dijkstra's algorithm.
+ */
+inline bool buildPairwiseStopMatrix(const Graph& g,
+                                    const std::vector<int>& stopNodeIndices,
+                                    const RouteOptions& baseOpts,
+                                    std::vector<std::vector<double>>& distMat,
+                                    std::vector<std::vector<std::vector<std::string>>>& pathMat) {
+    const int k = static_cast<int>(stopNodeIndices.size());
+    distMat.assign(k, std::vector<double>(k, kInf));
+    pathMat.assign(k, std::vector<std::vector<std::string>>(k));
+
+    RouteOptions dOpts = baseOpts;
+    dOpts.algo = "dijkstra";
+    dOpts.maxTrace = 0;
+
+    for (int i = 0; i < k; ++i) {
+        distMat[i][i] = 0.0;
+        pathMat[i][i] = {g.nodes[stopNodeIndices[i]].id};
+        for (int j = 0; j < k; ++j) {
+            if (i == j) continue;
+            const RouteResult r = runDijkstra(g, stopNodeIndices[i], stopNodeIndices[j], dOpts);
+            if (!r.found) {
+                return false;
+            }
+            distMat[i][j] = r.distance;
+            pathMat[i][j] = r.path;
+        }
+    }
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+// 8.2 Held-Karp Exact Bitmask DP (up to 12 stops)
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Held-Karp Bitmask Dynamic Programming for Multi-Stop TSP
+ * What it does:
+ *   Finds the globally optimal ordering of K stops starting at `stops[0]`
+ *   (optionally returning to `stops[0]`) over pairwise Dijkstra shortest-path
+ *   distances using state `dp[mask][u]` (minimum distance visiting subset `mask`
+ *   and ending at stop `u`).
+ * Time Complexity:
+ *   O(K^2 * 2^K + K * (V + E) log V) time, O(K * 2^K) space (for K <= 12).
+ * Where the app uses it:
+ *   Multi-stop campus tour optimizer (`call("tsp", {stops, algo: "dp"})`).
+ */
+inline std::pair<double, std::vector<int>> solveTspBitmaskDP(
+    const std::vector<std::vector<double>>& distMat,
+    bool returnToStart) {
+    const int k = static_cast<int>(distMat.size());
+    if (k == 0) return {0.0, {}};
+    if (k == 1) {
+        return {0.0, {0}};
+    }
+
+    const int numMasks = 1 << k;
+    std::vector<std::vector<double>> dp(numMasks, std::vector<double>(k, kInf));
+    std::vector<std::vector<int>> parent(numMasks, std::vector<int>(k, -1));
+
+    dp[1][0] = 0.0;
+
+    for (int mask = 1; mask < numMasks; ++mask) {
+        if ((mask & 1) == 0) continue; // Stop 0 is always the start
+        for (int u = 0; u < k; ++u) {
+            if ((mask & (1 << u)) == 0) continue;
+            const double curDist = dp[mask][u];
+            if (std::isinf(curDist)) continue;
+
+            for (int v = 0; v < k; ++v) {
+                if (mask & (1 << v)) continue;
+                const int nextMask = mask | (1 << v);
+                const double cand = curDist + distMat[u][v];
+                if (cand + 1e-12 < dp[nextMask][v]) {
+                    dp[nextMask][v] = cand;
+                    parent[nextMask][v] = u;
+                }
+            }
+        }
+    }
+
+    const int fullMask = numMasks - 1;
+    double bestTotal = kInf;
+    int bestEnd = -1;
+
+    for (int u = (k > 1 ? 1 : 0); u < k; ++u) {
+        if (std::isinf(dp[fullMask][u])) continue;
+        const double total = dp[fullMask][u] + (returnToStart ? distMat[u][0] : 0.0);
+        if (total + 1e-12 < bestTotal) {
+            bestTotal = total;
+            bestEnd = u;
+        }
+    }
+
+    if (bestEnd == -1) {
+        return {kInf, {}};
+    }
+
+    std::vector<int> order;
+    int currMask = fullMask;
+    int currU = bestEnd;
+    while (currU != -1) {
+        order.push_back(currU);
+        const int prevU = parent[currMask][currU];
+        currMask ^= (1 << currU);
+        currU = prevU;
+    }
+    std::reverse(order.begin(), order.end());
+    if (returnToStart) {
+        order.push_back(0);
+    }
+    return {bestTotal, order};
+}
+
+// ----------------------------------------------------------------------------
+// 8.3 Nearest-Neighbor Greedy Heuristic & Gap Comparison
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Nearest-Neighbor Greedy TSP Heuristic
+ * What it does:
+ *   Starts at `stops[0]` and repeatedly steps to the closest unvisited stop
+ *   until all K stops have been visited, providing a fast greedy baseline to
+ *   measure the optimality gap against Held-Karp bitmask DP.
+ * Time Complexity:
+ *   O(K^2 + K * (V + E) log V) time, O(K) auxiliary space.
+ * Where the app uses it:
+ *   Multi-stop tour heuristic comparison (`call("tsp", {stops, algo: "nn"})`)
+ *   and computing `heuristicGapPercent`.
+ */
+inline std::pair<double, std::vector<int>> solveTspNearestNeighbor(
+    const std::vector<std::vector<double>>& distMat,
+    bool returnToStart) {
+    const int k = static_cast<int>(distMat.size());
+    if (k == 0) return {0.0, {}};
+    if (k == 1) return {0.0, {0}};
+
+    std::vector<bool> visited(k, false);
+    std::vector<int> order;
+    order.reserve(k + 1);
+
+    int curr = 0;
+    visited[0] = true;
+    order.push_back(0);
+    double total = 0.0;
+
+    for (int step = 1; step < k; ++step) {
+        int bestNext = -1;
+        double bestDist = kInf;
+        for (int cand = 0; cand < k; ++cand) {
+            if (!visited[cand] && distMat[curr][cand] + 1e-12 < bestDist) {
+                bestDist = distMat[curr][cand];
+                bestNext = cand;
+            }
+        }
+        if (bestNext == -1) {
+            return {kInf, {}};
+        }
+        visited[bestNext] = true;
+        total += bestDist;
+        order.push_back(bestNext);
+        curr = bestNext;
+    }
+
+    if (returnToStart) {
+        total += distMat[curr][0];
+        order.push_back(0);
+    }
+    return {total, order};
+}
+
+/**
+ * Executes multi-stop TSP (`dp` or `nn`), stitches the full node path from the
+ * pairwise Dijkstra legs, and computes the heuristic gap percentage.
+ */
+inline TSPResult runTSP(const Graph& g,
+                        const std::vector<std::string>& stopIds,
+                        const std::vector<int>& stopNodeIndices,
+                        const std::string& requestedAlgo,
+                        bool returnToStart,
+                        const RouteOptions& baseOpts) {
+    TSPResult res;
+    const std::string algo = toLowerCopy(requestedAlgo.empty() ? "dp" : requestedAlgo);
+    res.algo = algo;
+    res.returnToStart = returnToStart;
+
+    const int k = static_cast<int>(stopNodeIndices.size());
+    if (k == 0) {
+        res.error = "At least one stop is required for TSP";
+        return res;
+    }
+    if (algo == "dp" && k > 12) {
+        res.error = "TSP bitmask DP supports at most 12 stops";
+        return res;
+    }
+
+    std::vector<std::vector<double>> distMat;
+    std::vector<std::vector<std::vector<std::string>>> pathMat;
+    if (!buildPairwiseStopMatrix(g, stopNodeIndices, baseOpts, distMat, pathMat)) {
+        res.error = "One or more TSP stops are mutually unreachable";
+        return res;
+    }
+
+    const auto [nnDist, nnOrder] = solveTspNearestNeighbor(distMat, returnToStart);
+    res.nnDistance = nnDist;
+
+    double dpDist = nnDist;
+    std::vector<int> dpOrder = nnOrder;
+    if (k <= 12) {
+        std::tie(dpDist, dpOrder) = solveTspBitmaskDP(distMat, returnToStart);
+        res.dpDistance = dpDist;
+    }
+
+    const std::vector<int>& chosenOrder = (algo == "nn") ? nnOrder : dpOrder;
+    const double chosenDist = (algo == "nn") ? nnDist : dpDist;
+
+    if (chosenOrder.empty() || std::isinf(chosenDist)) {
+        res.error = "Unable to construct valid TSP tour";
+        return res;
+    }
+
+    res.found = true;
+    res.totalDistance = chosenDist;
+    if (res.dpDistance > 1e-9 && res.nnDistance >= res.dpDistance) {
+        res.heuristicGapPercent = ((res.nnDistance - res.dpDistance) / res.dpDistance) * 100.0;
+    } else {
+        res.heuristicGapPercent = 0.0;
+    }
+
+    for (int sIdx : chosenOrder) {
+        res.orderedStops.push_back(stopIds[sIdx]);
+    }
+
+    // Stitch full node-by-node path from pairwise Dijkstra legs
+    if (chosenOrder.size() == 1) {
+        res.fullPath.push_back(g.nodes[stopNodeIndices[chosenOrder[0]]].id);
+    } else {
+        for (size_t i = 0; i + 1 < chosenOrder.size(); ++i) {
+            const int u = chosenOrder[i];
+            const int v = chosenOrder[i + 1];
+            const auto& leg = pathMat[u][v];
+            if (leg.empty()) continue;
+            const size_t startOffset = res.fullPath.empty() ? 0 : 1;
+            for (size_t p = startOffset; p < leg.size(); ++p) {
+                res.fullPath.push_back(leg[p]);
+            }
+        }
+    }
+
+    return res;
+}
+
+// ============================================================================
+// SECTION 9: Tarjan's Articulation Points & Bridges (Critical Infrastructure)
+// ============================================================================
+
+/**
+ * Algorithm: Tarjan's Single-Pass DFS for Articulation Points and Bridges
+ * What it does:
+ *   Identifies all critical outdoor campus intersections (articulation points)
+ *   and critical footpath segments (bridges) whose removal increases the number
+ *   of connected components in the undirected outdoor campus graph, using DFS
+ *   discovery times `disc[u]` and low-link values `low[u]`.
+ * Time Complexity:
+ *   O(V + E) time, O(V + E) space.
+ * Where the app uses it:
+ *   Campus vulnerability & emergency resilience analyzer (`call("criticalPoints")`).
+ */
+struct CriticalPointsResult {
+    std::vector<std::string> articulationPoints;
+    std::vector<std::pair<std::string, std::string>> bridges;
+    json nodeDetails = json::array();
+    json edgeDetails = json::array();
+    json landmarkNames = json::object();
+};
+
+inline CriticalPointsResult runTarjanCriticalPoints(const Graph& g) {
+    CriticalPointsResult res;
+
+    std::vector<int> outdoorToGraph;
+    std::vector<UndirectedEdge> allEdges;
+    extractOutdoorUndirectedGraph(g, outdoorToGraph, allEdges);
+
+    const int m = static_cast<int>(outdoorToGraph.size());
+    if (m == 0) return res;
+
+    std::vector<std::vector<std::pair<int, double>>> uAdj(m);
+    for (const auto& e : allEdges) {
+        uAdj[e.u].push_back({e.v, e.w});
+        uAdj[e.v].push_back({e.u, e.w});
+    }
+    for (int i = 0; i < m; ++i) {
+        std::sort(uAdj[i].begin(), uAdj[i].end());
+    }
+
+    std::vector<int> disc(m, -1);
+    std::vector<int> low(m, -1);
+    std::vector<bool> isArticulation(m, false);
+    std::vector<std::pair<int, int>> bridgeIndices;
+    int timer = 0;
+
+    std::function<void(int, int)> dfs = [&](int u, int p) {
+        disc[u] = low[u] = timer++;
+        int children = 0;
+
+        for (const auto& [v, w] : uAdj[u]) {
+            if (v == p) continue;
+            if (disc[v] != -1) {
+                low[u] = std::min(low[u], disc[v]);
+            } else {
+                children++;
+                dfs(v, u);
+                low[u] = std::min(low[u], low[v]);
+
+                if (p == -1 && children > 1) {
+                    isArticulation[u] = true;
+                }
+                if (p != -1 && low[v] >= disc[u]) {
+                    isArticulation[u] = true;
+                }
+                if (low[v] > disc[u]) {
+                    const int a = std::min(u, v);
+                    const int b = std::max(u, v);
+                    bridgeIndices.push_back({a, b});
+                }
+            }
+        }
+    };
+
+    for (int i = 0; i < m; ++i) {
+        if (disc[i] == -1) {
+            dfs(i, -1);
+        }
+    }
+
+    auto resolveNodeLandmarkLabel = [&](int gIdx) -> std::string {
+        const std::string& nid = g.nodes[gIdx].id;
+        auto it = g.nodeToLandmarkNames.find(nid);
+        if (it != g.nodeToLandmarkNames.end() && !it->second.empty()) {
+            std::string joined = it->second[0];
+            for (size_t i = 1; i < it->second.size(); ++i) {
+                joined += " / " + it->second[i];
+            }
+            return joined;
+        }
+        return g.nodes[gIdx].name;
+    };
+
+    for (int i = 0; i < m; ++i) {
+        if (!isArticulation[i]) continue;
+        const int gIdx = outdoorToGraph[i];
+        const std::string& nid = g.nodes[gIdx].id;
+        const std::string lmLabel = resolveNodeLandmarkLabel(gIdx);
+
+        res.articulationPoints.push_back(nid);
+        if (!lmLabel.empty()) {
+            res.landmarkNames[nid] = lmLabel;
+        }
+
+        json detail = {
+            {"id", nid},
+            {"landmarkName", lmLabel}
+        };
+        auto lmIt = g.nodeToLandmarkNames.find(nid);
+        if (lmIt != g.nodeToLandmarkNames.end()) {
+            detail["landmarks"] = lmIt->second;
+        } else {
+            detail["landmarks"] = json::array();
+        }
+        res.nodeDetails.push_back(std::move(detail));
+    }
+
+    std::sort(res.articulationPoints.begin(), res.articulationPoints.end());
+
+    // Sort bridges by their endpoint node IDs for deterministic output
+    std::vector<std::pair<std::string, std::string>> sortedBridges;
+    sortedBridges.reserve(bridgeIndices.size());
+    for (const auto& [u, v] : bridgeIndices) {
+        std::string idA = g.nodes[outdoorToGraph[u]].id;
+        std::string idB = g.nodes[outdoorToGraph[v]].id;
+        if (idB < idA) std::swap(idA, idB);
+        sortedBridges.push_back({idA, idB});
+    }
+    std::sort(sortedBridges.begin(), sortedBridges.end());
+
+    for (const auto& [idA, idB] : sortedBridges) {
+        res.bridges.push_back({idA, idB});
+        const int gA = g.getNodeIndex(idA);
+        const int gB = g.getNodeIndex(idB);
+        const std::string lmA = (gA >= 0) ? resolveNodeLandmarkLabel(gA) : "";
+        const std::string lmB = (gB >= 0) ? resolveNodeLandmarkLabel(gB) : "";
+        if (!lmA.empty()) res.landmarkNames[idA] = lmA;
+        if (!lmB.empty()) res.landmarkNames[idB] = lmB;
+
+        res.edgeDetails.push_back({
+            {"a", idA},
+            {"b", idB},
+            {"landmarkA", lmA},
+            {"landmarkB", lmB}
+        });
+    }
+
+    return res;
+}
+
+// ============================================================================
+// SECTION 10: Multi-Algorithm Benchmark Comparator
+// ============================================================================
 
 /**
  * Algorithm: Multi-Algorithm Benchmark Comparator
  * What it does:
- *   Executes Dijkstra, A*, BFS, and Bellman-Ford on the exact same (from, to)
- *   query and records execution wall-clock time (ms), visited node count, hop
- *   count, and total path distance in meters.
+ *   Executes Dijkstra, A*, BFS, Bellman-Ford, and Floyd-Warshall on the same
+ *   `(from, to)` query and records path distance, nodes visited, and execution
+ *   time in both microseconds (`timeUs`) and milliseconds (`timeMs`).
  * Time Complexity:
- *   O((V + E) log V + V * E) combined across all 4 algorithms.
+ *   O((V + E) log V + V * E + V_out^3) combined across all 5 algorithms.
  * Where the app uses it:
- *   Algorithm Comparison Drawer in the web UI and the `compare` command in the CLI.
+ *   Algorithm Comparison Drawer in the web UI and the `compare` CLI command.
  */
 inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptions& baseOpts) {
-    const std::vector<std::string> algos = {"dijkstra", "astar", "bfs", "bellmanford"};
+    const std::vector<std::string> algos = {"dijkstra", "astar", "bfs", "bellmanford", "floyd"};
     json results = json::object();
+
+    // Ensure Floyd table is pre-warmed or measured cleanly
+    cachedFloydTable(g, baseOpts, false);
 
     for (const auto& algoName : algos) {
         RouteOptions opts = baseOpts;
         opts.algo = algoName;
-        opts.maxTrace = 0; // Skip trace allocation during timing benchmark
+        opts.maxTrace = 0;
 
         const auto t0 = std::chrono::high_resolution_clock::now();
-        const RouteResult r = computeRoute(g, from, to, opts);
+        const RouteResult r = computeRoute(g, from, to, opts, false);
         const auto t1 = std::chrono::high_resolution_clock::now();
-        const double elapsedMs =
-            std::chrono::duration<double, std::milli>(t1 - t0).count();
+        const double elapsedUs =
+            std::chrono::duration<double, std::micro>(t1 - t0).count();
+        const double elapsedMs = elapsedUs / 1000.0;
 
         json entry = {
             {"found", r.found},
             {"distance", r.found ? r.distance : -1.0},
+            {"timeUs", elapsedUs},
             {"timeMs", elapsedMs},
             {"visitedCount", r.visitedCount},
+            {"nodesVisited", r.visitedCount},
             {"hops", r.path.empty() ? 0 : static_cast<int>(r.path.size()) - 1},
             {"negativeCycle", r.negativeCycle}
         };
@@ -1299,7 +2723,7 @@ inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptio
 }
 
 // ============================================================================
-// SECTION 4: WASM / Native JSON Dispatcher — call(fn, argsJson)
+// SECTION 11: WASM / Native JSON Dispatcher — call(fn, argsJson)
 // ============================================================================
 
 namespace detail {
@@ -1307,6 +2731,11 @@ namespace detail {
 inline Graph& globalGraph() {
     static Graph g;
     return g;
+}
+
+inline RouteLRUCache& globalRouteCache() {
+    static RouteLRUCache cache(128);
+    return cache;
 }
 
 inline std::string& responseBuffer() {
@@ -1323,10 +2752,6 @@ inline std::string makeErrorJson(const std::string& message) {
     return err.dump();
 }
 
-/**
- * Parses `avoid`, `blocked`, `blockedNodes`, and `blockedEdges` from a JSON
- * route/compare request into a `RouteOptions` struct.
- */
 inline RouteOptions parseRouteOptions(const Graph& g, const json& args) {
     RouteOptions opts;
     opts.algo = args.value("algo", "dijkstra");
@@ -1340,7 +2765,6 @@ inline RouteOptions parseRouteOptions(const Graph& g, const json& args) {
             opts.blockedNodes.insert(idx);
             return;
         }
-        // Check if string encodes an edge like "n1-n2" or "n1->n2"
         const auto arrowPos = s.find("->");
         if (arrowPos != std::string::npos) {
             const int u = g.getNodeIndex(s.substr(0, arrowPos));
@@ -1390,10 +2814,6 @@ inline RouteOptions parseRouteOptions(const Graph& g, const json& args) {
     return opts;
 }
 
-/**
- * Resolves a node or landmark identifier string to a graph node index.
- * Supports direct node IDs ("n21", "b-csit:101") as well as building landmark IDs ("b-csit").
- */
 inline int resolveEndpointIndex(const Graph& g, const std::string& id) {
     const int direct = g.getNodeIndex(id);
     if (direct >= 0) return direct;
@@ -1402,6 +2822,31 @@ inline int resolveEndpointIndex(const Graph& g, const std::string& id) {
         return g.getNodeIndex(lmIt->second);
     }
     return -1;
+}
+
+inline std::string serializeRouteResult(const RouteResult& r) {
+    json traceJson = json::array();
+    for (const auto& ev : r.trace) {
+        traceJson.push_back({
+            {"type", ev.type},
+            {"node", ev.node},
+            {"dist", ev.dist}
+        });
+    }
+
+    json out = {
+        {"found", r.found},
+        {"distance", r.distance},
+        {"path", r.path},
+        {"steps", r.steps},
+        {"trace", std::move(traceJson)},
+        {"visitedCount", r.visitedCount},
+        {"negativeCycle", r.negativeCycle}
+    };
+    if (r.negativeCycle && !r.error.empty()) {
+        out["error"] = r.error;
+    }
+    return out.dump();
 }
 
 inline std::string handlePing() {
@@ -1416,11 +2861,14 @@ inline std::string handleLoad(const std::string& argsJson) {
     json parsed = argsJson.empty() ? json::object() : json::parse(argsJson);
     Graph& g = globalGraph();
     g.loadFromJsonValue(parsed);
+    globalRouteCache().resetAll(globalRouteCache().capacity());
+
     json res = {
         {"status", "ok"},
         {"nodeCount", g.nodeCount()},
         {"edgeCount", g.logicalEdgeCount},
-        {"indoorBuildings", g.indoorBuildingCount}
+        {"indoorBuildings", g.indoorBuildingCount},
+        {"landmarkCount", static_cast<int>(g.landmarks.size())}
     };
     return res.dump();
 }
@@ -1448,33 +2896,26 @@ inline std::string handleRoute(const std::string& argsJson) {
     }
 
     const RouteOptions opts = parseRouteOptions(g, args);
-    const RouteResult r = computeRoute(g, fromIdx, toIdx, opts);
+    const std::string normAlgo = toLowerCopy(opts.algo.empty() ? "dijkstra" : opts.algo);
+    const uint64_t bHash = opts.blockedSetHash();
 
+    std::ostringstream keyOss;
+    keyOss << fromIdx << "|" << toIdx << "|" << normAlgo << "|"
+           << (opts.accessibleOnly ? 1 : 0) << "|" << bHash;
+    const std::string cacheKey = keyOss.str();
+
+    RouteResult cachedRes;
+    if (globalRouteCache().get(cacheKey, bHash, cachedRes)) {
+        return serializeRouteResult(cachedRes);
+    }
+
+    const RouteResult r = computeRoute(g, fromIdx, toIdx, opts);
     if (!r.error.empty() && !r.negativeCycle) {
         return makeErrorJson(r.error);
     }
 
-    json traceJson = json::array();
-    for (const auto& ev : r.trace) {
-        traceJson.push_back({
-            {"type", ev.type},
-            {"node", ev.node},
-            {"dist", ev.dist}
-        });
-    }
-
-    json out = {
-        {"found", r.found},
-        {"distance", r.distance},
-        {"path", r.path},
-        {"steps", r.steps},
-        {"trace", std::move(traceJson)},
-        {"negativeCycle", r.negativeCycle}
-    };
-    if (r.negativeCycle && !r.error.empty()) {
-        out["error"] = r.error;
-    }
-    return out.dump();
+    globalRouteCache().put(cacheKey, bHash, r);
+    return serializeRouteResult(r);
 }
 
 inline std::string handleCompare(const std::string& argsJson) {
@@ -1494,6 +2935,186 @@ inline std::string handleCompare(const std::string& argsJson) {
 
     const RouteOptions opts = parseRouteOptions(g, args);
     return compareAlgorithms(g, fromIdx, toIdx, opts).dump();
+}
+
+inline std::string handleSearch(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    const std::string query = args.value("query", "");
+    const int limit = args.value("limit", 10);
+    const auto matched = g.searchTrie.search(query, limit);
+
+    json results = json::array();
+    for (const auto& item : matched) {
+        json entry = {
+            {"id", item.id},
+            {"label", item.label},
+            {"name", item.label},
+            {"kind", item.kind},
+            {"type", item.kind},
+            {"nodeId", item.nodeId}
+        };
+        if (!item.buildingId.empty()) {
+            entry["buildingId"] = item.buildingId;
+        }
+        if (!item.shortName.empty()) {
+            entry["short"] = item.shortName;
+        }
+        if (!item.number.empty()) {
+            entry["number"] = item.number;
+        }
+        results.push_back(std::move(entry));
+    }
+
+    return json{{"results", std::move(results)}}.dump();
+}
+
+inline std::string handleCacheStats(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    RouteLRUCache& cache = globalRouteCache();
+
+    if (args.value("reset", false) || args.value("clear", false)) {
+        const size_t newCap = args.value("capacity", args.value("maxSize", cache.capacity()));
+        cache.resetAll(newCap);
+    } else if (args.contains("capacity") || args.contains("maxSize")) {
+        const size_t newCap = args.value("capacity", args.value("maxSize", cache.capacity()));
+        cache.setCapacity(newCap);
+    }
+
+    json res = {
+        {"hits", cache.hits()},
+        {"misses", cache.misses()},
+        {"size", cache.size()},
+        {"capacity", cache.capacity()},
+        {"evictions", cache.evictions()},
+        {"invalidations", cache.invalidations()},
+        {"keys", cache.keysMRUFirst()}
+    };
+    return res.dump();
+}
+
+inline std::string handleAllPairs(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    const RouteOptions opts = parseRouteOptions(g, args);
+    return computeAllPairsMatrixJson(g, opts).dump();
+}
+
+inline std::string handleMST(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    const std::string algo = toLowerCopy(args.value("algo", "kruskal"));
+    MSTResult mst;
+    if (algo == "kruskal" || algo.empty()) {
+        mst = runKruskalMST(g);
+    } else if (algo == "prim") {
+        mst = runPrimMST(g);
+    } else {
+        return makeErrorJson("Unknown MST algorithm: " + algo);
+    }
+
+    json edgesJson = json::array();
+    for (const auto& e : mst.edges) {
+        edgesJson.push_back({
+            {"a", g.nodes[e.graphU].id},
+            {"b", g.nodes[e.graphV].id},
+            {"w", e.w}
+        });
+    }
+
+    json out = {
+        {"algo", mst.algo},
+        {"totalWeight", mst.totalWeight},
+        {"totalLength", mst.totalWeight},
+        {"edgeCount", static_cast<int>(mst.edges.size())},
+        {"edges", std::move(edgesJson)}
+    };
+    return out.dump();
+}
+
+inline std::string handleTSP(const std::string& argsJson) {
+    const json args = json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    if (!args.contains("stops") || !args["stops"].is_array() || args["stops"].empty()) {
+        return makeErrorJson("'stops' must be a non-empty array of node or landmark IDs");
+    }
+
+    std::vector<std::string> stopIds;
+    std::vector<int> stopIndices;
+    for (const auto& item : args["stops"]) {
+        if (!item.is_string()) {
+            return makeErrorJson("Each stop in 'stops' must be a string ID");
+        }
+        const std::string sid = item.get<std::string>();
+        const int idx = resolveEndpointIndex(g, sid);
+        if (idx < 0) {
+            return makeErrorJson("Unknown stop ID in TSP: " + sid);
+        }
+        stopIds.push_back(sid);
+        stopIndices.push_back(idx);
+    }
+
+    const std::string algo = args.value("algo", "dp");
+    const bool returnToStart = args.value("returnToStart", false);
+    const RouteOptions baseOpts = parseRouteOptions(g, args);
+
+    const TSPResult r = runTSP(g, stopIds, stopIndices, algo, returnToStart, baseOpts);
+    if (!r.error.empty()) {
+        return makeErrorJson(r.error);
+    }
+
+    json out = {
+        {"found", r.found},
+        {"algo", r.algo},
+        {"returnToStart", r.returnToStart},
+        {"order", r.orderedStops},
+        {"orderedStops", r.orderedStops},
+        {"totalDistance", r.totalDistance},
+        {"dpDistance", r.dpDistance},
+        {"nnDistance", r.nnDistance},
+        {"heuristicGapPercent", r.heuristicGapPercent},
+        {"path", r.fullPath}
+    };
+    return out.dump();
+}
+
+inline std::string handleCriticalPoints(const std::string& argsJson) {
+    (void)argsJson;
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    const CriticalPointsResult cp = runTarjanCriticalPoints(g);
+    json bridgesArr = json::array();
+    for (const auto& [a, b] : cp.bridges) {
+        bridgesArr.push_back(json::array({a, b}));
+    }
+
+    json out = {
+        {"articulationPoints", cp.articulationPoints},
+        {"bridges", std::move(bridgesArr)},
+        {"nodes", cp.nodeDetails},
+        {"edges", cp.edgeDetails},
+        {"landmarkNames", cp.landmarkNames}
+    };
+    return out.dump();
 }
 
 } // namespace detail
@@ -1519,6 +3140,18 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
             buffer = navcore::detail::handleRoute(args);
         } else if (functionName == "compare") {
             buffer = navcore::detail::handleCompare(args);
+        } else if (functionName == "search") {
+            buffer = navcore::detail::handleSearch(args);
+        } else if (functionName == "cacheStats") {
+            buffer = navcore::detail::handleCacheStats(args);
+        } else if (functionName == "allPairs") {
+            buffer = navcore::detail::handleAllPairs(args);
+        } else if (functionName == "mst") {
+            buffer = navcore::detail::handleMST(args);
+        } else if (functionName == "tsp") {
+            buffer = navcore::detail::handleTSP(args);
+        } else if (functionName == "criticalPoints") {
+            buffer = navcore::detail::handleCriticalPoints(args);
         } else {
             buffer = navcore::detail::makeErrorJson("Unknown or unimplemented function: " + functionName);
         }
@@ -1533,7 +3166,7 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
 } // extern "C"
 
 // ============================================================================
-// SECTION 5: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+// SECTION 12: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
 // ============================================================================
 
 #ifdef NAVCORE_CLI
@@ -1543,8 +3176,14 @@ int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage:\n"
                   << "  navcore_cli ping\n"
-                  << "  navcore_cli route <from> <to> [dijkstra|astar|bfs|bellmanford] [--accessible] [--data <dirOrFile>]\n"
-                  << "  navcore_cli compare <from> <to> [--accessible] [--data <dirOrFile>]\n";
+                  << "  navcore_cli route <from> <to> [dijkstra|astar|bfs|bellmanford|floyd] [--accessible] [--data <dirOrFile>]\n"
+                  << "  navcore_cli compare <from> <to> [--accessible] [--data <dirOrFile>]\n"
+                  << "  navcore_cli search <query> [limit] [--data <dirOrFile>]\n"
+                  << "  navcore_cli cacheStats [--data <dirOrFile>]\n"
+                  << "  navcore_cli allPairs [--data <dirOrFile>]\n"
+                  << "  navcore_cli mst [kruskal|prim] [--data <dirOrFile>]\n"
+                  << "  navcore_cli tsp <stop1> <stop2> [stop3 ...] [--algo dp|nn] [--return] [--data <dirOrFile>]\n"
+                  << "  navcore_cli criticalPoints [--data <dirOrFile>]\n";
         return 1;
     }
 
@@ -1556,12 +3195,18 @@ int main(int argc, char* argv[]) {
 
     std::string dataTarget = "data";
     bool accessible = false;
+    bool returnToStart = false;
+    std::string algoOverride;
     std::vector<std::string> positional;
 
     for (int i = 2; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--accessible" || arg == "--step-free") {
             accessible = true;
+        } else if (arg == "--return" || arg == "--return-to-start") {
+            returnToStart = true;
+        } else if (arg == "--algo" && i + 1 < argc) {
+            algoOverride = argv[++i];
         } else if (arg == "--data" && i + 1 < argc) {
             dataTarget = argv[++i];
         } else {
@@ -1569,7 +3214,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Load graph from directory or file
     namespace fs = std::filesystem;
     std::error_code ec;
     json loadArgs;
@@ -1595,15 +3239,16 @@ int main(int argc, char* argv[]) {
             std::cerr << "Error: 'route' requires <from> and <to> arguments.\n";
             return 1;
         }
-        const std::string algo = (positional.size() >= 3) ? positional[2] : "dijkstra";
+        const std::string algo = !algoOverride.empty()
+                                     ? algoOverride
+                                     : ((positional.size() >= 3) ? positional[2] : "dijkstra");
         json routeArgs = {
             {"from", positional[0]},
             {"to", positional[1]},
             {"algo", algo},
             {"accessible", accessible}
         };
-        const char* resStr = call("route", routeArgs.dump().c_str());
-        std::cout << json::parse(resStr).dump(2) << "\n";
+        std::cout << json::parse(call("route", routeArgs.dump().c_str())).dump(2) << "\n";
         return 0;
     } else if (cmd == "compare") {
         if (positional.size() < 2) {
@@ -1615,8 +3260,48 @@ int main(int argc, char* argv[]) {
             {"to", positional[1]},
             {"accessible", accessible}
         };
-        const char* resStr = call("compare", cmpArgs.dump().c_str());
-        std::cout << json::parse(resStr).dump(2) << "\n";
+        std::cout << json::parse(call("compare", cmpArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "search") {
+        if (positional.empty()) {
+            std::cerr << "Error: 'search' requires a <query> argument.\n";
+            return 1;
+        }
+        const int limit = (positional.size() >= 2) ? std::atoi(positional[1].c_str()) : 10;
+        json searchArgs = {
+            {"query", positional[0]},
+            {"limit", limit > 0 ? limit : 10}
+        };
+        std::cout << json::parse(call("search", searchArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "cacheStats") {
+        std::cout << json::parse(call("cacheStats", "{}")).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "allPairs") {
+        std::cout << json::parse(call("allPairs", "{}")).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "mst") {
+        const std::string mstAlgo = !algoOverride.empty()
+                                        ? algoOverride
+                                        : (positional.empty() ? "kruskal" : positional[0]);
+        json mstArgs = {{"algo", mstAlgo}};
+        std::cout << json::parse(call("mst", mstArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "tsp") {
+        if (positional.size() < 2) {
+            std::cerr << "Error: 'tsp' requires at least 2 stop IDs.\n";
+            return 1;
+        }
+        json tspArgs = {
+            {"stops", positional},
+            {"algo", algoOverride.empty() ? "dp" : algoOverride},
+            {"returnToStart", returnToStart},
+            {"accessible", accessible}
+        };
+        std::cout << json::parse(call("tsp", tspArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "criticalPoints") {
+        std::cout << json::parse(call("criticalPoints", "{}")).dump(2) << "\n";
         return 0;
     } else {
         std::cerr << "Unknown CLI command: " << cmd << "\n";
@@ -1624,4 +3309,3 @@ int main(int argc, char* argv[]) {
     }
 }
 #endif // NAVCORE_CLI
-

@@ -13,7 +13,7 @@
 - `.github/workflows/core.yml`: CI pipeline for building/testing native C++ and compiling WASM.
 - `core/`: C++17 DSA algorithmic engine and Emscripten bindings.
 - `core/CMakeLists.txt`: Build specification for native test target and Emscripten WASM target.
-- `core/src/navcore.cpp`: Single-file C++17 routing engine (merged outdoor+indoor Graph, Dijkstra, A*, BFS, Bellman-Ford, WASM `call()` dispatcher, and optional `NAVCORE_CLI` terminal runner).
+- `core/src/navcore.cpp`: Single-file C++17 DSA & routing engine (Graph, Dijkstra, A*, BFS, Bellman-Ford, Trie search, LRU cache, Floyd-Warshall, Union-Find + Kruskal/Prim MST, Held-Karp DP/NN TSP, Tarjan critical points, WASM `call()`, and `NAVCORE_CLI`).
 - `core/tests/test_main.cpp`: Native Doctest unit test suite `#include`-ing `core/src/navcore.cpp`.
 - `core/third_party/doctest/doctest.h`: Vendored single-header unit testing framework.
 - `core/third_party/nlohmann/json.hpp`: Vendored single-header JSON parser.

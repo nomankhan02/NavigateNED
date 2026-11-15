@@ -20,15 +20,11 @@
   - Hover jitter eliminated: Removed conflicting CSS transforms on SVG transform-positioned elements; added transparent hit-area primitives with `pointer-events: none` on inner visuals across stairs, lift, entrance, exit, transition badges, and markers; respected `prefers-reduced-motion`.
   - Room label fitting & clipping: Computed room screen bounds at current zoom; fitted text using 2-line wrapped full names down to 9px min, short names, or short codes; centered labels within room rects; enforced strict clipping via SVG `<clipPath>` to prevent room overflow; recomputes on debounced zoom end (never during pan).
   - Room popover: Floating details tooltip displays full room name, floor, capacity, and ID on room hover or tap.
-- Task B1 delivered: Single-file C++17 routing core (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI update (`.github/workflows/core.yml`):
-  - Merged adjacency-list graph loading `data/graph.json` (86 outdoor nodes) + all 6 `data/indoor/*.json` files (611 indoor nodes) into a single 697-node graph linked via the 3 m indoor-to-outdoor entrance edges.
-  - Implemented Dijkstra (binary min-heap), A* (admissible Haversine heuristic using building entrance coordinates for indoor nodes), BFS (fewest hops), and Bellman-Ford (with negative cycle detection), all supporting step-free (`accessible: true`) and blocked nodes/edges (`avoid`, `blockedEdges`).
-  - Implemented `call("ping")`, `call("load")`, `call("route")` (with outdoor/indoor/entrance/floor-change `steps[]` and 2000-capped `trace[]`), and `call("compare")` with exception-safe JSON error boundary.
-  - CLI usage (`#ifdef NAVCORE_CLI`):
-    - Compile: `g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`
-    - Run route: `./navcore_cli route b-csit:201 n1 astar --accessible`
-    - Run compare: `./navcore_cli compare b-csit:201 b-library:204`
-    - Run tests: `g++ -std=c++17 -I core/third_party core/tests/test_main.cpp -o test_runner && ./test_runner`
+- Task B1 & B2 delivered: Single-file C++17 routing & DSA engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
+  - Merged 697-node graph (`data/graph.json` 86 outdoor nodes + 6 `data/indoor/*.json` 611 indoor nodes) linked via 3 m entrance edges.
+  - Routing: Dijkstra, A* (admissible Haversine heuristic), BFS (fewest hops), Bellman-Ford (with negative cycle detection), and Floyd-Warshall (`algo: "floyd"`), all supporting `accessible: true` and `avoid` / `blockedEdges`, memoized by an O(1) LRU cache (invalidated when blocked sets change).
+  - Additional DSA: Prefix Trie (`search`), Floyd-Warshall landmark matrix (`allPairs`), Union-Find + Kruskal/Prim (`mst`), Held-Karp bitmask DP & Nearest-Neighbor (`tsp` with heuristic gap %), and Tarjan's articulation points & bridges (`criticalPoints`).
+  - CLI (`g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): supports `ping`, `route`, `compare`, `search`, `cacheStats`, `allPairs`, `mst`, `tsp`, `criticalPoints`.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -54,12 +50,22 @@
    - Props: `<IndoorMap building={building} floor={activeFloor} onFloorChange={(fl) => ...} route={indoorNodeIds} highlightedNodeIds={ids} selectedRoomId={roomId} onRoomClick={(id, node) => ...} userNode={nodeId} evacuation={evacData} trace={traceReplay} />`
    - Styling: Uses standard `--map-*` tokens with fallbacks defined in `web/src/map/indoor/indoor.css`.
    - **Dev Harness Note**: `web/src/app/_map-dev/indoor/page.tsx` (and Next.js App Router underscore route forwarder `web/src/app/%5Fmap-dev/indoor/page.tsx`) is a temporary verification page added by Member A as an allowed exception; **Member C may freely remove or replace it**.
+7. **C++ WASM `call(fn, argsJson)` API Examples (for Member C)**:
+   - `call("ping", "{}")` -> `{"status":"pong","version":"1.0.0"}`
+   - `call("load", graphOrIndoorJson)` -> `{"status":"ok","nodeCount":697,"edgeCount":859,"indoorBuildings":6,"landmarkCount":55}` (pass outdoor `graph.json` first, then each indoor JSON to merge).
+   - `call("route", '{"from":"b-csit:201","to":"n1","algo":"dijkstra|astar|bfs|bellmanford|floyd","accessible":false,"avoid":["n12"]}')` -> `{"found":true,"distance":294.2,"path":["b-csit:201",...,"n1"],"steps":["Walk indoors...",...],"trace":[{"type":"visit|relax|frontier","node":"...","dist":0.0}],"negativeCycle":false}`
+   - `call("compare", '{"from":"b-csit","to":"b-library","accessible":false}')` -> `{"results":{"dijkstra":{"found":true,"distance":312.4,"nodesVisited":42,"visitedCount":42,"timeUs":38.5,"timeMs":0.0385,"hops":9},"astar":{...},"bfs":{...},"bellmanford":{...},"floyd":{...}}}`
+   - `call("search", '{"query":"11","limit":5}')` -> `{"results":[{"id":"b-auditorium","label":"Main Auditorium","name":"Main Auditorium","kind":"landmark","type":"landmark","number":"11","nodeId":"n57"},...]}` (rooms include `"buildingId":"b-csit"`).
+   - `call("cacheStats", "{}")` -> `{"hits":3,"misses":2,"size":2,"capacity":128,"evictions":0,"invalidations":0}` (supports `{"reset":true,"capacity":64}`).
+   - `call("allPairs", "{}")` -> `{"matrix":{"b-csit":{"b-library":312.4,"b-admin":198.0,...}}, "landmarkCount":55}` (unreachable entries are `null`).
+   - `call("mst", '{"algo":"kruskal|prim"}')` -> `{"algo":"kruskal","totalWeight":4120.5,"totalLength":4120.5,"edgeCount":85,"edges":[{"a":"n1","b":"n2","w":45.2},...]}`
+   - `call("tsp", '{"stops":["n1","b-csit","b-library"],"algo":"dp|nn","returnToStart":false}')` -> `{"found":true,"order":["n1","b-csit","b-library"],"orderedStops":[...],"totalDistance":485.6,"dpDistance":485.6,"nnDistance":510.2,"heuristicGapPercent":5.06,"path":["n1",...]}`
+   - `call("criticalPoints", "{}")` -> `{"articulationPoints":["n12",...],"bridges":[["n1","n2"],...],"landmarkNames":{"n57":"Main Auditorium",...},"nodes":[...],"edges":[...]}`
 
 ## Open Tasks
-- [x] Member A (Task A4): Indoor floor-plan SVG map component in `web/src/map/`.
-- [x] Member A (Task A4b): Indoor map fixes (hover jitter elimination, room label boundary clipping, and room popover).
-- [x] Member A/B (Task B1): C++17 single-file routing core (`core/src/navcore.cpp`) with merged outdoor+indoor graph, Dijkstra, A*, BFS, Bellman-Ford, CLI, and Doctest suite.
-- [ ] Member A/B (Task B2+): Remaining C++ DSA algorithms (`allPairs`, `mst`, `tsp`, `criticalPoints`, `search`, `evacuate`) in `core/src/navcore.cpp`.
+- [x] Member A (Task A4 & A4b): Indoor floor-plan SVG map component and fixes in `web/src/map/`.
+- [x] Member A/B (Task B1 & B2): Single-file C++17 routing & DSA core (`core/src/navcore.cpp`) with Dijkstra, A*, BFS, Bellman-Ford, Floyd-Warshall, Trie, LRU Cache, Union-Find/MST, TSP, and Tarjan.
+- [ ] Member A/B (Task B3): Emergency evacuation algorithm (`evacuate`) in `core/src/navcore.cpp`.
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
 ## Known Issues
