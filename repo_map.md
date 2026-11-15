@@ -48,6 +48,8 @@
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
 - `web/src/app/layout.tsx`: Root layout loading self-hosted Bricolage Grotesque, Familjen Grotesk, Azeret Mono, and Campus Survey Plate tokens.
 - `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
+- `web/src/app/kit/page.tsx`: Interactive `/kit` showcase of all Campus Survey Plate tokens, typography, icons, and UI components in Daylight and Night modes.
+- `web/src/app/kit/kit.module.css`: Scoped layout styles for the `/kit` styleguide page.
 - `web/src/app/_map-dev/page.tsx`: Temporary dev harness page verifying `OutdoorMap`, `useTraceReplay`, and evacuation overlays.
 - `web/src/app/_map-dev/indoor/page.tsx`: Temporary dev harness page verifying `IndoorMap` multi-floor rendering, evacuation, and trace replay.
 - `web/src/app/%5Fmap-dev/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev`.
@@ -74,5 +76,15 @@
 - `web/src/ui/icons/campus.tsx`: Campus & evacuation icons (`entrance`, `exit`, `stairs`, `lift`, `floor`, `building`, `accessibility`, `assembly-point`, `hazard`, `blocked-path`, `people-flow`).
 - `web/src/ui/icons/controls.tsx`: Transport, directional, and theme icons (`play`, `pause`, `step`, `close`, `menu`, `chevrons`, `settings`, `sun`, `moon`).
 - `web/src/ui/icons/index.tsx`: Icon barrel exports, `<Icon name={...} />` lookup component, and `ICON_CATALOG`.
+- `web/src/ui/ui.module.css`: Scoped Campus Survey Plate component styles using `tokens.css` variables.
+- `web/src/ui/theme.tsx`: `useTheme` hook and `ThemeSwitch` button toggling Daylight/Night Survey Plates.
+- `web/src/ui/Button.tsx`: `Button` (`primary`, `secondary`, `quiet`, `danger`, optional `chamfer`) and `IconButton`.
+- `web/src/ui/Controls.tsx`: Keyboard-accessible `Toggle`, `SegmentedControl`, and `Chip`.
+- `web/src/ui/Fields.tsx`: `Field` and `SearchField` input components with unit and shortcut badges.
+- `web/src/ui/Surfaces.tsx`: `Panel` (flat paper or frosted tracing vellum), `Divider` with ticks, `Badge`, and `ListRow`.
+- `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with optional tick-up animation (`prefers-reduced-motion` safe).
+- `web/src/ui/Sheet.tsx`: Responsive left edge panel on desktop and draggable 3-snap bottom sheet (`peek`, `half`, `expanded`) on phone.
+- `web/src/ui/Toast.tsx`: `Toast` notification banner and `SurveyLoader` calibration bar.
+- `web/src/ui/index.ts`: Barrel export for all UI components and icons.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
 - `web/src/styles/tokens.css`: Single-source Campus Survey Plate CSS custom properties (Daylight & Night plates, typography, vellum, chamfer, spacing, motion, and `--map-*` mappings).
