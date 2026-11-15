@@ -176,6 +176,7 @@ export function AppShell() {
   const [routeResult, setRouteResult] = useState<RouteResponse | null>(null);
   const [maneuvers, setManeuvers] = useState<Maneuver[]>([]);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [indoorStepIndex, setIndoorStepIndex] = useState<number>(0);
   const [stepFocusActive, setStepFocusActive] = useState<boolean>(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState<boolean>(false);
@@ -249,6 +250,7 @@ export function AppShell() {
     async (buildingId: string, route: string[], selectedRoomId?: string) => {
       setIndoorLoadError(null);
       if (indoorBuildings[buildingId]) {
+        setIndoorStepIndex(0);
         setActiveIndoor({ buildingId, route, selectedRoomId });
         setMobileSnap("peek");
         return;
@@ -262,6 +264,7 @@ export function AppShell() {
         }
         const bldg = (await res.json()) as IndoorBuilding;
         setIndoorBuildings((prev) => ({ ...prev, [buildingId]: bldg }));
+        setIndoorStepIndex(0);
         setActiveIndoor({ buildingId, route, selectedRoomId });
         setMobileSnap("peek");
       } catch (err) {
@@ -643,32 +646,50 @@ export function AppShell() {
             </div>
           )}
 
-          {!activeIndoor && routeResult?.found && maneuvers.length > 0 ? (
-            <RouteCard
-              fromLabel={fromInput || "Origin"}
-              toLabel={toInput || "Destination"}
-              distanceM={routeResult.distance}
-              algo={algo}
-              maneuvers={maneuvers}
-              activeStepIndex={activeStepIndex}
-              onStepChange={(idx) => {
-                setActiveStepIndex(idx);
-                setStepFocusActive(true);
-              }}
-              onEnterBuilding={(bid) => {
-                const leg = routeLegs.find(
-                  (l) => l.kind === "indoor" && l.buildingId === bid,
-                );
-                void openIndoorBuilding(
-                  bid,
-                  leg?.nodeIds ?? [],
-                  toTargetId.includes(":") ? toTargetId : undefined,
-                );
-              }}
-              indoorLoading={indoorLoading}
-              sheetSnap={mobileSnap}
-            />
-          ) : null}
+          {(() => {
+            if (!routeResult?.found || maneuvers.length === 0) return null;
+            const indoorManeuvers = activeIndoor
+              ? maneuvers.filter((m) =>
+                  m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+                )
+              : [];
+            const displayedManeuvers = activeIndoor
+              ? indoorManeuvers
+              : maneuvers;
+            if (displayedManeuvers.length === 0) return null;
+            const currentIdx = activeIndoor ? indoorStepIndex : activeStepIndex;
+            return (
+              <RouteCard
+                fromLabel={fromInput || "Origin"}
+                toLabel={toInput || "Destination"}
+                distanceM={routeResult.distance}
+                algo={algo}
+                maneuvers={displayedManeuvers}
+                activeStepIndex={currentIdx}
+                isIndoorMode={Boolean(activeIndoor)}
+                onStepChange={(idx) => {
+                  if (activeIndoor) {
+                    setIndoorStepIndex(idx);
+                  } else {
+                    setActiveStepIndex(idx);
+                    setStepFocusActive(true);
+                  }
+                }}
+                onEnterBuilding={(bid) => {
+                  const leg = routeLegs.find(
+                    (l) => l.kind === "indoor" && l.buildingId === bid,
+                  );
+                  void openIndoorBuilding(
+                    bid,
+                    leg?.nodeIds ?? [],
+                    toTargetId.includes(":") ? toTargetId : undefined,
+                  );
+                }}
+                indoorLoading={indoorLoading}
+                sheetSnap={mobileSnap}
+              />
+            );
+          })()}
 
           {activeIndoor && activeIndoorBuilding ? (
             <IndoorStage
@@ -679,6 +700,11 @@ export function AppShell() {
               }
               route={activeIndoor.route}
               initialSelectedRoomId={activeIndoor.selectedRoomId}
+              activeStepNodeId={
+                maneuvers.filter((m) =>
+                  m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+                )[indoorStepIndex]?.atNodeId ?? null
+              }
               onBackToCampus={() => setActiveIndoor(null)}
               onSetOriginFromRoom={(nodeId, label) => {
                 setFromTargetId(nodeId);

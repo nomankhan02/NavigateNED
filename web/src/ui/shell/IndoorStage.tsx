@@ -6,7 +6,6 @@ import {
   Badge,
   Button,
   ChevronLeftIcon,
-  ChevronRightIcon,
   LocateIcon,
 } from "@/ui";
 import styles from "./shell.module.css";
@@ -16,6 +15,7 @@ export interface IndoorStageProps {
   buildingDisplayName: string;
   route?: string[];
   initialSelectedRoomId?: string;
+  activeStepNodeId?: string | null;
   onBackToCampus: () => void;
   onSetOriginFromRoom: (nodeId: string, label: string) => void;
 }
@@ -25,6 +25,7 @@ export function IndoorStage({
   buildingDisplayName,
   route = [],
   initialSelectedRoomId,
+  activeStepNodeId = null,
   onBackToCampus,
   onSetOriginFromRoom,
 }: IndoorStageProps) {
@@ -41,41 +42,42 @@ export function IndoorStage({
       const roomNode = nodeById.get(initialSelectedRoomId);
       if (roomNode) return roomNode.floor;
     }
+    if (activeStepNodeId) {
+      const stepNode = nodeById.get(activeStepNodeId);
+      if (stepNode) return stepNode.floor;
+    }
     if (route.length > 0) {
       const first = nodeById.get(route[0]);
       if (first) return first.floor;
     }
     return building.floors[0]?.level ?? 0;
-  }, [building, route, initialSelectedRoomId, nodeById]);
+  }, [building, route, initialSelectedRoomId, activeStepNodeId, nodeById]);
 
   const [floor, setFloor] = useState<number>(initialFloor);
-  const [stepIndex, setStepIndex] = useState<number>(0);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(
     initialSelectedRoomId ?? null,
   );
   const [userNode, setUserNode] = useState<string | null>(null);
 
   useEffect(() => {
-    setStepIndex(0);
     setFloor(initialFloor);
     setSelectedRoomId(initialSelectedRoomId ?? null);
   }, [building.id, initialFloor, initialSelectedRoomId]);
 
-  const activeStepNodeId = route[stepIndex] ?? null;
+  // Follow RouteCard step changes: switch floor automatically when step moves to another floor
+  useEffect(() => {
+    if (!activeStepNodeId) return;
+    const stepNode = nodeById.get(activeStepNodeId);
+    if (stepNode) {
+      setFloor(stepNode.floor);
+    }
+  }, [activeStepNodeId, nodeById]);
+
   const activeStepNode = activeStepNodeId ? nodeById.get(activeStepNodeId) : undefined;
   const selectedRoomNode = selectedRoomId ? nodeById.get(selectedRoomId) : undefined;
+  const fallbackRouteNode = route.length > 0 ? nodeById.get(route[0]) : undefined;
 
-  const imHereTargetNode = selectedRoomNode ?? activeStepNode;
-
-  const handleStep = (delta: number) => {
-    if (route.length === 0) return;
-    const nextIdx = Math.max(0, Math.min(route.length - 1, stepIndex + delta));
-    setStepIndex(nextIdx);
-    const nextNode = nodeById.get(route[nextIdx]);
-    if (nextNode) {
-      setFloor(nextNode.floor);
-    }
-  };
+  const imHereTargetNode = selectedRoomNode ?? activeStepNode ?? fallbackRouteNode;
 
   const handleImHere = () => {
     const target = imHereTargetNode;
@@ -111,32 +113,6 @@ export function IndoorStage({
         </div>
 
         <div className={styles.indoorToolbarRight}>
-          {route.length > 0 ? (
-            <div className={styles.indoorStepper}>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={stepIndex <= 0}
-                leadingIcon={<ChevronLeftIcon size={14} />}
-                onClick={() => handleStep(-1)}
-              >
-                Back
-              </Button>
-              <span className={styles.indoorStepCounter}>
-                {stepIndex + 1} / {route.length}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={stepIndex >= route.length - 1}
-                trailingIcon={<ChevronRightIcon size={14} />}
-                onClick={() => handleStep(1)}
-              >
-                Next
-              </Button>
-            </div>
-          ) : null}
-
           <Button
             size="sm"
             variant="primary"

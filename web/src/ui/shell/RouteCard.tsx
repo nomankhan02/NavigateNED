@@ -26,6 +26,7 @@ export interface RouteCardProps {
   activeStepIndex: number;
   onStepChange: (index: number) => void;
   onEnterBuilding?: (buildingId: string) => void;
+  isIndoorMode?: boolean;
   indoorLoading?: boolean;
   sheetSnap?: SheetSnap;
 }
@@ -58,6 +59,7 @@ export function RouteCard({
   activeStepIndex,
   onStepChange,
   onEnterBuilding,
+  isIndoorMode = false,
   indoorLoading = false,
   sheetSnap = "peek",
 }: RouteCardProps) {
@@ -113,7 +115,7 @@ export function RouteCard({
             </div>
           </div>
 
-          {buildingIdForStep && onEnterBuilding ? (
+          {!isIndoorMode && buildingIdForStep && onEnterBuilding ? (
             <div className={styles.indoorActionBar}>
               <Button
                 size="sm"
@@ -196,7 +198,7 @@ export function RouteCard({
                     </span>
                     <span className={styles.expandedRowText}>{m.text}</span>
                   </span>
-                  {bid && onEnterBuilding ? (
+                  {!isIndoorMode && bid && onEnterBuilding ? (
                     <span
                       className={styles.indoorActionBar}
                       onClick={(e) => {
@@ -234,3 +236,4 @@ export function RouteCard({
     </section>
   );
 }
+
