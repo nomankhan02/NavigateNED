@@ -310,3 +310,98 @@ export async function compareAlgorithms(args: {
 export async function searchCampus(query: string, limit = 15): Promise<SearchResponse> {
   return callNavCore<SearchResponse>("search", { query, limit });
 }
+
+export interface EvacBlockedInput {
+  nodes: string[];
+  edges: [string, string][];
+}
+
+export interface EvacPersonGroup {
+  at: string;
+  count: number;
+}
+
+export interface EvacAssignment {
+  from: string;
+  assemblyId: string;
+  assemblyName: string;
+  count: number;
+  distance: number;
+  path: string[];
+  exitNodeId?: string;
+}
+
+export interface EvacAssemblyLoad {
+  id: string;
+  name?: string;
+  assigned: number;
+  capacity: number;
+}
+
+export interface EvacuateResponse {
+  mode: "nearest" | "capacity";
+  assignments: EvacAssignment[];
+  unassigned: number;
+  assemblyLoad: EvacAssemblyLoad[];
+  totalDistance: number;
+}
+
+export interface EvacuationCompareResponse {
+  nearest: EvacuateResponse;
+  capacity: EvacuateResponse;
+  totalDistance: { nearest: number; capacity: number };
+  maxAssemblyLoad: { nearest: number; capacity: number };
+  overloadedAreasCount: { nearest: number; capacity: number };
+}
+
+export interface NearestAssemblyResponse {
+  found: boolean;
+  from: string;
+  assemblyId: string;
+  assemblyName: string;
+  nodeId: string;
+  capacity: number;
+  distance: number;
+  path: string[];
+  steps: string[];
+  exitNodeId?: string;
+  error?: string;
+}
+
+export async function evacuateCampus(args: {
+  mode: "nearest" | "capacity";
+  blocked: EvacBlockedInput;
+  people: EvacPersonGroup[];
+  disableLifts?: boolean;
+}): Promise<EvacuateResponse> {
+  return callNavCore<EvacuateResponse>("evacuate", {
+    mode: args.mode,
+    blocked: args.blocked,
+    people: args.people,
+    disableLifts: args.disableLifts ?? true,
+  });
+}
+
+export async function compareEvacuation(args: {
+  blocked: EvacBlockedInput;
+  people: EvacPersonGroup[];
+  disableLifts?: boolean;
+}): Promise<EvacuationCompareResponse> {
+  return callNavCore<EvacuationCompareResponse>("evacuationCompare", {
+    blocked: args.blocked,
+    people: args.people,
+    disableLifts: args.disableLifts ?? true,
+  });
+}
+
+export async function findNearestAssembly(args: {
+  from: string;
+  blocked: EvacBlockedInput;
+  disableLifts?: boolean;
+}): Promise<NearestAssemblyResponse> {
+  return callNavCore<NearestAssemblyResponse>("nearestAssembly", {
+    from: args.from,
+    blocked: args.blocked,
+    disableLifts: args.disableLifts ?? true,
+  });
+}

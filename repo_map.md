@@ -92,6 +92,8 @@
 - `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, floating search dropdowns, `RouteCard`, `AlgoCompareCard`, live `OutdoorMap`, and `IndoorStage` transitions.
 - `web/src/ui/shell/AlgoCompareCard.tsx`: Floating frosted-vellum comparison dialog calling `compareAlgorithms()` with 4 hand-built SVG bar charts and click-to-select + replay.
 - `web/src/ui/shell/algoCompare.module.css`: Scoped token styles for `AlgoCompareCard`.
+- `web/src/ui/shell/EvacuatePanel.tsx`: Evacuate tab panel with slim hazard band, people-group scenario builder + presets, and map tap-to-block path/junction controls.
+- `web/src/ui/shell/evacuatePanel.module.css`: Scoped token styles for `EvacuatePanel`.
 - `web/src/ui/shell/RouteCard.tsx`: Frosted vellum floating route card over the map with current maneuver, Prev/Next stepper, expandable directions list, `"Watch the search"` / `"Compare algorithms"` triggers, and indoor `"Enter <building>?"` / `"Open indoor map"` actions.
 - `web/src/ui/shell/TraceReplayPanel.tsx`: Search trace replay controls (Play/Pause, step back/forward, `0.5x`/`1x`/`2x`/`5x` speeds, scrubber, `Azeret Mono` visited/frontier/distance readouts, indoor-leg note).
 - `web/src/ui/shell/traceReplayPanel.module.css`: Scoped token styles for `TraceReplayPanel`.

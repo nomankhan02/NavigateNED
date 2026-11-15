@@ -14,6 +14,7 @@ import {
 import {
   type CampusGraph,
   type CampusLandmark,
+  type EvacuationOverlayData,
   type IndoorBuilding,
   OutdoorMap,
   useTraceReplay,
@@ -64,6 +65,7 @@ import {
   Toggle,
 } from "@/ui";
 import { AlgoCompareCard } from "./AlgoCompareCard";
+import { type EvacGroupItem, EvacuatePanel } from "./EvacuatePanel";
 import { IndoorStage } from "./IndoorStage";
 import { RouteCard } from "./RouteCard";
 import { extractOutdoorPath, splitRouteIntoLegs } from "./routeLegs";
@@ -183,6 +185,11 @@ export function AppShell() {
   const [replayOpen, setReplayOpen] = useState<boolean>(false);
   const [compareOpen, setCompareOpen] = useState<boolean>(false);
   const pendingReplayRef = useRef<boolean>(false);
+
+  const [evacGroups, setEvacGroups] = useState<EvacGroupItem[]>([]);
+  const [blockMode, setBlockMode] = useState<boolean>(false);
+  const [blockedNodes, setBlockedNodes] = useState<string[]>([]);
+  const [blockedEdges, setBlockedEdges] = useState<[string, string][]>([]);
 
   const [activeIndoor, setActiveIndoor] = useState<{
     buildingId: string;
@@ -356,6 +363,96 @@ export function AppShell() {
       traceReplay.play();
     }
   }, [replayOpen, outdoorTraceEvents, traceReplay]);
+
+  const handleEvacMapClick = useCallback(
+    (coords: { lat: number; lng: number }) => {
+      if (!graph) return;
+      const cosLat = Math.cos((coords.lat * Math.PI) / 180);
+      const toXY = (lat: number, lng: number) => ({
+        x: (lng - coords.lng) * 111320 * cosLat,
+        y: (lat - coords.lat) * 111320,
+      });
+
+      let bestNodeId: string | null = null;
+      let bestNodeDist = 20;
+      const nodeMap = new Map<string, { lat: number; lng: number }>();
+      for (const n of graph.nodes) {
+        nodeMap.set(n.id, { lat: n.lat, lng: n.lng });
+        const p = toXY(n.lat, n.lng);
+        const d = Math.hypot(p.x, p.y);
+        if (d < bestNodeDist) {
+          bestNodeDist = d;
+          bestNodeId = n.id;
+        }
+      }
+
+      if (bestNodeId) {
+        const nid = bestNodeId;
+        setBlockedNodes((prev) =>
+          prev.includes(nid) ? prev.filter((x) => x !== nid) : [...prev, nid],
+        );
+        return;
+      }
+
+      let bestEdge: [string, string] | null = null;
+      let bestEdgeDist = 26;
+      for (const e of graph.edges) {
+        const pts: [number, number][] =
+          e.geometry && e.geometry.length >= 2
+            ? e.geometry
+            : (() => {
+                const na = nodeMap.get(e.a);
+                const nb = nodeMap.get(e.b);
+                return na && nb
+                  ? [
+                      [na.lat, na.lng],
+                      [nb.lat, nb.lng],
+                    ]
+                  : [];
+              })();
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = toXY(pts[i][0], pts[i][1]);
+          const b = toXY(pts[i + 1][0], pts[i + 1][1]);
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const len2 = dx * dx + dy * dy;
+          const t =
+            len2 > 0
+              ? Math.max(0, Math.min(1, (-a.x * dx - a.y * dy) / len2))
+              : 0;
+          const dist = Math.hypot(a.x + t * dx, a.y + t * dy);
+          if (dist < bestEdgeDist) {
+            bestEdgeDist = dist;
+            bestEdge = [e.a, e.b];
+          }
+        }
+      }
+
+      if (bestEdge) {
+        const [ea, eb] = bestEdge;
+        setBlockedEdges((prev) => {
+          const exists = prev.some(
+            ([x, y]) => (x === ea && y === eb) || (x === eb && y === ea),
+          );
+          if (exists) {
+            return prev.filter(
+              ([x, y]) => !((x === ea && y === eb) || (x === eb && y === ea)),
+            );
+          }
+          return [...prev, [ea, eb]];
+        });
+      }
+    },
+    [graph],
+  );
+
+  const evacOverlay: EvacuationOverlayData | null = useMemo(() => {
+    if (mode !== "evacuate") return null;
+    return {
+      blockedNodes,
+      blockedEdges,
+    };
+  }, [mode, blockedNodes, blockedEdges]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -642,10 +739,16 @@ export function AppShell() {
                 trace={replayOpen ? traceReplay : null}
                 activeManeuver={activeManeuverForMap}
                 activeLegPath={activeLegPathForMap}
-                showGraph={showGraph}
+                showGraph={showGraph || (mode === "evacuate" && blockMode)}
+                evacuation={evacOverlay}
                 selectedLandmarkId={selectedLandmarkId}
                 onLandmarkClick={handleLandmarkClickOnMap}
-                onMapClick={(coords) => setCursorCoords(coords)}
+                onMapClick={(coords) => {
+                  setCursorCoords(coords);
+                  if (mode === "evacuate" && blockMode) {
+                    handleEvacMapClick(coords);
+                  }
+                }}
               />
             </div>
           ) : (
@@ -1357,69 +1460,73 @@ export function AppShell() {
             ) : null}
 
             {mode === "evacuate" ? (
-              <>
-                <section className={styles.sectionCard}>
-                  <SectionHeader title="Summary" />
-                  <div className={styles.readoutGrid}>
-                    <StatReadout
-                      size="sm"
-                      label="Assembly zones"
-                      value={7}
-                      unit="areas"
-                      sublabel="Multi-source"
-                      tone="safe"
-                      icon={<AssemblyPointIcon size={14} />}
-                    />
-                    <StatReadout
-                      size="sm"
-                      label="Total capacity"
-                      value={6800}
-                      unit="people"
-                      sublabel="Max-flow balanced"
-                      tone="teal"
-                      icon={<GraphIcon size={14} />}
-                    />
-                  </div>
-                </section>
-
-                <section className={styles.sectionCard}>
-                  <SectionHeader title="Options" />
-                  <Toggle
-                    id="shell-evac-lifts"
-                    checked={disableLifts}
-                    onChange={setDisableLifts}
-                    leadingIcon={<HazardIcon size={15} />}
-                    label="Disable lifts"
-                    hint="Use stairs only during emergency egress"
-                  />
-                </section>
-
-                <section
-                  className={[styles.sectionCard, styles.sectionCardFill].join(" ")}
-                >
-                  <SectionHeader title="Assembly Points" />
-                  <div className={styles.landmarksScrollList}>
-                    <ListRow
-                      leading={<Badge variant="safe" numeric>01</Badge>}
-                      title="Courtyard Fountain Plaza"
-                      subtitle="Central campus muster zone"
-                      trailing={<span>600 cap</span>}
-                    />
-                    <ListRow
-                      leading={<Badge variant="safe" numeric>02</Badge>}
-                      title="Soccer Field & Athletics Track"
-                      subtitle="Primary open ground muster"
-                      trailing={<span>1800 cap</span>}
-                    />
-                    <ListRow
-                      leading={<Badge variant="safe" numeric>03</Badge>}
-                      title="Main Gate Assembly Apron"
-                      subtitle="University Road egress"
-                      trailing={<span>900 cap</span>}
-                    />
-                  </div>
-                </section>
-              </>
+              <EvacuatePanel
+                searchOptions={searchOptions}
+                groups={evacGroups}
+                onAddGroup={(at, label, count) =>
+                  setEvacGroups((prev) => [
+                    ...prev,
+                    { id: `${at}-${Date.now()}`, at, label, count },
+                  ])
+                }
+                onRemoveGroup={(id) =>
+                  setEvacGroups((prev) => prev.filter((g) => g.id !== id))
+                }
+                onApplyPresetGroups={(preset) => {
+                  if (preset === "lib-aud") {
+                    setEvacGroups([
+                      {
+                        id: "preset-lib",
+                        at: "b-library",
+                        label: "Central Library",
+                        count: 300,
+                      },
+                      {
+                        id: "preset-aud",
+                        at: "b-auditorium",
+                        label: "Main Auditorium",
+                        count: 200,
+                      },
+                    ]);
+                  } else {
+                    setEvacGroups([
+                      { id: "drill-lib", at: "b-library", label: "Central Library", count: 450 },
+                      { id: "drill-aud", at: "b-auditorium", label: "Main Auditorium", count: 350 },
+                      { id: "drill-csit", at: "b-csit", label: "CSIT Department", count: 300 },
+                      { id: "drill-admin", at: "b-admin", label: "Admin Block", count: 250 },
+                      { id: "drill-labs", at: "b-csit-labs", label: "CSIT Labs", count: 200 },
+                      { id: "drill-dean", at: "b-dean-offices", label: "Dean Offices", count: 150 },
+                    ]);
+                  }
+                }}
+                blockMode={blockMode}
+                onToggleBlockMode={setBlockMode}
+                blockedNodes={blockedNodes}
+                blockedEdges={blockedEdges}
+                onBlockMainGateRoad={() =>
+                  setBlockedEdges((prev) => {
+                    const has = prev.some(
+                      ([a, b]) =>
+                        (a === "n1" && b === "n9") || (a === "n9" && b === "n1"),
+                    );
+                    return has ? prev : [...prev, ["n1", "n9"]];
+                  })
+                }
+                onRemoveBlockedNode={(nid) =>
+                  setBlockedNodes((prev) => prev.filter((x) => x !== nid))
+                }
+                onRemoveBlockedEdge={(a, b) =>
+                  setBlockedEdges((prev) =>
+                    prev.filter(
+                      ([x, y]) => !((x === a && y === b) || (x === b && y === a)),
+                    ),
+                  )
+                }
+                onClearBlocked={() => {
+                  setBlockedNodes([]);
+                  setBlockedEdges([]);
+                }}
+              />
             ) : null}
           </div>
         </aside>
