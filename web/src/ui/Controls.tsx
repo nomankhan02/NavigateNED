@@ -27,7 +27,13 @@ export function Toggle({
   return (
     <label
       htmlFor={id}
-      className={[styles.toggleWrapper, disabled ? styles.toggleDisabled : ""].filter(Boolean).join(" ")}
+      className={[
+        styles.toggleWrapper,
+        checked ? styles.toggleWrapperChecked : "",
+        disabled ? styles.toggleDisabled : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <div className={styles.toggleText}>
         <span className={styles.toggleLabel}>
@@ -206,3 +212,4 @@ export function Chip({
     </span>
   );
 }
+

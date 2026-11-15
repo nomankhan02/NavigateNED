@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import styles from "./ui.module.css";
 
 export interface StatReadoutProps {
@@ -10,8 +10,9 @@ export interface StatReadoutProps {
   sublabel?: string;
   decimals?: number;
   animate?: boolean;
-  tone?: "default" | "accent" | "teal" | "safe";
+  tone?: "default" | "accent" | "vermilion" | "teal" | "safe" | "neutral";
   size?: "sm" | "md";
+  icon?: ReactNode;
 }
 
 export function StatReadout({
@@ -23,6 +24,7 @@ export function StatReadout({
   animate = true,
   tone = "default",
   size = "md",
+  icon,
 }: StatReadoutProps) {
   const numericTarget = typeof value === "number" ? value : Number.NaN;
   const [displayNumber, setDisplayNumber] = useState<number>(
@@ -73,17 +75,20 @@ export function StatReadout({
     : String(value);
 
   const toneClass =
-    tone === "accent"
+    tone === "accent" || tone === "vermilion"
       ? styles.statReadoutAccent
       : tone === "teal"
         ? styles.statReadoutTeal
         : tone === "safe"
           ? styles.statReadoutSafe
-          : "";
+          : styles.statReadoutNeutral;
 
   return (
     <div className={[styles.statReadout, toneClass].filter(Boolean).join(" ")}>
-      <span className={styles.statLabel}>{label}</span>
+      <div className={styles.statHeaderRow}>
+        <span className={styles.statLabel}>{label}</span>
+        {icon ? <span className={styles.statIcon}>{icon}</span> : null}
+      </div>
       <div className={styles.statValueRow}>
         <span
           className={[styles.statValue, size === "sm" ? styles.statValueSm : ""]

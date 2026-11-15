@@ -95,7 +95,7 @@ export interface IconCatalogEntry {
 }
 
 export const ICON_CATALOG: readonly IconCatalogEntry[] = [
-  { name: "route", group: "navigation", label: "Route Traverse" },
+  { name: "route", group: "navigation", label: "Route Path" },
   { name: "search", group: "navigation", label: "Search Reticle" },
   { name: "compass", group: "navigation", label: "Survey Compass" },
   { name: "locate", group: "navigation", label: "GPS Datum Locate" },
@@ -128,3 +128,4 @@ export const ICON_CATALOG: readonly IconCatalogEntry[] = [
   { name: "sun", group: "controls", label: "Daylight Plate" },
   { name: "moon", group: "controls", label: "Night Plate" },
 ] as const;
+

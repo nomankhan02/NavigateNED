@@ -80,13 +80,13 @@
 - `web/src/ui/theme.tsx`: `useTheme` hook and `ThemeSwitch` button toggling Daylight/Night Survey Plates.
 - `web/src/ui/Button.tsx`: `Button` (`primary`, `secondary`, `quiet`, `danger`, optional `chamfer`) and `IconButton`.
 - `web/src/ui/Controls.tsx`: Keyboard-accessible `Toggle`, `SegmentedControl`, and `Chip`.
-- `web/src/ui/Fields.tsx`: `Field` and `SearchField` input components with unit and shortcut badges.
+- `web/src/ui/Fields.tsx`: `Field` and `SearchField` input components with sentence-case labels and floating keyboard-accessible search dropdowns (`SearchOption`).
 - `web/src/ui/Surfaces.tsx`: `Panel` (flat paper or frosted tracing vellum), `Divider` with ticks, `Badge`, and `ListRow`.
-- `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with optional tick-up animation (`prefers-reduced-motion` safe).
+- `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with type-colored left edge, icon slot, and optional tick-up animation (`prefers-reduced-motion` safe).
 - `web/src/ui/Sheet.tsx`: Responsive left edge panel on desktop and draggable 3-snap bottom sheet (`peek`, `half`, `expanded`) on phone.
 - `web/src/ui/Toast.tsx`: `Toast` notification banner and `SurveyLoader` calibration bar.
-- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with title-block header strip, `<700ms` intro animation, edge-attached left panel / mobile bottom sheet, and live `OutdoorMap`.
-- `web/src/ui/shell/shell.module.css`: Scoped styles and intro keyframes for the `AppShell`.
+- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, numbered sections (`01 ROUTE`..`05 LANDMARKS`), floating search dropdowns, and live `OutdoorMap`.
+- `web/src/ui/shell/shell.module.css`: Scoped 3-level surface hierarchy, numbered section rules, and intro keyframes for `AppShell`.
 - `web/src/ui/index.ts`: Barrel export for all UI components and icons.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
 - `web/src/styles/tokens.css`: Single-source Campus Survey Plate CSS custom properties (Daylight & Night plates, typography, vellum, chamfer, spacing, motion, and `--map-*` mappings).
