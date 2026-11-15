@@ -821,7 +821,51 @@ img.leaflet-zoom-animated {
   }
 }
 
+/* Active turn-by-turn maneuver pulse marker */
+.ned-maneuver-pulse-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ned-maneuver-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid var(--map-route-stroke);
+  background: transparent;
+  animation: ned-maneuver-pulse 1.6s ease-out infinite;
+}
+
+.ned-maneuver-pulse-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: var(--map-route-stroke);
+  border: 2px solid var(--map-bg, #eef2f3);
+}
+
+@keyframes ned-maneuver-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ned-maneuver-pulse-ring {
+    animation: none !important;
+  }
   .ned-route-animated-path {
     animation: none !important;
     stroke-dasharray: none !important;

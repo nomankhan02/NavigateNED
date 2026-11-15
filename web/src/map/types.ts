@@ -111,10 +111,19 @@ export interface TraceReplayState {
   setSpeed: (multiplier: number) => void;
 }
 
+export interface ActiveManeuverMarker {
+  lat: number;
+  lng: number;
+  type?: string;
+  text?: string;
+}
+
 export interface OutdoorMapProps {
   graph: CampusGraph;
   route?: string[];
   highlightedNodeIds?: string[];
+  activeManeuver?: ActiveManeuverMarker | null;
+  activeLegPath?: string[];
   selectedLandmarkId?: string | null;
   onLandmarkClick?: (landmarkId: string, landmark: CampusLandmark) => void;
   onMapClick?: (coords: { lat: number; lng: number }) => void;

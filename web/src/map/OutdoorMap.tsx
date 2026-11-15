@@ -207,6 +207,8 @@ export function OutdoorMap({
   graph,
   route,
   highlightedNodeIds,
+  activeManeuver = null,
+  activeLegPath,
   selectedLandmarkId = null,
   onLandmarkClick,
   onMapClick,
@@ -230,6 +232,7 @@ export function OutdoorMap({
   const markerLayerRef = useRef<any>(null);
   const labelLayerRef = useRef<any>(null);
   const routeLayerRef = useRef<any>(null);
+  const activeStepLayerRef = useRef<any>(null);
   const highlightLayerRef = useRef<any>(null);
   const userLayerRef = useRef<any>(null);
   const evacLayerRef = useRef<any>(null);
@@ -341,6 +344,7 @@ export function OutdoorMap({
       footprintLayerRef.current = L.layerGroup().addTo(map);
       evacLayerRef.current = L.layerGroup().addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
+      activeStepLayerRef.current = L.layerGroup().addTo(map);
       traceLayerRef.current = L.layerGroup().addTo(map);
       highlightLayerRef.current = L.layerGroup().addTo(map);
       userLayerRef.current = L.layerGroup().addTo(map);
@@ -921,6 +925,66 @@ export function OutdoorMap({
       });
     }
   }, [isReady, graph, route]);
+
+  // 4b. Layer (d2): Active maneuver pulsing marker, leg segment highlight, and pan/flyTo
+  useEffect(() => {
+    const L = leafletRef.current;
+    const stepGroup = activeStepLayerRef.current;
+    const svgRenderer = svgRendererRef.current;
+    const map = mapRef.current;
+    if (!isReady || !L || !stepGroup || !svgRenderer || !graph) return;
+
+    stepGroup.clearLayers();
+
+    if (activeLegPath && activeLegPath.length >= 2) {
+      const nodeLookup = buildNodeLookup(graph.nodes);
+      const legCoords = getPathCoordinates(activeLegPath, graph.edges, nodeLookup);
+      if (legCoords.length >= 2) {
+        L.polyline(legCoords, {
+          renderer: svgRenderer,
+          color: "var(--color-network-teal, #0B6E75)",
+          weight: 7.5,
+          opacity: 0.9,
+          lineCap: "round",
+          lineJoin: "round",
+          interactive: false,
+        }).addTo(stepGroup);
+      }
+    }
+
+    if (
+      activeManeuver &&
+      Number.isFinite(activeManeuver.lat) &&
+      Number.isFinite(activeManeuver.lng) &&
+      (activeManeuver.lat !== 0 || activeManeuver.lng !== 0)
+    ) {
+      const pulseHtml = `
+        <div class="ned-maneuver-pulse-wrap" aria-hidden="true">
+          <div class="ned-maneuver-pulse-ring"></div>
+          <div class="ned-maneuver-pulse-dot"></div>
+        </div>`;
+      L.marker([activeManeuver.lat, activeManeuver.lng], {
+        icon: L.divIcon({ className: "", iconSize: [0, 0], html: pulseHtml }),
+        interactive: false,
+      }).addTo(stepGroup);
+
+      if (map) {
+        const reduced =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const targetZoom = Math.max(map.getZoom(), 18);
+        if (reduced) {
+          map.setView([activeManeuver.lat, activeManeuver.lng], targetZoom, {
+            animate: false,
+          });
+        } else {
+          map.flyTo([activeManeuver.lat, activeManeuver.lng], targetZoom, {
+            duration: 0.45,
+          });
+        }
+      }
+    }
+  }, [isReady, graph, activeManeuver, activeLegPath]);
 
   // 5. Layer (e): Highlighted Node IDs
   useEffect(() => {

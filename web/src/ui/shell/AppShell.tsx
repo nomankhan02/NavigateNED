@@ -63,6 +63,7 @@ import {
   Toggle,
 } from "@/ui";
 import { IndoorStage } from "./IndoorStage";
+import { RouteCard } from "./RouteCard";
 import { extractOutdoorPath, splitRouteIntoLegs } from "./routeLegs";
 import styles from "./shell.module.css";
 
@@ -174,6 +175,8 @@ export function AppShell() {
 
   const [routeResult, setRouteResult] = useState<RouteResponse | null>(null);
   const [maneuvers, setManeuvers] = useState<Maneuver[]>([]);
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [stepFocusActive, setStepFocusActive] = useState<boolean>(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState<boolean>(false);
 
@@ -297,6 +300,8 @@ export function AppShell() {
           accessible,
         });
         setRouteResult(res);
+        setActiveStepIndex(0);
+        setStepFocusActive(false);
         if (res.found) {
           const dirRes = await getDirections({ route: res });
           setManeuvers(dirRes.maneuvers ?? []);
@@ -438,6 +443,29 @@ export function AppShell() {
     }
     return floors.size;
   }, [routeResult, indoorBuildings]);
+
+  const activeManeuverForMap = useMemo(() => {
+    if (!stepFocusActive || activeIndoor || maneuvers.length === 0) return null;
+    const m = maneuvers[Math.max(0, Math.min(maneuvers.length - 1, activeStepIndex))];
+    if (!m) return null;
+    return { lat: m.lat, lng: m.lng, type: m.type, text: m.text };
+  }, [stepFocusActive, activeIndoor, maneuvers, activeStepIndex]);
+
+  const activeLegPathForMap = useMemo(() => {
+    if (!stepFocusActive || activeIndoor || maneuvers.length === 0 || outdoorRoutePath.length < 2) {
+      return undefined;
+    }
+    const idx = Math.max(0, Math.min(maneuvers.length - 1, activeStepIndex));
+    const cur = maneuvers[idx];
+    const next = maneuvers[idx + 1];
+    const startIdx = outdoorRoutePath.indexOf(cur.atNodeId);
+    if (startIdx < 0) return undefined;
+    const endIdx = next ? outdoorRoutePath.indexOf(next.atNodeId, startIdx) : -1;
+    if (endIdx > startIdx) {
+      return outdoorRoutePath.slice(startIdx, endIdx + 1);
+    }
+    return outdoorRoutePath.slice(startIdx);
+  }, [stepFocusActive, activeIndoor, maneuvers, activeStepIndex, outdoorRoutePath]);
 
   const focusLandmarkOnMap = (landmarkId?: string) => {
     if (!landmarkId || !graph) return;
@@ -593,6 +621,8 @@ export function AppShell() {
               <OutdoorMap
                 graph={graph}
                 route={outdoorRoutePath}
+                activeManeuver={activeManeuverForMap}
+                activeLegPath={activeLegPathForMap}
                 showGraph={showGraph}
                 selectedLandmarkId={selectedLandmarkId}
                 onLandmarkClick={handleLandmarkClickOnMap}
@@ -608,6 +638,33 @@ export function AppShell() {
               )}
             </div>
           )}
+
+          {!activeIndoor && routeResult?.found && maneuvers.length > 0 ? (
+            <RouteCard
+              fromLabel={fromInput || "Origin"}
+              toLabel={toInput || "Destination"}
+              distanceM={routeResult.distance}
+              algo={algo}
+              maneuvers={maneuvers}
+              activeStepIndex={activeStepIndex}
+              onStepChange={(idx) => {
+                setActiveStepIndex(idx);
+                setStepFocusActive(true);
+              }}
+              onEnterBuilding={(bid) => {
+                const leg = routeLegs.find(
+                  (l) => l.kind === "indoor" && l.buildingId === bid,
+                );
+                void openIndoorBuilding(
+                  bid,
+                  leg?.nodeIds ?? [],
+                  toTargetId.includes(":") ? toTargetId : undefined,
+                );
+              }}
+              indoorLoading={indoorLoading}
+              sheetSnap={mobileSnap}
+            />
+          ) : null}
 
           {activeIndoor && activeIndoorBuilding ? (
             <IndoorStage

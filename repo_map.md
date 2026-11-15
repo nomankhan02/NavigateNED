@@ -89,7 +89,9 @@
 - `web/src/ui/StatReadout.tsx`: `Azeret Mono` instrument readout with type-colored left edge, icon slot, and optional tick-up animation (`prefers-reduced-motion` safe).
 - `web/src/ui/Sheet.tsx`: Responsive left edge panel on desktop and draggable 3-snap bottom sheet (`peek`, `half`, `expanded`) on phone.
 - `web/src/ui/Toast.tsx`: `Toast` notification banner and `SurveyLoader` calibration bar.
-- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, numbered sections (`01 ROUTE`..`05 LANDMARKS`), floating search dropdowns, live `OutdoorMap`, and `IndoorStage` transitions.
+- `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, floating search dropdowns, `RouteCard`, live `OutdoorMap`, and `IndoorStage` transitions.
+- `web/src/ui/shell/RouteCard.tsx`: Frosted vellum floating route card over the map with current maneuver, Prev/Next stepper, expandable directions list, and indoor `"Enter <building>?"` / `"Open indoor map"` actions.
+- `web/src/ui/shell/routeCard.module.css`: Scoped frosted vellum styles for `RouteCard` on desktop bottom-center and phone above-sheet.
 - `web/src/ui/shell/routeLegs.ts`: Splits combined outdoor+indoor WASM paths into ordered `RouteLeg` segments and extracts outdoor node IDs for `OutdoorMap`.
 - `web/src/ui/shell/IndoorStage.tsx`: `IndoorMap` stage container with `"Back to campus"`, floor badge, Next/Back route stepper, and `"I'm here"` origin recomputation.
 - `web/src/ui/shell/shell.module.css`: Scoped 3-level surface hierarchy, numbered section rules, leg/direction cards, indoor toolbar, and intro keyframes for `AppShell`.
