@@ -43,6 +43,7 @@ export * from "./types";
 export * from "./navigation";
 export * from "./campus";
 export * from "./controls";
+export * from "./BrandLogo";
 
 const ICON_MAP: Record<IconName, ComponentType<IconProps>> = {
   route: RouteIcon,

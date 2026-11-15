@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   AccessibilityIcon,
   Badge,
+  BrandLogo,
   Button,
   Chip,
   CompassIcon,
@@ -66,7 +67,7 @@ export default function KitPage() {
     <div className={styles.kitPage}>
       <header className={styles.titleBlock}>
         <div className={styles.titleLeft}>
-          <CompassIcon size={24} />
+          <BrandLogo size={28} animated />
           <div className={styles.titleMeta}>
             <span className={styles.plateStamp}>
               NED UNIVERSITY // GEODETIC SURVEY INSTRUMENT KIT // REV 1.0
@@ -238,11 +239,26 @@ export default function KitPage() {
           </Panel>
         </div>
 
-        {/* 3. HAND-DRAWN ICON SET */}
+        {/* 3. BRAND MARK & HAND-DRAWN ICON SET */}
         <Panel
-          code="SECTION 03 // INLINE SVG ICON SET (24x24, 1.75PX STROKE)"
-          title={`Hand-Drawn Survey & Campus Icons (${ICON_CATALOG.length} Icons)`}
+          code="SECTION 03 // BRAND MARK & INLINE SVG ICON SET"
+          title={`Isometric Brand Mark & Hand-Drawn Icons (${ICON_CATALOG.length} Icons)`}
         >
+          <div className={styles.rowWrap} style={{ marginBottom: "12px" }}>
+            <div className={styles.iconCell} style={{ minWidth: "120px" }}>
+              <BrandLogo size={16} />
+              <span className={styles.iconName}>16px (Simplified)</span>
+            </div>
+            <div className={styles.iconCell} style={{ minWidth: "120px" }}>
+              <BrandLogo size={24} />
+              <span className={styles.iconName}>24px (Header)</span>
+            </div>
+            <div className={styles.iconCell} style={{ minWidth: "140px" }}>
+              <BrandLogo size={64} animated />
+              <span className={styles.iconName}>64px (Full Isometric)</span>
+            </div>
+          </div>
+          <Divider label="24x24 SURVEY & CAMPUS ICON SET (1.75PX STROKE)" />
           <div className={styles.iconGrid}>
             {ICON_CATALOG.map((item) => (
               <div key={item.name} className={styles.iconCell}>

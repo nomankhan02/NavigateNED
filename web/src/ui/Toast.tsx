@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CloseIcon } from "./icons";
+import { BrandLogo, CloseIcon } from "./icons";
 import styles from "./ui.module.css";
 
 export type ToastTone = "default" | "safe" | "hazard";
@@ -50,6 +50,7 @@ export interface SurveyLoaderProps {
 export function SurveyLoader({ label = "CALIBRATING SURVEY PLATE" }: SurveyLoaderProps) {
   return (
     <div role="status" aria-live="polite" className={styles.surveyLoader}>
+      <BrandLogo size={20} animated title="" />
       <div className={styles.surveyLoaderTrack} aria-hidden="true">
         <div className={styles.surveyLoaderSweep} />
       </div>
@@ -57,3 +58,4 @@ export function SurveyLoader({ label = "CALIBRATING SURVEY PLATE" }: SurveyLoade
     </div>
   );
 }
+

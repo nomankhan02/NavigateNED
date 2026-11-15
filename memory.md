@@ -36,6 +36,10 @@
 - Task C1b (Sidebar Polish) delivered:
   - Floating search dropdown on `Where to`, `From`, and `To` fields (`web/src/ui/Fields.tsx`) indexing buildings and indoor rooms with keyboard highlight/select/close (`ArrowUp`/`ArrowDown`/`Enter`/`Escape`), outside-click dismissal, automatic upward/viewport-clamped placement on the phone `Sheet`, and rows displaying number badge, clean name, and kind (`Building` or `Room · <Building>`).
   - Three-level panel visual hierarchy (panel base, elevated section cards, recessed inset wells) with numbered tick-mark headers (`01 ROUTE`, `02 ALGORITHM`, `03 OPTIONS`, `04 SUMMARY`, `05 LANDMARKS`), solid vermilion fills on active tab & selected algorithm, solid teal fills on active toggles & filter chips, type-coded readout cards (`Distance`, `Walk time`, `Floors`, `Visited`), readable sentence-case labels, zero user-visible internal IDs, and collapsible/scrollable `05 LANDMARKS` with full-width `"Set as destination"` buttons.
+- Task C1c (Harbor Chart Theme, Fixes & Isometric Brand Mark) delivered:
+  - Rethemed `web/src/styles/tokens.css` & `design.md` to Theme 2 (**Harbor Chart**, day & night palettes + unified `--map-*` / `--map-indoor-*` tokens).
+  - Fixed `Toggle` (`transform` only, 180ms ease, `prefers-reduced-motion`), `SearchField` focus ring (single outer 2px route-colour ring, no inner cursor bars, `/` keycap preserved), and unified `ThemeProvider` (`try/catch` localStorage, `prefers-color-scheme`, inline pre-paint script in `layout.tsx`, accurate `ThemeSwitch` icon & `aria-label` synced across `/kit` and shell).
+  - Created 30° 3D isometric extruded `"N"` `BrandLogo` (`web/src/ui/icons/BrandLogo.tsx`, full 24px/64px + simplified 16px, staggered 4px face rise intro `<700ms`), `web/public/favicon.svg`, and `web/public/apple-touch-icon.png` (180x180).
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.

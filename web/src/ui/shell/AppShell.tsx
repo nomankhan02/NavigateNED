@@ -20,13 +20,13 @@ import {
   AccessibilityIcon,
   AssemblyPointIcon,
   Badge,
+  BrandLogo,
   Button,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
   Chip,
-  CompassIcon,
   DistanceIcon,
   Field,
   FloorIcon,
@@ -310,8 +310,8 @@ export function AppShell() {
       {/* TITLE-BLOCK HEADER STRIP */}
       <header className={styles.titleBlock}>
         <div className={styles.brandCluster}>
-          <span className={styles.compassStamp} aria-hidden="true">
-            <CompassIcon size={20} />
+          <span className={styles.compassStamp}>
+            <BrandLogo size={24} animated title="NavigateNED" />
           </span>
           <div className={styles.brandTitles}>
             <span className={styles.plateSerial}>

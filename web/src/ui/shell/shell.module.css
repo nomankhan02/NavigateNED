@@ -74,7 +74,7 @@
   min-width: 0;
 }
 
-/* Signature <700ms compass mark settle animation */
+/* Brand Mark Stamp (Logo faces animate in sequence via BrandLogo animated prop) */
 .compassStamp {
   display: inline-flex;
   align-items: center;
@@ -84,20 +84,7 @@
   border: var(--hairline-width) solid var(--color-border-strong);
   border-radius: var(--radius-xs);
   background-color: var(--color-surface-elevated);
-  color: var(--color-signal-vermilion);
   flex-shrink: 0;
-  animation: settleCompass 620ms var(--ease-out-plate) both;
-}
-
-@keyframes settleCompass {
-  from {
-    transform: rotate(-42deg) scale(0.88);
-    opacity: 0;
-  }
-  to {
-    transform: rotate(0deg) scale(1);
-    opacity: 1;
-  }
 }
 
 .brandTitles {

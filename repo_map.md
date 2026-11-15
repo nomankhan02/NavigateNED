@@ -41,6 +41,8 @@
 - `web/package.json`: Web dependencies, scripts, and build tasks.
 - `web/tsconfig.json`: TypeScript compiler configuration with strict checks.
 - `web/next.config.ts`: Next.js config with static export and cache headers.
+- `web/public/favicon.svg`: Static 30° isometric "N" Harbor Chart vector favicon.
+- `web/public/apple-touch-icon.png`: 180x180 anti-aliased isometric "N" app icon.
 - `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.
 - `web/public/data/indoor/`: Static public indoor floor plan datasets for client-only loading.
 - `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay source image.
@@ -75,9 +77,10 @@
 - `web/src/ui/icons/navigation.tsx`: Survey navigation icons (`route`, `search`, `compass`, `locate`, `layers`, `swap`, `distance`, `graph`).
 - `web/src/ui/icons/campus.tsx`: Campus & evacuation icons (`entrance`, `exit`, `stairs`, `lift`, `floor`, `building`, `accessibility`, `assembly-point`, `hazard`, `blocked-path`, `people-flow`).
 - `web/src/ui/icons/controls.tsx`: Transport, directional, and theme icons (`play`, `pause`, `step`, `close`, `menu`, `chevrons`, `settings`, `sun`, `moon`).
+- `web/src/ui/icons/BrandLogo.tsx`: Static 30° isometric extruded "N" brand mark (24px/64px full + 16px simplified) with staggered face intro.
 - `web/src/ui/icons/index.tsx`: Icon barrel exports, `<Icon name={...} />` lookup component, and `ICON_CATALOG`.
 - `web/src/ui/ui.module.css`: Scoped Campus Survey Plate component styles using `tokens.css` variables.
-- `web/src/ui/theme.tsx`: `useTheme` hook and `ThemeSwitch` button toggling Daylight/Night Survey Plates.
+- `web/src/ui/theme.tsx`: Shared `ThemeProvider` context, `useTheme` hook, and `ThemeSwitch` button synced across shell and `/kit`.
 - `web/src/ui/Button.tsx`: `Button` (`primary`, `secondary`, `quiet`, `danger`, optional `chamfer`) and `IconButton`.
 - `web/src/ui/Controls.tsx`: Keyboard-accessible `Toggle`, `SegmentedControl`, and `Chip`.
 - `web/src/ui/Fields.tsx`: `Field` and `SearchField` input components with sentence-case labels and floating keyboard-accessible search dropdowns (`SearchOption`).

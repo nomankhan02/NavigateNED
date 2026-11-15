@@ -70,9 +70,19 @@ All animations strictly use GPU-composited `transform` and `opacity` (or SVG `st
 
 | Interaction / Element | Duration Token | Easing Token | What Animates |
 | :--- | :--- | :--- | :--- |
-| **Title-Block Intro Draw-In** | `--duration-intro` (`620ms`) | `--ease-out-plate` (`cubic-bezier(0.16, 1, 0.3, 1)`) | On first load, title-block hairline rules scale from `scaleX(0)` to `scaleX(1)` (`transform-origin: left`) and compass needle settles (`rotate(-18deg)` to `0deg`). |
+| **Title-Block Intro Draw-In** | `--duration-intro` (`620ms`) | `--ease-out-plate` (`cubic-bezier(0.16, 1, 0.3, 1)`) | On first load, title-block hairline rules scale from `scaleX(0)` to `scaleX(1)` (`transform-origin: left`) and the isometric `N` brand mark faces fade and rise `4px` into place in sequence (`< 700ms` total). |
 | **Panel Slide & Bottom Sheet Snap** | `--duration-normal` (`240ms`) | `--ease-spring-snap` (`cubic-bezier(0.22, 1, 0.36, 1)`) | Desktop side panel translates `translateX(-100% -> 0)`; mobile bottom sheet snaps between peek/half/full via `translateY(...)`. |
 | **Route Polyline Draw-On** | `--duration-route-draw` (`900ms`) | `--ease-spring-snap` (`cubic-bezier(0.22, 1, 0.36, 1)`) | SVG route path animates `stroke-dashoffset` from `1800` to `0`. |
 | **StatReadout Number Tick-Up** | `--duration-slow` (`380ms`) | `requestAnimationFrame` cubic ease-out | Numeric instrument readouts interpolate smoothly from previous value to target value (instant under `prefers-reduced-motion`). |
 | **Indoor Floor Switch** | `--duration-normal` (`240ms`) | `--ease-out-plate` (`cubic-bezier(0.16, 1, 0.3, 1)`) | Floor SVG group cross-fades `opacity` (`0 -> 1`) with subtle vertical shift `translateY(6px -> 0)`. |
 | **Control & ListRow Hover / Press** | `--duration-fast` (`150ms`) | `--ease-out-plate` | Background tint shift and `translateX(2px)` on list rows or `translateY(-1px)` on primary buttons. |
+
+---
+
+## 6. Brand Mark Usage & Clear-Space Rule (`web/src/ui/icons/BrandLogo.tsx`)
+
+- **Geometry**: Static 30° isometric extruded letter **"N"** built strictly from flat polygon faces in three theme-token tones (`--color-logo-light` top face, `--color-logo-mid` front/left face, `--color-logo-dark` side/right face), bisected bottom-left to top-right by a thin `--color-signal-vermilion` route line with endpoint nodes. Zero gradients, zero blur.
+- **Size Variants**:
+  - `24px`–`64px+`: Full 3D isometric extruded letterform (`favicon.svg`, `apple-touch-icon.png`, header title block, `/kit`, `SurveyLoader`).
+  - `16px` (`size <= 18`): Simplified 3-face isometric geometry with thicker `1.5px` route cut for crisp legibility at small sizes.
+- **Clear-Space Rule**: Maintain a minimum clear space equal to **`0.25 ×` the logo's rendered width** (`1/4` of mark size, e.g., `6px` around a `24px` mark or `16px` around a `64px` mark) on all four sides, free of text, badges, or competing borders. Inside the `34px` header stamp frame, the `24px` mark sits centered with `5px` internal padding.

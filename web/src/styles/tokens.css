@@ -489,6 +489,37 @@ body[data-map-interacting="true"] .ned-indoor-hud-btn {
   background-color: var(--vellum-bg-fallback) !important;
 }
 
+@keyframes nedLogoFaceRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ned-logo-face {
+  animation: nedLogoFaceRise 340ms var(--ease-out-plate) both;
+}
+
+.ned-logo-face-1 {
+  animation-delay: 0ms;
+}
+
+.ned-logo-face-2 {
+  animation-delay: 90ms;
+}
+
+.ned-logo-face-3 {
+  animation-delay: 180ms;
+}
+
+.ned-logo-face-4 {
+  animation-delay: 280ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
