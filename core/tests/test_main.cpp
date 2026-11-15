@@ -761,3 +761,390 @@ TEST_CASE("Task B2 fix: PrefixTrie search ranking is strictly deterministic acro
     CHECK(resLibrRev[0].id == "b-library");
     CHECK(resLibrRev[0].kind == "landmark");
 }
+
+// ============================================================================
+// Task B3 Unit Tests: Emergency Evacuation (Multi-Source Dijkstra & Min-Cost Max-Flow)
+// ============================================================================
+
+TEST_CASE("Task B3.1: evac.json loading and nearest mode matches brute-force minimum over all assembly areas on random nodes") {
+    auto loadRes = loadRealMergedGraph();
+    REQUIRE(loadRes["status"] == "ok");
+    CHECK(loadRes["assemblyAreaCount"].get<int>() == 7);
+    CHECK(loadRes["buildingExitCount"].get<int>() == 12);
+
+    const navcore::Graph& g = navcore::detail::globalGraph();
+    REQUIRE(g.assemblyAreas.size() == 7);
+    REQUIRE(g.buildingExits.size() == 12);
+
+    // Collect all non-lift nodes so we can sample random outdoor and indoor nodes
+    std::vector<int> candidateNodes;
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (g.nodes[u].kind != "lift") {
+            candidateNodes.push_back(u);
+        }
+    }
+    REQUIRE(candidateNodes.size() > 600);
+
+    std::mt19937 rng(2026);
+    std::uniform_int_distribution<size_t> distNode(0, candidateNodes.size() - 1);
+
+    // Build a RouteOptions that blocks all lift nodes so single-pair forward Dijkstra
+    // computes the exact lift-free shortest distance to each assembly area.
+    navcore::RouteOptions liftBlockedOpts;
+    liftBlockedOpts.algo = "dijkstra";
+    liftBlockedOpts.maxTrace = 0;
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (g.nodes[u].kind == "lift") {
+            liftBlockedOpts.blockedNodes.insert(u);
+        }
+    }
+
+    json peopleArr = json::array();
+    std::vector<std::string> sampledIds;
+    std::set<std::string> seen;
+
+    while (sampledIds.size() < 60) {
+        const int u = candidateNodes[distNode(rng)];
+        const std::string& id = g.nodes[u].id;
+        if (seen.insert(id).second) {
+            sampledIds.push_back(id);
+            peopleArr.push_back({{"at", id}, {"count", 5}});
+        }
+    }
+
+    json evacReq = {
+        {"mode", "nearest"},
+        {"disableLifts", true},
+        {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+        {"people", peopleArr}
+    };
+    const auto evacRes = json::parse(call("evacuate", evacReq.dump().c_str()));
+    REQUIRE(evacRes.contains("assignments"));
+    CHECK(evacRes["mode"] == "nearest");
+    CHECK(evacRes["unassigned"] == 0);
+    REQUIRE(evacRes["assignments"].size() == sampledIds.size());
+
+    for (const auto& assign : evacRes["assignments"]) {
+        const std::string fromId = assign["from"].get<std::string>();
+        const double reportedDist = assign["distance"].get<double>();
+        const std::string reportedArea = assign["assemblyId"].get<std::string>();
+        const int u = g.getNodeIndex(fromId);
+        REQUIRE(u >= 0);
+
+        // Brute-force minimum over all 7 assembly areas using forward single-pair Dijkstra
+        double bruteMinDist = std::numeric_limits<double>::infinity();
+        std::string bruteBestAreaId;
+        for (const auto& area : g.assemblyAreas) {
+            const int aNodeIdx = g.getNodeIndex(area.nodeId);
+            REQUIRE(aNodeIdx >= 0);
+            const auto r = navcore::runDijkstra(g, u, aNodeIdx, liftBlockedOpts);
+            if (r.found) {
+                if (r.distance + 1e-9 < bruteMinDist ||
+                    (std::abs(r.distance - bruteMinDist) <= 1e-9 && area.id < bruteBestAreaId)) {
+                    bruteMinDist = r.distance;
+                    bruteBestAreaId = area.id;
+                }
+            }
+        }
+
+        CHECK(reportedDist == doctest::Approx(bruteMinDist).epsilon(1e-6));
+        CHECK(reportedArea == bruteBestAreaId);
+
+        // Also check call("nearestAssembly") agrees for this node
+        json singleReq = {{"from", fromId}, {"disableLifts", true}};
+        const auto singleRes = json::parse(call("nearestAssembly", singleReq.dump().c_str()));
+        CHECK(singleRes["found"] == true);
+        CHECK(singleRes["assemblyId"] == reportedArea);
+        CHECK(singleRes["distance"].get<double>() == doctest::Approx(reportedDist).epsilon(1e-6));
+    }
+}
+
+TEST_CASE("Task B3.2: capacity mode respects all area capacities, assigns everyone when capacity suffices, and reports exact unassigned when demand exceeds capacity") {
+    auto loadRes = loadRealMergedGraph();
+    REQUIRE(loadRes["status"] == "ok");
+
+    const navcore::Graph& g = navcore::detail::globalGraph();
+    int totalCampusCapacity = 0;
+    for (const auto& a : g.assemblyAreas) {
+        totalCampusCapacity += a.capacity;
+    }
+    REQUIRE(totalCampusCapacity == 6800);
+
+    SUBCASE("Concentrated demand near Courtyard Fountain (cap 600) overloads in nearest mode but splits cleanly in capacity mode") {
+        // Place 1,500 people right around Courtyard Fountain (n28, capacity 600) and Library (n76)
+        json people = json::array({
+            {{"at", "n28"}, {"count", 500}},
+            {{"at", "b-library:204"}, {"count", 500}},
+            {{"at", "b-csit:201"}, {"count", 500}}
+        });
+
+        json cmpReq = {
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", people}
+        };
+        const auto cmpRes = json::parse(call("evacuationCompare", cmpReq.dump().c_str()));
+        REQUIRE(cmpRes.contains("nearest"));
+        REQUIRE(cmpRes.contains("capacity"));
+
+        const auto& nearMode = cmpRes["nearest"];
+        const auto& capMode = cmpRes["capacity"];
+
+        // Both modes assign all 1,500 people since total capacity is 6,800
+        CHECK(nearMode["unassigned"].get<int>() == 0);
+        CHECK(capMode["unassigned"].get<int>() == 0);
+
+        // Nearest mode overloads at least one assembly area
+        CHECK(nearMode["overloadedAreasCount"].get<int>() >= 1);
+        CHECK( cmpRes["overloadedAreasCount"]["nearest"].get<int>() >= 1);
+
+        // Capacity mode NEVER exceeds any assembly area's capacity
+        CHECK(capMode["overloadedAreasCount"].get<int>() == 0);
+        CHECK(cmpRes["overloadedAreasCount"]["capacity"].get<int>() == 0);
+
+        int sumAssignedCap = 0;
+        for (const auto& loadEntry : capMode["assemblyLoad"]) {
+            const int assigned = loadEntry["assigned"].get<int>();
+            const int cap = loadEntry["capacity"].get<int>();
+            CHECK(assigned <= cap);
+            sumAssignedCap += assigned;
+        }
+        CHECK(sumAssignedCap == 1500);
+    }
+
+    SUBCASE("Unassigned is exact when total demand exceeds total campus capacity (6,800)") {
+        // Total demand = 8,050 across 4 locations -> excess = 8,050 - 6,800 = 1,250 unassigned
+        json people = json::array({
+            {{"at", "b-library:204"}, {"count", 2500}},
+            {{"at", "b-csit:201"}, {"count", 2000}},
+            {{"at", "b-auditorium:g01"}, {"count", 2000}},
+            {{"at", "b-admin:101"}, {"count", 1550}}
+        });
+
+        json req = {
+            {"mode", "capacity"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", people}
+        };
+        const auto res = json::parse(call("evacuate", req.dump().c_str()));
+        CHECK(res["unassigned"].get<int>() == 1250);
+
+        int totalAssigned = 0;
+        for (const auto& loadEntry : res["assemblyLoad"]) {
+            const int assigned = loadEntry["assigned"].get<int>();
+            const int cap = loadEntry["capacity"].get<int>();
+            CHECK(assigned == cap); // Every reachable assembly area is filled to 100% capacity
+            totalAssigned += assigned;
+        }
+        CHECK(totalAssigned == 6800);
+    }
+}
+
+TEST_CASE("Task B3.3: Min-cost max-flow cost equals brute-force optimum on a 3-group, 3-area instance and respects oneway edges") {
+    // Construct a directed graph with 3 group nodes (g1, g2, g3) and 3 assembly areas (a1, a2, a3)
+    // with asymmetric distances and capacities so greedy nearest assignment is suboptimal.
+    const char* syntheticEvacGraph = R"({
+        "meta": {"version": "1.0"},
+        "nodes": [
+            {"id": "g1", "lat": 24.9310, "lng": 67.1110},
+            {"id": "g2", "lat": 24.9312, "lng": 67.1112},
+            {"id": "g3", "lat": 24.9314, "lng": 67.1114},
+            {"id": "a1", "lat": 24.9320, "lng": 67.1120},
+            {"id": "a2", "lat": 24.9322, "lng": 67.1122},
+            {"id": "a3", "lat": 24.9324, "lng": 67.1124}
+        ],
+        "edges": [
+            {"a": "g1", "b": "a1", "w": 10.0, "oneway": true},
+            {"a": "g1", "b": "a2", "w": 20.0, "oneway": true},
+            {"a": "g1", "b": "a3", "w": 90.0, "oneway": true},
+            {"a": "g2", "b": "a1", "w": 12.0, "oneway": true},
+            {"a": "g2", "b": "a2", "w": 60.0, "oneway": true},
+            {"a": "g2", "b": "a3", "w": 70.0, "oneway": true},
+            {"a": "g3", "b": "a1", "w": 50.0, "oneway": true},
+            {"a": "g3", "b": "a2", "w": 25.0, "oneway": true},
+            {"a": "g3", "b": "a3", "w": 30.0, "oneway": true}
+        ],
+        "assemblyAreas": [
+            {"id": "area-1", "name": "Assembly 1", "nodeId": "a1", "capacity": 5},
+            {"id": "area-2", "name": "Assembly 2", "nodeId": "a2", "capacity": 5},
+            {"id": "area-3", "name": "Assembly 3", "nodeId": "a3", "capacity": 4}
+        ]
+    })";
+
+    auto loadRes = json::parse(call("load", syntheticEvacGraph));
+    REQUIRE(loadRes["status"] == "ok");
+    CHECK(loadRes["assemblyAreaCount"] == 3);
+
+    // Group supplies: g1 = 4, g2 = 5, g3 = 3 (total demand = 12 <= total capacity = 14)
+    const int s[3] = {4, 5, 3};
+    const int cap[3] = {5, 5, 4};
+    const double cost[3][3] = {
+        {10.0, 20.0, 90.0},
+        {12.0, 60.0, 70.0},
+        {50.0, 25.0, 30.0}
+    };
+
+    // Brute-force enumerate all non-negative integer 3x3 flow matrices f[i][j]
+    // satisfying row sums == s[i] and column sums <= cap[j].
+    double bruteOptCost = std::numeric_limits<double>::infinity();
+    for (int f00 = 0; f00 <= s[0]; ++f00) {
+        for (int f01 = 0; f00 + f01 <= s[0]; ++f01) {
+            const int f02 = s[0] - f00 - f01;
+            for (int f10 = 0; f10 <= s[1]; ++f10) {
+                for (int f11 = 0; f10 + f11 <= s[1]; ++f11) {
+                    const int f12 = s[1] - f10 - f11;
+                    for (int f20 = 0; f20 <= s[2]; ++f20) {
+                        for (int f21 = 0; f20 + f21 <= s[2]; ++f21) {
+                            const int f22 = s[2] - f20 - f21;
+                            if (f00 + f10 + f20 > cap[0]) continue;
+                            if (f01 + f11 + f21 > cap[1]) continue;
+                            if (f02 + f12 + f22 > cap[2]) continue;
+
+                            const double totalC =
+                                f00 * cost[0][0] + f01 * cost[0][1] + f02 * cost[0][2] +
+                                f10 * cost[1][0] + f11 * cost[1][1] + f12 * cost[1][2] +
+                                f20 * cost[2][0] + f21 * cost[2][1] + f22 * cost[2][2];
+                            bruteOptCost = std::min(bruteOptCost, totalC);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    json evacReq = {
+        {"mode", "capacity"},
+        {"people", json::array({
+            {{"at", "g1"}, {"count", s[0]}},
+            {{"at", "g2"}, {"count", s[1]}},
+            {{"at", "g3"}, {"count", s[2]}}
+        })}
+    };
+    const auto evacRes = json::parse(call("evacuate", evacReq.dump().c_str()));
+    CHECK(evacRes["unassigned"].get<int>() == 0);
+    CHECK(evacRes["totalDistance"].get<double>() == doctest::Approx(bruteOptCost).epsilon(1e-6));
+}
+
+TEST_CASE("Task B3.4: Blocking a node on an evacuation path changes the path and assignment; lifts disabled by default; indoor upper-floor room evacuates via stairs with exitNodeId") {
+    auto loadRes = loadRealMergedGraph();
+    REQUIRE(loadRes["status"] == "ok");
+
+    const navcore::Graph& g = navcore::detail::globalGraph();
+
+    SUBCASE("Upper-floor indoor room (b-library:204) evacuates via stairs, never uses lifts when disableLifts=true, and populates exitNodeId") {
+        json req = {
+            {"mode", "nearest"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", json::array({{{"at", "b-library:204"}, {"count", 25}}})}
+        };
+        const auto res = json::parse(call("evacuate", req.dump().c_str()));
+        REQUIRE(res["assignments"].size() == 1);
+        const auto& assign = res["assignments"][0];
+
+        CHECK(assign["from"] == "b-library:204");
+        CHECK(assign["count"] == 25);
+        CHECK(assign["distance"].get<double>() > 30.0);
+        REQUIRE(assign.contains("exitNodeId"));
+        const std::string exitId = assign["exitNodeId"].get<std::string>();
+        CHECK((exitId == "b-library:exit_nw" || exitId == "b-library:exit_se"));
+
+        const auto path = assign["path"].get<std::vector<std::string>>();
+        REQUIRE(path.size() >= 6);
+        CHECK(path.front() == "b-library:204");
+
+        bool usedStairsEdge = false;
+        bool usedLiftEdgeOrNode = false;
+        for (size_t i = 0; i + 1 < path.size(); ++i) {
+            const int u = g.getNodeIndex(path[i]);
+            const int v = g.getNodeIndex(path[i + 1]);
+            REQUIRE(u >= 0);
+            REQUIRE(v >= 0);
+            if (g.nodes[u].kind == "lift" || g.nodes[v].kind == "lift") {
+                usedLiftEdgeOrNode = true;
+            }
+            for (const auto& e : g.adj[u]) {
+                if (e.to == v) {
+                    if (e.kind == "stairs") usedStairsEdge = true;
+                    if (e.kind == "lift") usedLiftEdgeOrNode = true;
+                }
+            }
+        }
+        CHECK(usedStairsEdge);
+        CHECK_FALSE(usedLiftEdgeOrNode);
+    }
+
+    SUBCASE("Blocking all stairs while disableLifts=true makes upper-floor room unreachable, whereas disableLifts=false evacuates via lift") {
+        // Block the ground-floor staircase node in b-csit (b-csit:f0_stairs)
+        json blockedStairsReq = {
+            {"from", "b-csit:201"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array({"b-csit:f0_stairs"})}, {"edges", json::array()}}}
+        };
+        const auto blockedRes = json::parse(call("nearestAssembly", blockedStairsReq.dump().c_str()));
+        // With stairs blocked and disableLifts=true, floor 2 cannot reach floor 0!
+        CHECK(blockedRes["found"] == false);
+
+        // With disableLifts=false, floor 2 can use the elevator (b-csit:f2_lift -> f1_lift -> f0_lift)
+        json allowLiftsReq = {
+            {"from", "b-csit:201"},
+            {"disableLifts", false},
+            {"blocked", {{"nodes", json::array({"b-csit:f0_stairs"})}, {"edges", json::array()}}}
+        };
+        const auto liftRes = json::parse(call("nearestAssembly", allowLiftsReq.dump().c_str()));
+        CHECK(liftRes["found"] == true);
+        CHECK(liftRes["distance"].get<double>() > 30.0);
+    }
+
+    SUBCASE("Blocking a node on an evacuation path changes the path and the assigned assembly area") {
+        json initReq = {
+            {"mode", "nearest"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", json::array({{{"at", "b-csit:201"}, {"count", 40}}})}
+        };
+        const auto initRes = json::parse(call("evacuate", initReq.dump().c_str()));
+        REQUIRE(initRes["assignments"].size() == 1);
+
+        const auto initAssign = initRes["assignments"][0];
+        const std::string initAreaId = initAssign["assemblyId"].get<std::string>();
+        const auto initPath = initAssign["path"].get<std::vector<std::string>>();
+        REQUIRE(initPath.size() >= 6);
+
+        // 1. Block an intermediate node on the ring corridor (initPath[2]) -> path reroutes around the ring
+        const std::string blockedCorridorNode = initPath[2];
+        json midBlockedReq = {
+            {"mode", "nearest"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array({blockedCorridorNode})}, {"edges", json::array()}}},
+            {"people", json::array({{{"at", "b-csit:201"}, {"count", 40}}})}
+        };
+        const auto midBlockedRes = json::parse(call("evacuate", midBlockedReq.dump().c_str()));
+        REQUIRE(midBlockedRes["assignments"].size() == 1);
+        const auto reroutedPath = midBlockedRes["assignments"][0]["path"].get<std::vector<std::string>>();
+        CHECK(reroutedPath != initPath);
+        for (const auto& nid : reroutedPath) {
+            CHECK(nid != blockedCorridorNode);
+        }
+
+        // 2. Block the destination node of the initially assigned assembly area -> changes both path and assignment
+        const std::string initAreaNodeId = initPath.back();
+        json areaBlockedReq = {
+            {"mode", "nearest"},
+            {"disableLifts", true},
+            {"blocked", {{"nodes", json::array({initAreaNodeId})}, {"edges", json::array()}}},
+            {"people", json::array({{{"at", "b-csit:201"}, {"count", 40}}})}
+        };
+        const auto areaBlockedRes = json::parse(call("evacuate", areaBlockedReq.dump().c_str()));
+        REQUIRE(areaBlockedRes["assignments"].size() == 1);
+        const std::string newAreaId = areaBlockedRes["assignments"][0]["assemblyId"].get<std::string>();
+        const auto newAreaPath = areaBlockedRes["assignments"][0]["path"].get<std::vector<std::string>>();
+        CHECK(newAreaId != initAreaId);
+        CHECK(newAreaPath != initPath);
+        for (const auto& nid : newAreaPath) {
+            CHECK(nid != initAreaNodeId);
+        }
+    }
+}
+

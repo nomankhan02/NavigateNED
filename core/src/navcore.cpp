@@ -52,16 +52,22 @@
  *   SECTION 9: Tarjan's Articulation Points & Bridges (Critical Infrastructure)
  *              - Single-pass O(V + E) DFS discovery/low-link analysis
  *
- *   SECTION 10: Multi-Algorithm Benchmark Comparator
+ *   SECTION 10: Emergency Evacuation (Multi-Source Dijkstra & Min-Cost Max-Flow)
+ *              - 10.1 Multi-Source Dijkstra on the Reversed Graph
+ *              - 10.2 Min-Cost Max-Flow Assignment (Successive Shortest Paths / SPFA)
+ *              - 10.3 Evacuation Mode Comparison (Nearest vs Capacity-Constrained)
+ *
+ *   SECTION 11: Multi-Algorithm Benchmark Comparator
  *              - Side-by-side timing (microseconds), visited count, and distance
  *
- *   SECTION 11: WASM / Native JSON Dispatcher — call(fn, argsJson)
+ *   SECTION 12: WASM / Native JSON Dispatcher — call(fn, argsJson)
  *              - Handlers: "ping", "load", "route", "compare", "search",
- *                "cacheStats", "allPairs", "mst", "tsp", "criticalPoints"
+ *                "cacheStats", "allPairs", "mst", "tsp", "criticalPoints",
+ *                "evacuate", "nearestAssembly", "evacuationCompare"
  *              - Exception-safe C ABI entry point & #ifdef __EMSCRIPTEN__ export
  *
- *   SECTION 12: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
- *              - Terminal commands demonstrating every algorithm
+ *   SECTION 13: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+ *              - Terminal commands demonstrating every algorithm including evacuate
  * ============================================================================
  */
 
@@ -211,6 +217,24 @@ struct Landmark {
     std::string number;    // e.g. "5"
     std::string nodeId;    // Outdoor entrance node ID, e.g. "n21"
     std::string category;  // e.g. "academic"
+};
+
+/**
+ * Represents an outdoor emergency assembly area from `data/evac.json`.
+ */
+struct AssemblyArea {
+    std::string id;       // e.g. "a-cricket-ground"
+    std::string name;     // e.g. "NED Cricket Ground"
+    std::string nodeId;   // e.g. "n80"
+    int capacity = 0;     // e.g. 1800
+};
+
+/**
+ * Represents a designated building emergency exit from `data/evac.json`.
+ */
+struct BuildingExit {
+    std::string buildingId; // e.g. "b-library"
+    std::string nodeId;     // e.g. "b-library:exit_nw"
 };
 
 /**
@@ -602,6 +626,10 @@ public:
     std::unordered_map<std::string, std::string> buildingNames;
     std::unordered_map<std::string, std::unordered_map<int, std::string>> floorLabels;
 
+    std::vector<AssemblyArea> assemblyAreas;
+    std::vector<BuildingExit> buildingExits;
+    std::unordered_set<std::string> buildingExitNodeIds;
+
     PrefixTrie searchTrie;
 
     int logicalEdgeCount = 0;
@@ -619,6 +647,9 @@ public:
         nodeToLandmarkNames.clear();
         buildingNames.clear();
         floorLabels.clear();
+        assemblyAreas.clear();
+        buildingExits.clear();
+        buildingExitNodeIds.clear();
         searchTrie.clear();
         logicalEdgeCount = 0;
         indoorBuildingCount = 0;
@@ -972,14 +1003,73 @@ public:
         }
     }
 
+    /**
+     * Loads emergency evacuation metadata (`assemblyAreas` and `buildingExits`)
+     * from `data/evac.json` or an inline JSON object.
+     */
+    void loadEvacJson(const json& j) {
+        if (!j.is_object()) return;
+
+        if (j.contains("assemblyAreas") && j["assemblyAreas"].is_array()) {
+            for (const auto& aj : j["assemblyAreas"]) {
+                if (!aj.is_object()) continue;
+                AssemblyArea area;
+                area.id = aj.value("id", "");
+                area.name = aj.value("name", area.id);
+                area.nodeId = aj.value("nodeId", "");
+                area.capacity = aj.value("capacity", 0);
+                if (area.id.empty() || area.nodeId.empty()) continue;
+
+                bool updated = false;
+                for (auto& existing : assemblyAreas) {
+                    if (existing.id == area.id) {
+                        existing = area;
+                        updated = true;
+                        break;
+                    }
+                }
+                if (!updated) {
+                    assemblyAreas.push_back(std::move(area));
+                }
+            }
+            // Sort assembly areas deterministically by id
+            std::sort(assemblyAreas.begin(), assemblyAreas.end(),
+                      [](const AssemblyArea& a, const AssemblyArea& b) {
+                          return a.id < b.id;
+                      });
+        }
+
+        if (j.contains("buildingExits") && j["buildingExits"].is_array()) {
+            for (const auto& ej : j["buildingExits"]) {
+                if (!ej.is_object()) continue;
+                BuildingExit be;
+                be.buildingId = ej.value("buildingId", "");
+                be.nodeId = ej.value("nodeId", "");
+                if (be.nodeId.empty()) continue;
+                if (buildingExitNodeIds.insert(be.nodeId).second) {
+                    buildingExits.push_back(std::move(be));
+                }
+            }
+            // Sort building exits deterministically by (buildingId, nodeId)
+            std::sort(buildingExits.begin(), buildingExits.end(),
+                      [](const BuildingExit& a, const BuildingExit& b) {
+                          if (a.buildingId != b.buildingId) return a.buildingId < b.buildingId;
+                          return a.nodeId < b.nodeId;
+                      });
+        }
+    }
+
     void loadFromJsonValue(const json& parsed) {
         if (parsed.is_array()) {
             clear();
             for (const auto& item : parsed) {
                 if (isIndoorJsonObject(item)) {
                     loadIndoorJson(item);
+                } else if (isEvacOnlyJsonObject(item)) {
+                    loadEvacJson(item);
                 } else {
                     loadOutdoorJson(item);
+                    loadEvacJson(item);
                 }
             }
             finalizeCoordinatesAndHeuristic();
@@ -993,9 +1083,10 @@ public:
         if (parsed.empty() || parsed.contains("dataDir") || parsed.contains("graphPath")) {
             const std::string reqDir = parsed.value("dataDir", "");
             const std::string reqGraphPath = parsed.value("graphPath", "");
+            const std::string reqEvacPath = parsed.value("evacPath", "");
             if (!reqGraphPath.empty()) {
                 const std::string indoorDir = parsed.value("indoorDir", "");
-                loadFromDiskFiles(reqGraphPath, indoorDir);
+                loadFromDiskFiles(reqGraphPath, indoorDir, reqEvacPath);
                 return;
             }
             const std::string resolvedDir = resolveDataDirectory(reqDir.empty() ? "data" : reqDir);
@@ -1003,14 +1094,34 @@ public:
             return;
         }
 
+        // If the payload is purely an evac.json object (assemblyAreas / buildingExits without nodes),
+        // merge it into the currently loaded graph without clearing nodes/edges unless reset=true.
+        if (isEvacOnlyJsonObject(parsed)) {
+            if (parsed.value("reset", false)) {
+                clear();
+            } else {
+                assemblyAreas.clear();
+                buildingExits.clear();
+                buildingExitNodeIds.clear();
+            }
+            loadEvacJson(parsed);
+            loadGeneration++;
+            return;
+        }
+
         if (parsed.contains("outdoor") && parsed["outdoor"].is_object()) {
             clear();
             loadOutdoorJson(parsed["outdoor"]);
+            loadEvacJson(parsed["outdoor"]);
             if (parsed.contains("indoor") && parsed["indoor"].is_array()) {
                 for (const auto& ind : parsed["indoor"]) {
                     loadIndoorJson(ind);
                 }
             }
+            if (parsed.contains("evac") && parsed["evac"].is_object()) {
+                loadEvacJson(parsed["evac"]);
+            }
+            loadEvacJson(parsed);
             finalizeCoordinatesAndHeuristic();
             return;
         }
@@ -1033,6 +1144,10 @@ public:
                 loadIndoorJson(ind);
             }
         }
+        if (parsed.contains("evac") && parsed["evac"].is_object()) {
+            loadEvacJson(parsed["evac"]);
+        }
+        loadEvacJson(parsed);
         finalizeCoordinatesAndHeuristic();
     }
 
@@ -1063,11 +1178,15 @@ public:
         return hint;
     }
 
-    void loadFromDiskFiles(const std::string& graphPath, const std::string& indoorDir = "") {
+    void loadFromDiskFiles(const std::string& graphPath,
+                           const std::string& indoorDir = "",
+                           const std::string& evacPath = "") {
         namespace fs = std::filesystem;
         clear();
-        const json outdoorJson = readJsonFile(fs::path(graphPath));
+        const fs::path gPath(graphPath);
+        const json outdoorJson = readJsonFile(gPath);
         loadOutdoorJson(outdoorJson);
+        loadEvacJson(outdoorJson);
 
         if (!indoorDir.empty()) {
             std::error_code ec;
@@ -1085,6 +1204,15 @@ public:
                 }
             }
         }
+
+        std::error_code ec;
+        const fs::path resolvedEvacPath = !evacPath.empty()
+                                              ? fs::path(evacPath)
+                                              : (gPath.parent_path() / "evac.json");
+        if (fs::exists(resolvedEvacPath, ec) && fs::is_regular_file(resolvedEvacPath, ec)) {
+            loadEvacJson(readJsonFile(resolvedEvacPath));
+        }
+
         finalizeCoordinatesAndHeuristic();
     }
 
@@ -1093,10 +1221,18 @@ public:
         const fs::path resolved = resolveDataDirectory(dataDir);
         const fs::path graphPath = resolved / "graph.json";
         const fs::path indoorDir = resolved / "indoor";
-        loadFromDiskFiles(graphPath.string(), indoorDir.string());
+        const fs::path evacPath = resolved / "evac.json";
+        loadFromDiskFiles(graphPath.string(), indoorDir.string(), evacPath.string());
     }
 
 private:
+    static bool isEvacOnlyJsonObject(const json& j) {
+        if (!j.is_object()) return false;
+        const bool hasEvac = j.contains("assemblyAreas") || j.contains("buildingExits");
+        const bool hasGraph = j.contains("nodes") || j.contains("edges") ||
+                              j.contains("outdoor") || j.contains("floors");
+        return hasEvac && !hasGraph;
+    }
     static bool isIndoorJsonObject(const json& j) {
         if (!j.is_object()) return false;
         if (j.contains("floors") || j.contains("rooms") || j.contains("landmarkId")) {
@@ -2729,7 +2865,662 @@ inline CriticalPointsResult runTarjanCriticalPoints(const Graph& g) {
 }
 
 // ============================================================================
-// SECTION 10: Multi-Algorithm Benchmark Comparator
+// SECTION 10: Emergency Evacuation (Multi-Source Dijkstra & Min-Cost Max-Flow)
+// ============================================================================
+
+/**
+ * Configuration options for emergency evacuation routing and capacity assignment.
+ */
+struct EvacOptions {
+    RouteOptions routeOpts;
+    bool disableLifts = true; // Default true during evacuation: lifts disabled, stairs allowed
+};
+
+/**
+ * Represents a group of evacuees starting at a specific graph node (`at`).
+ */
+struct EvacGroup {
+    std::string fromId;
+    int nodeIdx = -1;
+    int count = 0;
+};
+
+/**
+ * Represents a single group-to-assembly-area evacuation assignment.
+ */
+struct EvacAssignment {
+    std::string from;
+    std::string assemblyId;
+    std::string assemblyName;
+    int count = 0;
+    double distance = 0.0;
+    std::vector<std::string> path;
+    std::string exitNodeId; // Populated when `from` is an indoor node
+};
+
+/**
+ * Represents the assigned vs. total capacity load at an assembly area.
+ */
+struct AssemblyLoadEntry {
+    std::string id;
+    std::string name;
+    int assigned = 0;
+    int capacity = 0;
+};
+
+/**
+ * Complete result of an `evacuate` calculation in either "nearest" or "capacity" mode.
+ */
+struct EvacResult {
+    std::string mode = "nearest";
+    std::vector<EvacAssignment> assignments;
+    int unassigned = 0;
+    std::vector<AssemblyLoadEntry> assemblyLoad;
+    double totalDistance = 0.0;     // Weighted person-distance sum(count * distance)
+    double totalPathDistance = 0.0; // Unweighted sum of assignment path distances
+    int maxAssemblyLoad = 0;
+    int overloadedAreasCount = 0;
+};
+
+/**
+ * Checks whether a forward directed edge `e` (`u -> e.to`) can be traversed
+ * by an evacuee under `evOpts`.
+ * - Respects `oneway` (since only valid forward edges exist in `g.adj[u]`).
+ * - Respects blocked nodes and blocked edges.
+ * - When `evOpts.disableLifts` is true (default), disallows any edge with
+ *   `e.kind == "lift"` or entering/leaving a lift shaft node (`kind == "lift"`),
+ *   while allowing stairs (`e.kind == "stairs"`).
+ */
+inline bool canTraverseEvacForwardEdge(const Graph& g, int u, const Edge& e, const EvacOptions& evOpts) {
+    if (u < 0 || e.to < 0 || u >= g.nodeCount() || e.to >= g.nodeCount()) return false;
+    if (evOpts.routeOpts.isNodeBlocked(u) || evOpts.routeOpts.isNodeBlocked(e.to)) return false;
+    if (evOpts.routeOpts.isEdgeBlocked(u, e.to)) return false;
+    if (evOpts.disableLifts) {
+        if (e.kind == "lift" || g.nodes[u].kind == "lift" || g.nodes[e.to].kind == "lift") {
+            return false;
+        }
+    }
+    if (evOpts.routeOpts.accessibleOnly && !e.accessible) return false;
+    return true;
+}
+
+/**
+ * Builds the reversed adjacency list of the graph for backward search from
+ * assembly areas. Each reversed edge in `revAdj[v]` represents a forward
+ * directed edge `u -> v` from `g.adj[u]`.
+ */
+struct ReversedEdge {
+    int fromForward; // u in forward graph (u -> v)
+    Edge forwardEdge;
+};
+
+inline std::vector<std::vector<ReversedEdge>> buildReversedAdjacency(const Graph& g) {
+    const int n = g.nodeCount();
+    std::vector<std::vector<ReversedEdge>> revAdj(n);
+    for (int u = 0; u < n; ++u) {
+        for (const auto& e : g.adj[u]) {
+            revAdj[e.to].push_back(ReversedEdge{u, e});
+        }
+    }
+    return revAdj;
+}
+
+/**
+ * Determines the building exit node (`exitNodeId`) nearest along the indoor
+ * portion of an evacuation path when the start node `startIdx` is indoors.
+ * Checks `g.buildingExits` (loaded from `data/evac.json`) for the building,
+ * measuring shortest indoor walk distance from the path's indoor vertices to
+ * each designated building exit, with fallback to any `"exit"` or `"entrance"`
+ * node on the path.
+ */
+inline std::string findExitNodeAlongPath(const Graph& g, int startIdx,
+                                         const std::vector<int>& pathIndices) {
+    if (startIdx < 0 || startIdx >= g.nodeCount() || !g.nodes[startIdx].isIndoor) {
+        return "";
+    }
+    const std::string& bId = g.nodes[startIdx].buildingId;
+
+    // 1. If the path directly visits a designated building exit or a node with kind=="exit", return it
+    for (int idx : pathIndices) {
+        if (idx < 0 || idx >= g.nodeCount()) continue;
+        const Node& n = g.nodes[idx];
+        if (!n.isIndoor || n.buildingId != bId) continue;
+        if (g.buildingExitNodeIds.find(n.id) != g.buildingExitNodeIds.end() || n.kind == "exit") {
+            return n.id;
+        }
+    }
+
+    // 2. Collect designated buildingExits for this building from data/evac.json
+    std::vector<int> candidateExitIndices;
+    for (const auto& be : g.buildingExits) {
+        if (be.buildingId == bId) {
+            const int eIdx = g.getNodeIndex(be.nodeId);
+            if (eIdx >= 0) {
+                candidateExitIndices.push_back(eIdx);
+            }
+        }
+    }
+    // Also include any indoor node of this building with kind == "exit"
+    for (const auto& n : g.nodes) {
+        if (n.isIndoor && n.buildingId == bId && n.kind == "exit") {
+            if (std::find(candidateExitIndices.begin(), candidateExitIndices.end(), n.index) ==
+                candidateExitIndices.end()) {
+                candidateExitIndices.push_back(n.index);
+            }
+        }
+    }
+
+    if (!candidateExitIndices.empty()) {
+        // Measure shortest indoor graph distance from the indoor nodes on `pathIndices`
+        // to each candidate building exit node (using multi-source Dijkstra seeded with the indoor path nodes).
+        const int n = g.nodeCount();
+        std::vector<double> indoorDist(n, kInf);
+        using PItem = std::pair<double, int>;
+        std::priority_queue<PItem, std::vector<PItem>, std::greater<PItem>> pq;
+
+        for (int idx : pathIndices) {
+            if (idx >= 0 && idx < n && g.nodes[idx].isIndoor && g.nodes[idx].buildingId == bId) {
+                indoorDist[idx] = 0.0;
+                pq.push({0.0, idx});
+            }
+        }
+
+        while (!pq.empty()) {
+            const auto [d, u] = pq.top();
+            pq.pop();
+            if (d > indoorDist[u] + 1e-12) continue;
+            for (const auto& e : g.adj[u]) {
+                if (!g.nodes[e.to].isIndoor || g.nodes[e.to].buildingId != bId) continue;
+                if (e.kind == "lift") continue;
+                const double nd = d + e.w;
+                if (nd + 1e-12 < indoorDist[e.to]) {
+                    indoorDist[e.to] = nd;
+                    pq.push({nd, e.to});
+                }
+            }
+        }
+
+        int bestExitIdx = -1;
+        double bestDist = kInf;
+        for (int cIdx : candidateExitIndices) {
+            double d = indoorDist[cIdx];
+            if (std::isinf(d)) {
+                // Planar fallback if disconnected
+                const Node& startN = g.nodes[startIdx];
+                const Node& exitN = g.nodes[cIdx];
+                d = 1000.0 + std::hypot(startN.x - exitN.x, startN.y - exitN.y);
+            }
+            if (bestExitIdx < 0 || d + 1e-12 < bestDist ||
+                (std::abs(d - bestDist) <= 1e-12 && g.nodes[cIdx].id < g.nodes[bestExitIdx].id)) {
+                bestDist = d;
+                bestExitIdx = cIdx;
+            }
+        }
+        if (bestExitIdx >= 0) {
+            return g.nodes[bestExitIdx].id;
+        }
+    }
+
+    // 3. Fallback: return the building entrance/exit node traversed along the path
+    for (int idx : pathIndices) {
+        if (idx >= 0 && idx < g.nodeCount() && g.nodes[idx].isIndoor &&
+            g.nodes[idx].buildingId == bId &&
+            (g.nodes[idx].kind == "entrance" || g.nodes[idx].id.find(":ent") != std::string::npos)) {
+            return g.nodes[idx].id;
+        }
+    }
+    return "";
+}
+
+// ----------------------------------------------------------------------------
+// 10.1 Multi-Source Dijkstra on the Reversed Graph
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Multi-Source Dijkstra on the Reversed Graph
+ * What it does:
+ *   Initializes a single binary min-heap priority queue with all non-blocked
+ *   assembly-area vertices at distance 0 and runs Dijkstra backward along the
+ *   reversed directed edges (`revAdj`, where reversed edge `v -> u` corresponds
+ *   to forward directed edge `u -> v`). In one pass, every vertex `u` in the
+ *   merged outdoor+indoor graph receives its nearest reachable assembly area,
+ *   exact shortest forward evacuation distance, and forward `nextHop[u]` pointer
+ *   (respecting `oneway` edges, blocked nodes/edges, and `disableLifts`).
+ * Time Complexity:
+ *   O((V + E) log V) time, O(V + E) space in a single pass across all assembly areas.
+ * Where the app uses it:
+ *   Emergency evacuation mode (`call("evacuate", {mode: "nearest"})`), single-user
+ *   "Evacuate Me" (`call("nearestAssembly")`), and `call("evacuationCompare")`.
+ */
+struct MultiSourceEvacTable {
+    std::vector<double> dist;      // dist[u] = shortest forward distance from u to nearest assembly area
+    std::vector<int> bestAreaIdx;  // bestAreaIdx[u] = index into g.assemblyAreas (or -1 if unreachable)
+    std::vector<int> nextHop;      // nextHop[u] = next vertex along forward path from u to assembly area
+};
+
+inline MultiSourceEvacTable runMultiSourceReversedDijkstra(
+    const Graph& g,
+    const std::vector<AssemblyArea>& areas,
+    const EvacOptions& evOpts,
+    const std::vector<std::vector<ReversedEdge>>& revAdj) {
+    const int n = g.nodeCount();
+    MultiSourceEvacTable table;
+    table.dist.assign(n, kInf);
+    table.bestAreaIdx.assign(n, -1);
+    table.nextHop.assign(n, -1);
+
+    if (n == 0 || areas.empty()) {
+        return table;
+    }
+
+    struct HeapItem {
+        double d;
+        int areaIdx;
+        int u;
+        std::string areaId;
+        std::string nodeId;
+
+        bool operator>(const HeapItem& other) const {
+            if (std::abs(d - other.d) > 1e-12) return d > other.d;
+            if (areaId != other.areaId) return areaId > other.areaId;
+            return nodeId > other.nodeId;
+        }
+    };
+
+    std::priority_queue<HeapItem, std::vector<HeapItem>, std::greater<HeapItem>> pq;
+
+    // Seed all non-blocked assembly areas simultaneously at distance 0.0
+    for (size_t aIdx = 0; aIdx < areas.size(); ++aIdx) {
+        const int v = g.getNodeIndex(areas[aIdx].nodeId);
+        if (v < 0 || v >= n) continue;
+        if (evOpts.routeOpts.isNodeBlocked(v)) continue;
+        if (evOpts.disableLifts && g.nodes[v].kind == "lift") continue;
+
+        const int curArea = table.bestAreaIdx[v];
+        if (curArea < 0 || areas[aIdx].id < areas[curArea].id) {
+            table.dist[v] = 0.0;
+            table.bestAreaIdx[v] = static_cast<int>(aIdx);
+            table.nextHop[v] = -1;
+            pq.push(HeapItem{0.0, static_cast<int>(aIdx), v, areas[aIdx].id, g.nodes[v].id});
+        }
+    }
+
+    while (!pq.empty()) {
+        const HeapItem top = pq.top();
+        pq.pop();
+
+        const int v = top.u;
+        if (top.d > table.dist[v] + 1e-12) continue;
+        if (std::abs(top.d - table.dist[v]) <= 1e-12 && top.areaIdx != table.bestAreaIdx[v]) {
+            continue;
+        }
+
+        // Traverse reversed edges v -> u (which correspond to forward edges u -> v)
+        for (const auto& revEdge : revAdj[v]) {
+            const int u = revEdge.fromForward;
+            const Edge& fwdEdge = revEdge.forwardEdge;
+            if (!canTraverseEvacForwardEdge(g, u, fwdEdge, evOpts)) continue;
+
+            const double candDist = top.d + fwdEdge.w;
+            bool improve = false;
+            if (candDist + 1e-12 < table.dist[u]) {
+                improve = true;
+            } else if (std::abs(candDist - table.dist[u]) <= 1e-12 && table.bestAreaIdx[u] >= 0) {
+                const std::string& candAreaId = areas[top.areaIdx].id;
+                const std::string& curAreaId = areas[table.bestAreaIdx[u]].id;
+                if (candAreaId < curAreaId) {
+                    improve = true;
+                } else if (candAreaId == curAreaId) {
+                    const int curNext = table.nextHop[u];
+                    const std::string curNextId = (curNext >= 0) ? g.nodes[curNext].id : "";
+                    if (g.nodes[v].id < curNextId) {
+                        improve = true;
+                    }
+                }
+            }
+
+            if (improve) {
+                table.dist[u] = candDist;
+                table.bestAreaIdx[u] = top.areaIdx;
+                table.nextHop[u] = v;
+                pq.push(HeapItem{candDist, top.areaIdx, u, areas[top.areaIdx].id, g.nodes[u].id});
+            }
+        }
+    }
+
+    return table;
+}
+
+/**
+ * Reconstructs the forward node-by-node evacuation path from `startIdx` to the
+ * target assembly area using the `nextHop` pointers produced by Reversed Dijkstra.
+ */
+inline void reconstructForwardEvacPath(const Graph& g, int startIdx,
+                                       const std::vector<int>& nextHop,
+                                       std::vector<int>& outIndices,
+                                       std::vector<std::string>& outIds) {
+    outIndices.clear();
+    outIds.clear();
+    if (startIdx < 0 || startIdx >= g.nodeCount()) return;
+
+    const int maxSteps = g.nodeCount() + 2;
+    int curr = startIdx;
+    int steps = 0;
+    while (curr >= 0 && curr < g.nodeCount() && steps < maxSteps) {
+        outIndices.push_back(curr);
+        outIds.push_back(g.nodes[curr].id);
+        curr = nextHop[curr];
+        ++steps;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// 10.2 Min-Cost Max-Flow Assignment (Successive Shortest Paths / SPFA)
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Min-Cost Max-Flow Evacuation Assignment (Successive Shortest Paths with SPFA)
+ * What it does:
+ *   Assigns evacuee groups (supply nodes with headcount `count`) to campus
+ *   assembly areas (sink nodes with `capacity`) to minimize total person-walking
+ *   distance `sum(count * distance)` without exceeding any assembly area's
+ *   capacity. First computes exact blocked-aware, lift-disabled shortest evacuation
+ *   distances between all groups and each assembly area via Reversed Dijkstra,
+ *   then builds a directed bipartite flow network (`Source -> Group_i -> Area_j -> Sink`)
+ *   and augments flow along minimum-cost residual paths found by Bellman-Ford / SPFA.
+ *   A single group may be split across multiple assembly areas when the nearest
+ *   area fills up; any excess demand beyond total reachable capacity is reported
+ *   in `unassigned`.
+ * Time Complexity:
+ *   O(A * (V + E) log V + F * V_f * E_f) time, where A is the number of assembly
+ *   areas, V_f = P + A + 2, E_f = O(P * A), and F <= P + A augmentations.
+ * Where the app uses it:
+ *   Capacity-constrained campus evacuation (`call("evacuate", {mode: "capacity"})`)
+ *   and evacuation mode comparison (`call("evacuationCompare")`).
+ */
+inline EvacResult runEvacuation(const Graph& g,
+                                const std::string& rawMode,
+                                const std::vector<EvacGroup>& groups,
+                                const EvacOptions& evOpts) {
+    EvacResult res;
+    const std::string mode = (toLowerCopy(rawMode) == "capacity") ? "capacity" : "nearest";
+    res.mode = mode;
+
+    // Copy assembly areas (already sorted by id in Graph::loadEvacJson)
+    std::vector<AssemblyArea> areas = g.assemblyAreas;
+    std::sort(areas.begin(), areas.end(), [](const AssemblyArea& a, const AssemblyArea& b) {
+        return a.id < b.id;
+    });
+
+    const int numAreas = static_cast<int>(areas.size());
+    const int numGroups = static_cast<int>(groups.size());
+
+    std::vector<int> areaAssigned(numAreas, 0);
+    int totalDemand = 0;
+    for (const auto& grp : groups) {
+        if (grp.count > 0) {
+            totalDemand += grp.count;
+        }
+    }
+
+    const auto revAdj = buildReversedAdjacency(g);
+
+    if (mode == "nearest") {
+        const MultiSourceEvacTable msTable =
+            runMultiSourceReversedDijkstra(g, areas, evOpts, revAdj);
+
+        int totalAssigned = 0;
+        for (const auto& grp : groups) {
+            if (grp.count <= 0) continue;
+            const int u = grp.nodeIdx;
+            if (u < 0 || u >= g.nodeCount() || msTable.bestAreaIdx[u] < 0 ||
+                std::isinf(msTable.dist[u])) {
+                continue;
+            }
+
+            const int aIdx = msTable.bestAreaIdx[u];
+            const AssemblyArea& area = areas[aIdx];
+            const double d = msTable.dist[u];
+
+            std::vector<int> pathIndices;
+            std::vector<std::string> pathIds;
+            reconstructForwardEvacPath(g, u, msTable.nextHop, pathIndices, pathIds);
+
+            EvacAssignment assign;
+            assign.from = grp.fromId;
+            assign.assemblyId = area.id;
+            assign.assemblyName = area.name;
+            assign.count = grp.count;
+            assign.distance = d;
+            assign.path = std::move(pathIds);
+            if (g.nodes[u].isIndoor) {
+                assign.exitNodeId = findExitNodeAlongPath(g, u, pathIndices);
+            }
+
+            res.assignments.push_back(std::move(assign));
+            areaAssigned[aIdx] += grp.count;
+            totalAssigned += grp.count;
+            res.totalDistance += static_cast<double>(grp.count) * d;
+            res.totalPathDistance += d;
+        }
+        res.unassigned = std::max(0, totalDemand - totalAssigned);
+    } else {
+        // Mode: "capacity" — Min-Cost Max-Flow via Successive Shortest Paths (Bellman-Ford / SPFA)
+        // Step 1: Compute shortest evacuation distance & nextHop from all nodes to each assembly area j
+        std::vector<MultiSourceEvacTable> perAreaTables(numAreas);
+        for (int j = 0; j < numAreas; ++j) {
+            std::vector<AssemblyArea> singleArea = {areas[j]};
+            perAreaTables[j] = runMultiSourceReversedDijkstra(g, singleArea, evOpts, revAdj);
+        }
+
+        // Step 2: Build directed bipartite flow network
+        // Nodes: 0 = SOURCE, 1..numGroups = Groups, 1+numGroups..numGroups+numAreas = Areas, SINK = numGroups+numAreas+1
+        const int source = 0;
+        const int sink = 1 + numGroups + numAreas;
+        const int vCount = sink + 1;
+
+        struct FlowEdge {
+            int to;
+            int rev;
+            int cap;
+            int flow;
+            double cost;
+        };
+
+        std::vector<std::vector<FlowEdge>> flowAdj(vCount);
+        auto addFlowEdge = [&](int u, int v, int cap, double cost) -> int {
+            const int fwdIdx = static_cast<int>(flowAdj[u].size());
+            const int revIdx = static_cast<int>(flowAdj[v].size());
+            flowAdj[u].push_back(FlowEdge{v, revIdx, cap, 0, cost});
+            flowAdj[v].push_back(FlowEdge{u, fwdIdx, 0, 0, -cost});
+            return fwdIdx;
+        };
+
+        // Record (groupIdx, areaIdx, edgeIdxInGroupAdj) to extract positive flows after MCMF
+        struct GroupAreaEdgeRef {
+            int groupIdx;
+            int areaIdx;
+            int edgeIdx;
+        };
+        std::vector<GroupAreaEdgeRef> groupAreaEdges;
+
+        for (int i = 0; i < numGroups; ++i) {
+            if (groups[i].count <= 0) continue;
+            const int gNode = 1 + i;
+            addFlowEdge(source, gNode, groups[i].count, 0.0);
+
+            const int u = groups[i].nodeIdx;
+            if (u < 0 || u >= g.nodeCount()) continue;
+
+            for (int j = 0; j < numAreas; ++j) {
+                const double d = perAreaTables[j].dist[u];
+                if (std::isinf(d) || perAreaTables[j].bestAreaIdx[u] < 0) continue;
+                const int aNode = 1 + numGroups + j;
+                const int eIdx = addFlowEdge(gNode, aNode, groups[i].count, d);
+                groupAreaEdges.push_back(GroupAreaEdgeRef{i, j, eIdx});
+            }
+        }
+
+        for (int j = 0; j < numAreas; ++j) {
+            const int cap = std::max(0, areas[j].capacity);
+            if (cap > 0) {
+                const int aNode = 1 + numGroups + j;
+                addFlowEdge(aNode, sink, cap, 0.0);
+            }
+        }
+
+        // Step 3: Successive Shortest Paths using SPFA (Bellman-Ford queue)
+        int totalFlow = 0;
+        while (true) {
+            std::vector<double> dist(vCount, kInf);
+            std::vector<int> parentNode(vCount, -1);
+            std::vector<int> parentEdge(vCount, -1);
+            std::vector<bool> inQueue(vCount, false);
+            std::queue<int> q;
+
+            dist[source] = 0.0;
+            q.push(source);
+            inQueue[source] = true;
+
+            while (!q.empty()) {
+                const int u = q.front();
+                q.pop();
+                inQueue[u] = false;
+
+                for (size_t eIdx = 0; eIdx < flowAdj[u].size(); ++eIdx) {
+                    const FlowEdge& e = flowAdj[u][eIdx];
+                    if (e.cap - e.flow <= 0) continue;
+                    const double cand = dist[u] + e.cost;
+                    if (cand + 1e-11 < dist[e.to]) {
+                        dist[e.to] = cand;
+                        parentNode[e.to] = u;
+                        parentEdge[e.to] = static_cast<int>(eIdx);
+                        if (!inQueue[e.to]) {
+                            q.push(e.to);
+                            inQueue[e.to] = true;
+                        }
+                    }
+                }
+            }
+
+            if (std::isinf(dist[sink])) {
+                break; // No more augmenting paths
+            }
+
+            // Find bottleneck residual capacity along augmenting path
+            int push = std::numeric_limits<int>::max();
+            for (int cur = sink; cur != source; cur = parentNode[cur]) {
+                const int p = parentNode[cur];
+                const int idx = parentEdge[cur];
+                push = std::min(push, flowAdj[p][idx].cap - flowAdj[p][idx].flow);
+            }
+
+            if (push <= 0) break;
+
+            // Augment flow along path
+            for (int cur = sink; cur != source; cur = parentNode[cur]) {
+                const int p = parentNode[cur];
+                const int idx = parentEdge[cur];
+                const int revIdx = flowAdj[p][idx].rev;
+                flowAdj[p][idx].flow += push;
+                flowAdj[cur][revIdx].flow -= push;
+            }
+            totalFlow += push;
+        }
+
+        // Step 4: Extract assignments from positive flow edges
+        for (const auto& ref : groupAreaEdges) {
+            const int gNode = 1 + ref.groupIdx;
+            const FlowEdge& e = flowAdj[gNode][ref.edgeIdx];
+            if (e.flow <= 0) continue;
+
+            const EvacGroup& grp = groups[ref.groupIdx];
+            const AssemblyArea& area = areas[ref.areaIdx];
+            const MultiSourceEvacTable& areaTable = perAreaTables[ref.areaIdx];
+            const int u = grp.nodeIdx;
+            const double d = areaTable.dist[u];
+
+            std::vector<int> pathIndices;
+            std::vector<std::string> pathIds;
+            reconstructForwardEvacPath(g, u, areaTable.nextHop, pathIndices, pathIds);
+
+            EvacAssignment assign;
+            assign.from = grp.fromId;
+            assign.assemblyId = area.id;
+            assign.assemblyName = area.name;
+            assign.count = e.flow;
+            assign.distance = d;
+            assign.path = std::move(pathIds);
+            if (g.nodes[u].isIndoor) {
+                assign.exitNodeId = findExitNodeAlongPath(g, u, pathIndices);
+            }
+
+            res.assignments.push_back(std::move(assign));
+            areaAssigned[ref.areaIdx] += e.flow;
+            res.totalDistance += static_cast<double>(e.flow) * d;
+            res.totalPathDistance += d;
+        }
+
+        res.unassigned = std::max(0, totalDemand - totalFlow);
+    }
+
+    // Sort assignments deterministically by (from, assemblyId) so output order is
+    // 100% reproducible across platforms and independent of augmentation order.
+    std::sort(res.assignments.begin(), res.assignments.end(),
+              [](const EvacAssignment& a, const EvacAssignment& b) {
+                  if (a.from != b.from) return a.from < b.from;
+                  if (a.assemblyId != b.assemblyId) return a.assemblyId < b.assemblyId;
+                  return a.count > b.count;
+              });
+
+    // Populate assemblyLoad (already sorted by area.id) and compute overload metrics
+    res.assemblyLoad.reserve(numAreas);
+    for (int j = 0; j < numAreas; ++j) {
+        const int assigned = areaAssigned[j];
+        const int cap = areas[j].capacity;
+        res.assemblyLoad.push_back(AssemblyLoadEntry{
+            areas[j].id,
+            areas[j].name,
+            assigned,
+            cap
+        });
+        res.maxAssemblyLoad = std::max(res.maxAssemblyLoad, assigned);
+        if (assigned > cap) {
+            res.overloadedAreasCount++;
+        }
+    }
+
+    return res;
+}
+
+// ----------------------------------------------------------------------------
+// 10.3 Evacuation Mode Comparison (Nearest vs. Capacity-Constrained)
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Evacuation Mode Comparator (Nearest vs. Capacity-Constrained)
+ * What it does:
+ *   Runs both Multi-Source Reversed Dijkstra (`mode: "nearest"`) and Min-Cost
+ *   Max-Flow (`mode: "capacity"`) on the identical evacuee population, blocked
+ *   hazards, and lift constraints, comparing total evacuation distance,
+ *   maximum assembly area load, and overloaded assembly area count side by side.
+ * Time Complexity:
+ *   O(A * (V + E) log V + F * V_f * E_f) combined across both modes.
+ * Where the app uses it:
+ *   Emergency Evacuation Comparison panel (`call("evacuationCompare")`) and
+ *   the terminal CLI.
+ */
+inline std::pair<EvacResult, EvacResult> compareEvacuationModes(
+    const Graph& g,
+    const std::vector<EvacGroup>& groups,
+    const EvacOptions& evOpts) {
+    EvacResult nearestRes = runEvacuation(g, "nearest", groups, evOpts);
+    EvacResult capacityRes = runEvacuation(g, "capacity", groups, evOpts);
+    return {std::move(nearestRes), std::move(capacityRes)};
+}
+
+// ============================================================================
+// SECTION 11: Multi-Algorithm Benchmark Comparator
 // ============================================================================
 
 /**
@@ -2781,7 +3572,7 @@ inline json compareAlgorithms(const Graph& g, int from, int to, const RouteOptio
 }
 
 // ============================================================================
-// SECTION 11: WASM / Native JSON Dispatcher — call(fn, argsJson)
+// SECTION 12: WASM / Native JSON Dispatcher — call(fn, argsJson)
 // ============================================================================
 
 namespace detail {
@@ -2838,34 +3629,52 @@ inline RouteOptions parseRouteOptions(const Graph& g, const json& args) {
         }
     };
 
+    auto parseBlockedEdgeEntry = [&](const json& ej) {
+        if (ej.is_object()) {
+            const std::string a = ej.value("a", ej.value("from", ej.value("u", "")));
+            const std::string b = ej.value("b", ej.value("to", ej.value("v", "")));
+            const bool oneway = ej.value("oneway", false);
+            const int u = g.getNodeIndex(a);
+            const int v = g.getNodeIndex(b);
+            if (u >= 0 && v >= 0) {
+                opts.blockEdge(u, v, !oneway);
+            }
+        } else if (ej.is_array() && ej.size() >= 2 && ej[0].is_string() && ej[1].is_string()) {
+            const int u = g.getNodeIndex(ej[0].get<std::string>());
+            const int v = g.getNodeIndex(ej[1].get<std::string>());
+            if (u >= 0 && v >= 0) {
+                opts.blockEdge(u, v, true);
+            }
+        } else if (ej.is_string()) {
+            parseBlockedItem(ej);
+        }
+    };
+
     for (const char* key : {"avoid", "blocked", "blockedNodes"}) {
-        if (args.contains(key) && args[key].is_array()) {
-            for (const auto& item : args[key]) {
+        if (!args.contains(key)) continue;
+        const auto& val = args[key];
+        if (val.is_array()) {
+            for (const auto& item : val) {
                 parseBlockedItem(item);
+            }
+        } else if (val.is_object()) {
+            // Support structured blocked: {nodes: [...], edges: [[a, b], ...]}
+            if (val.contains("nodes") && val["nodes"].is_array()) {
+                for (const auto& item : val["nodes"]) {
+                    parseBlockedItem(item);
+                }
+            }
+            if (val.contains("edges") && val["edges"].is_array()) {
+                for (const auto& ej : val["edges"]) {
+                    parseBlockedEdgeEntry(ej);
+                }
             }
         }
     }
 
     if (args.contains("blockedEdges") && args["blockedEdges"].is_array()) {
         for (const auto& ej : args["blockedEdges"]) {
-            if (ej.is_object()) {
-                const std::string a = ej.value("a", ej.value("from", ej.value("u", "")));
-                const std::string b = ej.value("b", ej.value("to", ej.value("v", "")));
-                const bool oneway = ej.value("oneway", false);
-                const int u = g.getNodeIndex(a);
-                const int v = g.getNodeIndex(b);
-                if (u >= 0 && v >= 0) {
-                    opts.blockEdge(u, v, !oneway);
-                }
-            } else if (ej.is_array() && ej.size() >= 2 && ej[0].is_string() && ej[1].is_string()) {
-                const int u = g.getNodeIndex(ej[0].get<std::string>());
-                const int v = g.getNodeIndex(ej[1].get<std::string>());
-                if (u >= 0 && v >= 0) {
-                    opts.blockEdge(u, v, true);
-                }
-            } else if (ej.is_string()) {
-                parseBlockedItem(ej);
-            }
+            parseBlockedEdgeEntry(ej);
         }
     }
 
@@ -2880,6 +3689,79 @@ inline int resolveEndpointIndex(const Graph& g, const std::string& id) {
         return g.getNodeIndex(lmIt->second);
     }
     return -1;
+}
+
+inline EvacOptions parseEvacOptions(const Graph& g, const json& args) {
+    EvacOptions evOpts;
+    evOpts.routeOpts = parseRouteOptions(g, args);
+    evOpts.disableLifts = args.value("disableLifts", true);
+    return evOpts;
+}
+
+inline std::vector<EvacGroup> parseEvacGroups(const Graph& g, const json& args) {
+    std::vector<EvacGroup> groups;
+    if (!args.contains("people") || !args["people"].is_array()) {
+        return groups;
+    }
+
+    // Aggregate identical `at` locations if passed multiple times while preserving deterministic order
+    std::unordered_map<std::string, size_t> seenIdx;
+    for (const auto& pj : args["people"]) {
+        if (!pj.is_object()) continue;
+        const std::string atId = pj.value("at", pj.value("from", pj.value("nodeId", "")));
+        const int count = pj.value("count", 0);
+        if (atId.empty() || count <= 0) continue;
+        const int nodeIdx = resolveEndpointIndex(g, atId);
+
+        auto it = seenIdx.find(atId);
+        if (it == seenIdx.end()) {
+            seenIdx[atId] = groups.size();
+            groups.push_back(EvacGroup{atId, nodeIdx, count});
+        } else {
+            groups[it->second].count += count;
+        }
+    }
+    return groups;
+}
+
+inline json serializeEvacResultJson(const EvacResult& r) {
+    json assignmentsJson = json::array();
+    for (const auto& a : r.assignments) {
+        json item = {
+            {"from", a.from},
+            {"assemblyId", a.assemblyId},
+            {"assemblyName", a.assemblyName},
+            {"count", a.count},
+            {"distance", a.distance},
+            {"path", a.path}
+        };
+        if (!a.exitNodeId.empty()) {
+            item["exitNodeId"] = a.exitNodeId;
+        }
+        assignmentsJson.push_back(std::move(item));
+    }
+
+    json loadJson = json::array();
+    for (const auto& l : r.assemblyLoad) {
+        loadJson.push_back({
+            {"id", l.id},
+            {"name", l.name},
+            {"assigned", l.assigned},
+            {"capacity", l.capacity}
+        });
+    }
+
+    return json{
+        {"mode", r.mode},
+        {"assignments", std::move(assignmentsJson)},
+        {"unassigned", r.unassigned},
+        {"assemblyLoad", std::move(loadJson)},
+        {"totalDistance", r.totalDistance},
+        {"flowCost", r.totalDistance},
+        {"totalPathDistance", r.totalPathDistance},
+        {"maxAssemblyLoad", r.maxAssemblyLoad},
+        {"overloadedAreasCount", r.overloadedAreasCount}
+    };
 }
 
 inline std::string serializeRouteResult(const RouteResult& r) {
@@ -2926,7 +3808,9 @@ inline std::string handleLoad(const std::string& argsJson) {
         {"nodeCount", g.nodeCount()},
         {"edgeCount", g.logicalEdgeCount},
         {"indoorBuildings", g.indoorBuildingCount},
-        {"landmarkCount", static_cast<int>(g.landmarks.size())}
+        {"landmarkCount", static_cast<int>(g.landmarks.size())},
+        {"assemblyAreaCount", static_cast<int>(g.assemblyAreas.size())},
+        {"buildingExitCount", static_cast<int>(g.buildingExits.size())}
     };
     return res.dump();
 }
@@ -3185,6 +4069,150 @@ inline std::string handleCriticalPoints(const std::string& argsJson) {
     return out.dump();
 }
 
+inline void ensureEvacDataLoadedIfNeeded(Graph& g, const json& args) {
+    if (args.is_object() && (args.contains("assemblyAreas") || args.contains("buildingExits"))) {
+        if (args.contains("assemblyAreas")) {
+            g.assemblyAreas.clear();
+        }
+        if (args.contains("buildingExits")) {
+            g.buildingExits.clear();
+            g.buildingExitNodeIds.clear();
+        }
+        g.loadEvacJson(args);
+        return;
+    }
+    if (g.assemblyAreas.empty()) {
+        namespace fs = std::filesystem;
+        std::error_code ec;
+        const fs::path evacFile = fs::path(Graph::resolveDataDirectory("data")) / "evac.json";
+        if (fs::exists(evacFile, ec) && fs::is_regular_file(evacFile, ec)) {
+            g.loadEvacJson(Graph::readJsonFile(evacFile));
+        }
+    }
+}
+
+inline std::string handleEvacuate(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+    ensureEvacDataLoadedIfNeeded(g, args);
+
+    const std::string mode = args.value("mode", "nearest");
+    const EvacOptions evOpts = parseEvacOptions(g, args);
+    const std::vector<EvacGroup> groups = parseEvacGroups(g, args);
+
+    const EvacResult res = runEvacuation(g, mode, groups, evOpts);
+    return serializeEvacResultJson(res).dump();
+}
+
+inline std::string handleNearestAssembly(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+    ensureEvacDataLoadedIfNeeded(g, args);
+
+    const std::string fromId = args.value("from", args.value("at", ""));
+    if (fromId.empty()) {
+        return makeErrorJson("'from' node ID is required for nearestAssembly");
+    }
+    const int fromIdx = resolveEndpointIndex(g, fromId);
+    if (fromIdx < 0) {
+        return makeErrorJson("Unknown 'from' node ID: " + fromId);
+    }
+
+    const EvacOptions evOpts = parseEvacOptions(g, args);
+    std::vector<AssemblyArea> areas = g.assemblyAreas;
+    std::sort(areas.begin(), areas.end(), [](const AssemblyArea& a, const AssemblyArea& b) {
+        return a.id < b.id;
+    });
+
+    const auto revAdj = buildReversedAdjacency(g);
+    const MultiSourceEvacTable msTable = runMultiSourceReversedDijkstra(g, areas, evOpts, revAdj);
+
+    if (msTable.bestAreaIdx[fromIdx] < 0 || std::isinf(msTable.dist[fromIdx])) {
+        json unreachableOut = {
+            {"found", false},
+            {"from", fromId},
+            {"assemblyId", ""},
+            {"assemblyName", ""},
+            {"distance", -1.0},
+            {"path", json::array()}
+        };
+        return unreachableOut.dump();
+    }
+
+    const int aIdx = msTable.bestAreaIdx[fromIdx];
+    const AssemblyArea& area = areas[aIdx];
+    const double d = msTable.dist[fromIdx];
+
+    std::vector<int> pathIndices;
+    std::vector<std::string> pathIds;
+    reconstructForwardEvacPath(g, fromIdx, msTable.nextHop, pathIndices, pathIds);
+
+    RouteResult stepFormatted;
+    stepFormatted.found = true;
+    stepFormatted.distance = d;
+    stepFormatted.pathIndices = pathIndices;
+    buildStepsFromPathIndices(g, evOpts.routeOpts, stepFormatted);
+
+    json out = {
+        {"found", true},
+        {"from", fromId},
+        {"assemblyId", area.id},
+        {"assemblyName", area.name},
+        {"nodeId", area.nodeId},
+        {"capacity", area.capacity},
+        {"distance", d},
+        {"path", pathIds},
+        {"steps", stepFormatted.steps}
+    };
+    if (g.nodes[fromIdx].isIndoor) {
+        const std::string exitId = findExitNodeAlongPath(g, fromIdx, pathIndices);
+        if (!exitId.empty()) {
+            out["exitNodeId"] = exitId;
+        }
+    }
+    return out.dump();
+}
+
+inline std::string handleEvacuationCompare(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+    ensureEvacDataLoadedIfNeeded(g, args);
+
+    const EvacOptions evOpts = parseEvacOptions(g, args);
+    const std::vector<EvacGroup> groups = parseEvacGroups(g, args);
+
+    const auto [nearestRes, capacityRes] = compareEvacuationModes(g, groups, evOpts);
+    json nearestJson = serializeEvacResultJson(nearestRes);
+    json capacityJson = serializeEvacResultJson(capacityRes);
+
+    json out = {
+        {"nearest", std::move(nearestJson)},
+        {"capacity", std::move(capacityJson)},
+        {"totalDistance", {
+            {"nearest", nearestRes.totalDistance},
+            {"capacity", capacityRes.totalDistance}
+        }},
+        {"maxAssemblyLoad", {
+            {"nearest", nearestRes.maxAssemblyLoad},
+            {"capacity", capacityRes.maxAssemblyLoad}
+        }},
+        {"overloadedAreasCount", {
+            {"nearest", nearestRes.overloadedAreasCount},
+            {"capacity", capacityRes.overloadedAreasCount}
+        }}
+    };
+    return out.dump();
+}
+
 } // namespace detail
 } // namespace navcore
 
@@ -3220,6 +4248,12 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
             buffer = navcore::detail::handleTSP(args);
         } else if (functionName == "criticalPoints") {
             buffer = navcore::detail::handleCriticalPoints(args);
+        } else if (functionName == "evacuate") {
+            buffer = navcore::detail::handleEvacuate(args);
+        } else if (functionName == "nearestAssembly") {
+            buffer = navcore::detail::handleNearestAssembly(args);
+        } else if (functionName == "evacuationCompare") {
+            buffer = navcore::detail::handleEvacuationCompare(args);
         } else {
             buffer = navcore::detail::makeErrorJson("Unknown or unimplemented function: " + functionName);
         }
@@ -3234,7 +4268,7 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
 } // extern "C"
 
 // ============================================================================
-// SECTION 12: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+// SECTION 13: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
 // ============================================================================
 
 #ifdef NAVCORE_CLI
@@ -3251,7 +4285,10 @@ int main(int argc, char* argv[]) {
                   << "  navcore_cli allPairs [--data <dirOrFile>]\n"
                   << "  navcore_cli mst [kruskal|prim] [--data <dirOrFile>]\n"
                   << "  navcore_cli tsp <stop1> <stop2> [stop3 ...] [--algo dp|nn] [--return] [--data <dirOrFile>]\n"
-                  << "  navcore_cli criticalPoints [--data <dirOrFile>]\n";
+                  << "  navcore_cli criticalPoints [--data <dirOrFile>]\n"
+                  << "  navcore_cli nearestAssembly <from> [--allow-lifts] [--data <dirOrFile>]\n"
+                  << "  navcore_cli evacuate [nearest|capacity] [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n"
+                  << "  navcore_cli evacuationCompare [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n";
         return 1;
     }
 
@@ -3264,6 +4301,7 @@ int main(int argc, char* argv[]) {
     std::string dataTarget = "data";
     bool accessible = false;
     bool returnToStart = false;
+    bool disableLifts = true;
     std::string algoOverride;
     std::vector<std::string> positional;
 
@@ -3273,6 +4311,8 @@ int main(int argc, char* argv[]) {
             accessible = true;
         } else if (arg == "--return" || arg == "--return-to-start") {
             returnToStart = true;
+        } else if (arg == "--allow-lifts" || arg == "--enable-lifts") {
+            disableLifts = false;
         } else if (arg == "--algo" && i + 1 < argc) {
             algoOverride = argv[++i];
         } else if (arg == "--data" && i + 1 < argc) {
@@ -3301,6 +4341,41 @@ int main(int argc, char* argv[]) {
         std::cerr << loadRes.dump(2) << "\n";
         return 1;
     }
+
+    auto buildEvacPeopleJson = [&](size_t startIdx) -> json {
+        json people = json::array();
+        for (size_t i = startIdx; i < positional.size(); ++i) {
+            const std::string& token = positional[i];
+            const auto lastColon = token.rfind(':');
+            if (lastColon != std::string::npos && lastColon > 0) {
+                const std::string tail = token.substr(lastColon + 1);
+                bool allDigits = !tail.empty();
+                for (unsigned char c : tail) {
+                    if (!std::isdigit(c)) {
+                        allDigits = false;
+                        break;
+                    }
+                }
+                if (allDigits) {
+                    const std::string atId = token.substr(0, lastColon);
+                    const int cnt = std::atoi(tail.c_str());
+                    if (!atId.empty() && cnt > 0) {
+                        people.push_back({{"at", atId}, {"count", cnt}});
+                    }
+                }
+            }
+        }
+        if (people.empty()) {
+            // Default campus evacuation demo scenario (1,600 people across academic buildings)
+            people = json::array({
+                {{"at", "b-library:204"}, {"count", 450}},
+                {{"at", "b-library:101"}, {"count", 350}},
+                {{"at", "b-csit:201"}, {"count", 450}},
+                {{"at", "b-auditorium:g01"}, {"count", 350}}
+            });
+        }
+        return people;
+    };
 
     if (cmd == "route") {
         if (positional.size() < 2) {
@@ -3370,6 +4445,39 @@ int main(int argc, char* argv[]) {
         return 0;
     } else if (cmd == "criticalPoints") {
         std::cout << json::parse(call("criticalPoints", "{}")).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "nearestAssembly") {
+        const std::string fromNode = positional.empty() ? "b-library:204" : positional[0];
+        json naArgs = {
+            {"from", fromNode},
+            {"disableLifts", disableLifts}
+        };
+        std::cout << json::parse(call("nearestAssembly", naArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "evacuate") {
+        std::string mode = "nearest";
+        size_t startIdx = 0;
+        if (!positional.empty() && (positional[0] == "nearest" || positional[0] == "capacity")) {
+            mode = positional[0];
+            startIdx = 1;
+        } else if (!algoOverride.empty()) {
+            mode = algoOverride;
+        }
+        json evacArgs = {
+            {"mode", mode},
+            {"disableLifts", disableLifts},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", buildEvacPeopleJson(startIdx)}
+        };
+        std::cout << json::parse(call("evacuate", evacArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "evacuationCompare") {
+        json cmpArgs = {
+            {"disableLifts", disableLifts},
+            {"blocked", {{"nodes", json::array()}, {"edges", json::array()}}},
+            {"people", buildEvacPeopleJson(0)}
+        };
+        std::cout << json::parse(call("evacuationCompare", cmpArgs.dump().c_str())).dump(2) << "\n";
         return 0;
     } else {
         std::cerr << "Unknown CLI command: " << cmd << "\n";

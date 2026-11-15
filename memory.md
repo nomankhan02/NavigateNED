@@ -20,11 +20,12 @@
   - Hover jitter eliminated: Removed conflicting CSS transforms on SVG transform-positioned elements; added transparent hit-area primitives with `pointer-events: none` on inner visuals across stairs, lift, entrance, exit, transition badges, and markers; respected `prefers-reduced-motion`.
   - Room label fitting & clipping: Computed room screen bounds at current zoom; fitted text using 2-line wrapped full names down to 9px min, short names, or short codes; centered labels within room rects; enforced strict clipping via SVG `<clipPath>` to prevent room overflow; recomputes on debounced zoom end (never during pan).
   - Room popover: Floating details tooltip displays full room name, floor, capacity, and ID on room hover or tap.
-- Task B1 & B2 delivered: Single-file C++17 routing & DSA engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
-  - Merged 697-node graph (`data/graph.json` 86 outdoor nodes + 6 `data/indoor/*.json` 611 indoor nodes) linked via 3 m entrance edges.
+- Task B1, B2 & B3 delivered: Single-file C++17 routing, DSA & evacuation engine (`core/src/navcore.cpp`), Doctest suite (`core/tests/test_main.cpp`), and CI (`.github/workflows/core.yml`):
+  - Merged 697-node graph (`data/graph.json` 86 outdoor nodes + 6 `data/indoor/*.json` 611 indoor nodes) linked via 3 m entrance edges, plus `data/evac.json` (7 assembly areas, 12 building exits).
   - Routing: Dijkstra, A* (admissible Haversine heuristic), BFS (fewest hops), Bellman-Ford (with negative cycle detection), and Floyd-Warshall (`algo: "floyd"`), all supporting `accessible: true` and `avoid` / `blockedEdges`, memoized by an O(1) LRU cache (invalidated when blocked sets change).
   - Additional DSA: Prefix Trie (`search`), Floyd-Warshall landmark matrix (`allPairs`), Union-Find + Kruskal/Prim (`mst`), Held-Karp bitmask DP & Nearest-Neighbor (`tsp` with heuristic gap %), and Tarjan's articulation points & bridges (`criticalPoints`). Fully deterministic tie-breaking across platforms.
-  - CLI (`g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): supports `ping`, `route`, `compare`, `search`, `cacheStats`, `allPairs`, `mst`, `tsp`, `criticalPoints`.
+  - Emergency Evacuation (Task B3): Multi-Source Dijkstra on the reversed graph (`nearest` mode & `nearestAssembly`) and Min-Cost Max-Flow via Successive Shortest Paths / Bellman-Ford SPFA (`capacity` mode) with `disableLifts` (default `true`), indoor `exitNodeId` detection, and side-by-side `evacuationCompare`.
+  - CLI (`g++ -std=c++17 -O2 -DNAVCORE_CLI -I core/third_party core/src/navcore.cpp -o navcore_cli`): supports `ping`, `route`, `compare`, `search`, `cacheStats`, `allPairs`, `mst`, `tsp`, `criticalPoints`, `nearestAssembly`, `evacuate`, `evacuationCompare`.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
@@ -61,11 +62,13 @@
    - `call("mst", '{"algo":"kruskal|prim"}')` -> `{"algo":"kruskal","totalWeight":4120.5,"totalLength":4120.5,"edgeCount":85,"edges":[{"a":"n1","b":"n2","w":45.2},...]}`
    - `call("tsp", '{"stops":["n1","b-csit","b-library"],"algo":"dp|nn","returnToStart":false}')` -> `{"found":true,"order":["n1","b-csit","b-library"],"orderedStops":[...],"totalDistance":485.6,"dpDistance":485.6,"nnDistance":510.2,"heuristicGapPercent":5.06,"path":["n1",...]}`
    - `call("criticalPoints", "{}")` -> `{"articulationPoints":["n12",...],"bridges":[["n1","n2"],...],"landmarkNames":{"n57":"Main Auditorium",...},"nodes":[...],"edges":[...]}`
+   - `call("nearestAssembly", '{"from":"b-library:204","blocked":{"nodes":[],"edges":[]},"disableLifts":true}')` -> `{"found":true,"from":"b-library:204","assemblyId":"a-courtyard-fountain","assemblyName":"Courtyard Fountain Central Plaza","nodeId":"n28","capacity":600,"distance":263.5,"path":["b-library:204",...,"n28"],"steps":[...],"exitNodeId":"b-library:exit_nw"}`
+   - `call("evacuate", '{"mode":"nearest|capacity","blocked":{"nodes":["n28"],"edges":[["n1","n2"]]},"people":[{"at":"b-library:204","count":450},{"at":"b-csit:201","count":400}],"disableLifts":true}')` -> `{"mode":"capacity","assignments":[{"from":"b-library:204","assemblyId":"a-soccer-field","assemblyName":"Soccer Field & Athletics Track","count":450,"distance":312.4,"path":["b-library:204",...],"exitNodeId":"b-library:exit_nw"},...],"unassigned":0,"assemblyLoad":[{"id":"a-bank-gate","assigned":0,"capacity":700},...],"totalDistance":245100.0}` (Note: calling `call("load", evacJsonStr)` merges `data/evac.json` into the loaded graph without clearing nodes/edges).
+   - `call("evacuationCompare", '{"blocked":{"nodes":[],"edges":[]},"people":[{"at":"b-library:204","count":500},{"at":"b-csit:201","count":500}],"disableLifts":true}')` -> `{"nearest":{...},"capacity":{...},"totalDistance":{"nearest":...,"capacity":...},"maxAssemblyLoad":{"nearest":1000,"capacity":600},"overloadedAreasCount":{"nearest":1,"capacity":0}}`
 
 ## Open Tasks
 - [x] Member A (Task A4 & A4b): Indoor floor-plan SVG map component and fixes in `web/src/map/`.
-- [x] Member A/B (Task B1 & B2): Single-file C++17 routing & DSA core (`core/src/navcore.cpp`) with Dijkstra, A*, BFS, Bellman-Ford, Floyd-Warshall, Trie, LRU Cache, Union-Find/MST, TSP, and Tarjan.
-- [ ] Member A/B (Task B3): Emergency evacuation algorithm (`evacuate`) in `core/src/navcore.cpp`.
+- [x] Member A/B (Task B1, B2 & B3): Single-file C++17 routing, DSA & evacuation core (`core/src/navcore.cpp`).
 - [ ] Member C: Design tokens, accessible navigation UI shell, and algorithm step visualizer.
 
 ## Known Issues
