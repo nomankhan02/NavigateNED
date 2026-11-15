@@ -1,8 +1,8 @@
 # Repository Map
 
-- `agents.md`: Member ownership boundaries and 5-step task workflow.
+- `agents.md`: Unified project ownership table and 5-step task workflow.
 - `contracts.md`: Data schemas and C++ WASM API interface contract.
-- `design.md`: Visual constraints, forbidden design patterns, and token specification rules.
+- `design.md`: Campus Survey Plate visual direction, token architecture, typography, vellum rules, and motion spec.
 - `memory.md`: Living project state, architectural decisions, and current issues (<100 lines).
 - `plan.md`: Roadmap and task breakdown assigned by team member.
 - `README.md`: Project overview, architecture summary, and instructions to run locally.
@@ -46,7 +46,7 @@
 - `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay source image.
 - `web/public/map/ned_master_plan_warped.webp`: North-up georeferenced RGBA WebP master plan overlay for `L.imageOverlay(bounds)`.
 - `web/public/wasm/navcore.js`: Compiled/committed WASM JavaScript loader and module.
-- `web/src/app/layout.tsx`: Root layout document with baseline styling.
+- `web/src/app/layout.tsx`: Root layout loading self-hosted Bricolage Grotesque, Familjen Grotesk, Azeret Mono, and Campus Survey Plate tokens.
 - `web/src/app/page.tsx`: Foundation page testing WASM bridge, ping, and sample graph loading.
 - `web/src/app/_map-dev/page.tsx`: Temporary dev harness page verifying `OutdoorMap`, `useTraceReplay`, and evacuation overlays.
 - `web/src/app/_map-dev/indoor/page.tsx`: Temporary dev harness page verifying `IndoorMap` multi-floor rendering, evacuation, and trace replay.
@@ -67,5 +67,6 @@
 - `web/src/map/OutdoorMap.tsx`: Client-only Leaflet outdoor campus map with Street/Satellite basemaps, north-up `L.imageOverlay` master plan, canvas footprints & walkways, priority collision labels, deduplicated markers, animated route, evacuation hazards, and trace replay.
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.
 - `web/src/map/useTraceReplay.ts`: React hook driving play/pause/speed/seek state over `trace[]` algorithm events.
-- `web/src/ui/`: Reusable accessible UI components (owned by Member C).
+- `web/src/ui/`: Reusable accessible UI components.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
+- `web/src/styles/tokens.css`: Single-source Campus Survey Plate CSS custom properties (Daylight & Night plates, typography, vellum, chamfer, spacing, motion, and `--map-*` mappings).

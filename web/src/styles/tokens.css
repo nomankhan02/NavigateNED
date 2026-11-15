@@ -1,62 +1,488 @@
-/* CSS Variables & System Tokens */
-:root {
-  --color-bg-canvas: #f8faf9;
-  --color-surface-panel: #ffffff;
-  --color-surface-elevated: #f1f4f2;
-  --color-border-subtle: #d8dfdb;
-  --color-border-strong: #9daea4;
+/* ==========================================================================
+ * NavigateNED — Campus Survey Plate Design Tokens (web/src/styles/tokens.css)
+ * Aesthetic Direction: Architectural & Geodetic Survey Instrument Plate
+ * ========================================================================== */
 
-  --color-text-primary: #121f19;
-  --color-text-secondary: #485c52;
-  --color-text-muted: #72847b;
+:root,
+[data-theme="light"] {
+  color-scheme: light;
 
-  --color-accent: #0b5c46;
-  --color-accent-subtle: #e6f2ee;
-  --color-accent-active: #074031;
+  /* 1. Daylight Survey Plate Palette ("Drafting Paper & Geodetic Ink") */
+  --color-bg-canvas: #f5f2ea;
+  --color-surface-panel: #ece7dc;
+  --color-surface-elevated: #faf8f3;
+  --color-surface-recessed: #e2dcd0;
+  --color-surface-hover: #e5dfd2;
 
-  --color-status-success: #1b6338;
-  --color-status-warning: #915d07;
-  --color-status-error: #962828;
+  /* Deep Ink Green-Black Text Hierarchy */
+  --color-text-primary: #111d18;
+  --color-text-secondary: #394d44;
+  --color-text-muted: #63776d;
+  --color-text-inverse: #f8f6f0;
 
-  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Hairline Rules & Tick Marks */
+  --color-border-subtle: #d3cdc0;
+  --color-border-hairline: #c4bdb0;
+  --color-border-strong: #6d7f76;
+  --color-border-ink: #1a2c24;
+  --color-tick-mark: #83948b;
 
+  /* Walkable Network Teal */
+  --color-network-teal: #0e6b5e;
+  --color-network-teal-hover: #094f45;
+  --color-network-teal-subtle: #dbece9;
+  --color-network-teal-border: #7bb5ac;
+
+  /* Signal Vermilion (Primary Actions, Active Routes & Focus Rings) */
+  --color-signal-vermilion: #d9431f;
+  --color-signal-vermilion-hover: #b83414;
+  --color-signal-vermilion-active: #99290d;
+  --color-signal-vermilion-subtle: #fce7e1;
+  --color-signal-vermilion-casing: #fff9f5;
+
+  /* Semantic Instrument Status Colors (Zero Purple) */
+  --color-hazard-red: #c62828;
+  --color-hazard-red-hover: #a51d1d;
+  --color-hazard-red-subtle: #fdeaea;
+
+  --color-safe-green: #1d7544;
+  --color-safe-green-hover: #155933;
+  --color-safe-green-subtle: #e0f2e8;
+
+  --color-caution-amber: #c4760a;
+  --color-caution-amber-subtle: #fdf0db;
+
+  /* Legacy alias mappings for existing pages */
+  --color-accent: var(--color-signal-vermilion);
+  --color-accent-subtle: var(--color-signal-vermilion-subtle);
+  --color-accent-active: var(--color-signal-vermilion-active);
+  --color-status-success: var(--color-safe-green);
+  --color-status-warning: var(--color-caution-amber);
+  --color-status-error: var(--color-hazard-red);
+
+  /* 2. Frosted Tracing Vellum (Allowed ONLY on surfaces sitting over the map) */
+  --vellum-bg: rgba(245, 242, 234, 0.82);
+  --vellum-bg-elevated: rgba(250, 248, 243, 0.86);
+  --vellum-bg-fallback: #efece3;
+  --vellum-border: #8b9a92;
+  --vellum-blur: 12px;
+
+  /* 3. Typography & Numerals System */
+  --font-display: "Bricolage Grotesque", "Familjen Grotesk", sans-serif;
+  --font-sans: "Familjen Grotesk", sans-serif;
+  --font-numerals: "Azeret Mono", monospace;
+  --font-system: var(--font-sans);
+  --font-mono: var(--font-numerals);
+
+  /* Type Scale */
+  --text-2xs: 0.6875rem; /* 11px — technical micro labels, coordinates */
+  --text-xs: 0.75rem;    /* 12px — instrument captions, badges */
+  --text-sm: 0.8125rem;  /* 13px — compact controls, list rows */
+  --text-base: 0.9375rem;/* 15px — primary body & field text */
+  --text-md: 1.0625rem;  /* 17px — section headers */
+  --text-lg: 1.25rem;    /* 20px — panel titles, stat readouts */
+  --text-xl: 1.5rem;     /* 24px — primary display readouts */
+  --text-2xl: 1.875rem;  /* 30px — hero survey plate readouts */
+
+  /* Line Heights & Tracking */
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.04em;
+  --tracking-plate: 0.08em;
+
+  /* 4. 4 px Spacing Scale */
+  --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-8: 48px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  /* 5. Radii, Hairlines & Signature Chamfered Corners (No generic pills) */
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
 
-  --shadow-sm: 0 1px 2px rgba(18, 31, 25, 0.05);
-  --shadow-md: 0 4px 12px rgba(18, 31, 25, 0.08);
+  --hairline-width: 1px;
+  --rule-heavy-width: 1.75px;
+  --stroke-icon: 1.75px;
+
+  /* Recurring 6px / 8px 45-degree chamfered corner clip-paths */
+  --chamfer-xs: 4px;
+  --chamfer-sm: 6px;
+  --chamfer-md: 9px;
+  --clip-chamfer-tr: polygon(
+    0 0,
+    calc(100% - var(--chamfer-sm)) 0,
+    100% var(--chamfer-sm),
+    100% 100%,
+    0 100%
+  );
+  --clip-chamfer-both: polygon(
+    var(--chamfer-xs) 0,
+    calc(100% - var(--chamfer-sm)) 0,
+    100% var(--chamfer-sm),
+    100% 100%,
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
+
+  /* 6. Minimal Architectural Shadows (Crisp offset, zero diffuse glow) */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px rgba(17, 29, 24, 0.07);
+  --shadow-md: 0 3px 10px rgba(17, 29, 24, 0.11);
+  --shadow-plate: 2px 2px 0px rgba(17, 29, 24, 0.14);
+
+  /* 7. Z-Index Layers */
+  --z-map: 1;
+  --z-map-hud: 400;
+  --z-map-controls: 800;
+  --z-panel: 840;
+  --z-key-drawer: 860;
+  --z-header: 900;
+  --z-sheet: 920;
+  --z-popover: 960;
+  --z-toast: 1000;
+
+  /* 8. Motion Durations & Easings (Transform & Opacity only) */
+  --duration-instant: 90ms;
+  --duration-fast: 150ms;
+  --duration-normal: 240ms;
+  --duration-slow: 380ms;
+  --duration-intro: 620ms;
+  --duration-route-draw: 900ms;
+
+  --ease-out-plate: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-plate: cubic-bezier(0.45, 0, 0.15, 1);
+  --ease-spring-snap: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* 9. Unified Outdoor & Indoor Map Variable Mapping (--map-*) */
+  --map-bg: #eae5d9;
+  --map-Turf-tint: #dfe7dd;
+  --map-surface-card: var(--vellum-bg);
+  --map-surface-elevated: var(--color-surface-elevated);
+  --map-border: var(--color-border-hairline);
+  --map-border-strong: var(--color-border-strong);
+
+  --map-text-primary: var(--color-text-primary);
+  --map-text-secondary: var(--color-text-secondary);
+  --map-text-inverse: var(--color-text-inverse);
+
+  --map-edge-walkway: #5a786d;
+  --map-edge-covered: var(--color-network-teal);
+
+  --map-landmark-fill: var(--color-network-teal);
+  --map-landmark-stroke: var(--color-network-teal-hover);
+  --map-landmark-hover-fill: #08473e;
+  --map-landmark-hover-stroke: #06352e;
+  --map-landmark-selected-fill: var(--color-signal-vermilion);
+  --map-landmark-selected-stroke: var(--color-signal-vermilion-hover);
+
+  --map-marker-entrance: var(--color-safe-green);
+  --map-marker-gate: var(--color-signal-vermilion);
+  --map-marker-assembly: var(--color-network-teal);
+  --map-marker-highlight: var(--color-signal-vermilion);
+
+  --map-route-stroke: var(--color-signal-vermilion);
+  --map-route-casing: var(--color-signal-vermilion-casing);
+  --map-user-dot: var(--color-network-teal);
+  --map-user-accuracy: var(--color-network-teal);
+
+  --map-evac-blocked: var(--color-hazard-red);
+  --map-evac-blocked-bg: var(--color-hazard-red-subtle);
+  --map-evac-assign: var(--color-safe-green);
+
+  --map-trace-visited: var(--color-network-teal);
+  --map-trace-frontier: var(--color-caution-amber);
+  --map-trace-active: var(--color-signal-vermilion);
+
+  --map-shadow: var(--shadow-md);
+  --map-font-sans: var(--font-sans);
+  --map-font-display: var(--font-display);
+  --map-font-mono: var(--font-numerals);
+
+  /* Indoor map variables mapped to survey plate tokens */
+  --map-indoor-bg: #ebe6da;
+  --map-indoor-canvas: #f5f2ea;
+  --map-indoor-grid: #e2ddd0;
+  --map-indoor-wall: #1c2e26;
+  --map-indoor-wall-muted: #52685e;
+  --map-indoor-corridor: #e4e9e4;
+  --map-indoor-corridor-stroke: #a5b8af;
+  --map-indoor-room: #faf8f3;
+  --map-indoor-room-hover: #e5efe9;
+  --map-indoor-room-selected: var(--color-signal-vermilion-subtle);
+  --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
+  --map-indoor-text: var(--color-text-primary);
+  --map-indoor-text-muted: var(--color-text-secondary);
+  --map-indoor-badge-bg: rgba(250, 248, 243, 0.94);
+  --map-indoor-stairs: var(--color-network-teal);
+  --map-indoor-lift: #0d5c75;
+  --map-indoor-entrance: var(--color-safe-green);
+  --map-indoor-exit: var(--color-hazard-red);
 }
 
-*, *::before, *::after {
+/* ==========================================================================
+ * Night Survey Plate Palette ([data-theme="dark"] & system dark mode)
+ * ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg-canvas: #0b1410;
+    --color-surface-panel: #111e18;
+    --color-surface-elevated: #172820;
+    --color-surface-recessed: #070d0a;
+    --color-surface-hover: #1d3128;
+
+    --color-text-primary: #edeae1;
+    --color-text-secondary: #a5b5ad;
+    --color-text-muted: #6e8278;
+    --color-text-inverse: #0b1410;
+
+    --color-border-subtle: #1c2e25;
+    --color-border-hairline: #24382e;
+    --color-border-strong: #415e50;
+    --color-border-ink: #9bb0a6;
+    --color-tick-mark: #4c6b5c;
+
+    --color-network-teal: #24a18e;
+    --color-network-teal-hover: #38b8a4;
+    --color-network-teal-subtle: #122e29;
+    --color-network-teal-border: #286e63;
+
+    --color-signal-vermilion: #ec532f;
+    --color-signal-vermilion-hover: #f36b4b;
+    --color-signal-vermilion-active: #d9431f;
+    --color-signal-vermilion-subtle: #361a13;
+    --color-signal-vermilion-casing: #18110e;
+
+    --color-hazard-red: #e53935;
+    --color-hazard-red-hover: #ef5350;
+    --color-hazard-red-subtle: #361414;
+
+    --color-safe-green: #2eae66;
+    --color-safe-green-hover: #43c47b;
+    --color-safe-green-subtle: #122e1e;
+
+    --color-caution-amber: #e59423;
+    --color-caution-amber-subtle: #33230c;
+
+    --vellum-bg: rgba(17, 30, 24, 0.83);
+    --vellum-bg-elevated: rgba(23, 40, 32, 0.88);
+    --vellum-bg-fallback: #13211b;
+    --vellum-border: #3d594b;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-plate: 2px 2px 0px rgba(0, 0, 0, 0.5);
+
+    --map-bg: #0d1713;
+    --map-Turf-tint: #11221b;
+    --map-edge-walkway: #4c7364;
+    --map-edge-covered: var(--color-network-teal);
+    --map-landmark-fill: #1b7a6c;
+    --map-landmark-stroke: #29a895;
+    --map-landmark-hover-fill: #249685;
+    --map-landmark-hover-stroke: #46c4b1;
+
+    --map-indoor-bg: #0b1410;
+    --map-indoor-canvas: #0f1b16;
+    --map-indoor-grid: #182921;
+    --map-indoor-wall: #9bb0a6;
+    --map-indoor-wall-muted: #597367;
+    --map-indoor-corridor: #15261f;
+    --map-indoor-corridor-stroke: #2e4a3e;
+    --map-indoor-room: #14231c;
+    --map-indoor-room-hover: #1c3127;
+    --map-indoor-room-selected: #381b14;
+    --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
+    --map-indoor-badge-bg: rgba(20, 35, 28, 0.94);
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg-canvas: #0b1410;
+  --color-surface-panel: #111e18;
+  --color-surface-elevated: #172820;
+  --color-surface-recessed: #070d0a;
+  --color-surface-hover: #1d3128;
+
+  --color-text-primary: #edeae1;
+  --color-text-secondary: #a5b5ad;
+  --color-text-muted: #6e8278;
+  --color-text-inverse: #0b1410;
+
+  --color-border-subtle: #1c2e25;
+  --color-border-hairline: #24382e;
+  --color-border-strong: #415e50;
+  --color-border-ink: #9bb0a6;
+  --color-tick-mark: #4c6b5c;
+
+  --color-network-teal: #24a18e;
+  --color-network-teal-hover: #38b8a4;
+  --color-network-teal-subtle: #122e29;
+  --color-network-teal-border: #286e63;
+
+  --color-signal-vermilion: #ec532f;
+  --color-signal-vermilion-hover: #f36b4b;
+  --color-signal-vermilion-active: #d9431f;
+  --color-signal-vermilion-subtle: #361a13;
+  --color-signal-vermilion-casing: #18110e;
+
+  --color-hazard-red: #e53935;
+  --color-hazard-red-hover: #ef5350;
+  --color-hazard-red-subtle: #361414;
+
+  --color-safe-green: #2eae66;
+  --color-safe-green-hover: #43c47b;
+  --color-safe-green-subtle: #122e1e;
+
+  --color-caution-amber: #e59423;
+  --color-caution-amber-subtle: #33230c;
+
+  --vellum-bg: rgba(17, 30, 24, 0.83);
+  --vellum-bg-elevated: rgba(23, 40, 32, 0.88);
+  --vellum-bg-fallback: #13211b;
+  --vellum-border: #3d594b;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-plate: 2px 2px 0px rgba(0, 0, 0, 0.5);
+
+  --map-bg: #0d1713;
+  --map-Turf-tint: #11221b;
+  --map-edge-walkway: #4c7364;
+  --map-edge-covered: var(--color-network-teal);
+  --map-landmark-fill: #1b7a6c;
+  --map-landmark-stroke: #29a895;
+  --map-landmark-hover-fill: #249685;
+  --map-landmark-hover-stroke: #46c4b1;
+
+  --map-indoor-bg: #0b1410;
+  --map-indoor-canvas: #0f1b16;
+  --map-indoor-grid: #182921;
+  --map-indoor-wall: #9bb0a6;
+  --map-indoor-wall-muted: #597367;
+  --map-indoor-corridor: #15261f;
+  --map-indoor-corridor-stroke: #2e4a3e;
+  --map-indoor-room: #14231c;
+  --map-indoor-room-hover: #1c3127;
+  --map-indoor-room-selected: #381b14;
+  --map-indoor-room-selected-stroke: var(--color-signal-vermilion);
+  --map-indoor-badge-bg: rgba(20, 35, 28, 0.94);
+}
+
+/* ==========================================================================
+ * Base Reset, Typography Rules & Vellum / Performance Rules
+ * ========================================================================== */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html,
 body {
   background-color: var(--color-bg-canvas);
   color: var(--color-text-primary);
-  font-family: var(--font-system);
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+/* ALL numbers in the app (distances, times, floors, counts, coordinates, readouts) */
+.font-numerals,
+.numerals,
+[data-numerals="true"],
+code,
+pre,
+.ned-key-badge-count,
+.ned-indoor-room-popover-pill {
+  font-family: var(--font-numerals);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Building number badges use the display face bold */
+.font-building-badge,
+.ned-landmark-badge,
+.ned-key-item-number {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visible keyboard focus ring in the signal vermilion color */
+:focus-visible {
+  outline: 2px solid var(--color-signal-vermilion);
+  outline-offset: 2px;
+}
+
+/* Frosted Tracing Vellum surface utility (ONLY for surfaces sitting over the map) */
+.surface-vellum {
+  background-color: var(--vellum-bg-fallback);
+  border: var(--hairline-width) solid var(--vellum-border);
+}
+
+@supports ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  .surface-vellum {
+    background-color: var(--vellum-bg);
+    backdrop-filter: blur(var(--vellum-blur));
+    -webkit-backdrop-filter: blur(var(--vellum-blur));
+  }
+}
+
+/* Disable backdrop-filter blur while the map is being dragged or zoomed (mobile performance) */
+body[data-map-interacting="true"] .surface-vellum,
+body[data-map-interacting="true"] .ned-key-panel,
+body[data-map-interacting="true"] .ned-layer-switcher,
+body[data-map-interacting="true"] .ned-map-hud,
+body[data-map-interacting="true"] .ned-map-ctrl-btn,
+body[data-map-interacting="true"] .ned-indoor-floor-switcher,
+body[data-map-interacting="true"] .ned-indoor-hud-btn {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: var(--vellum-bg-fallback) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
-

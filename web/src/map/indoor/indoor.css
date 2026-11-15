@@ -2,36 +2,16 @@
 /* IndoorMap architectural floor plan stylesheet with --map-* tokens */
 
 .ned-indoor-root {
-  --map-indoor-bg: var(--map-bg, #e7ece8);
-  --map-indoor-canvas: #f2f6f3;
-  --map-indoor-grid: #e1e9e3;
-  --map-indoor-wall: #263830;
-  --map-indoor-wall-muted: #526b60;
-  --map-indoor-corridor: #e4ece6;
-  --map-indoor-corridor-stroke: #b5c7bc;
-  --map-indoor-room: #ffffff;
-  --map-indoor-room-hover: #eaf3ed;
-  --map-indoor-room-selected: #fef3c7;
-  --map-indoor-room-selected-stroke: #b85d19;
-  --map-indoor-text: #14241d;
-  --map-indoor-text-muted: #4a6155;
-  --map-indoor-badge-bg: rgba(255, 255, 255, 0.96);
-
-  --map-indoor-stairs: #0f766e;
-  --map-indoor-lift: #0369a1;
-  --map-indoor-entrance: #15803d;
-  --map-indoor-exit: #b91c1c;
-
   position: relative;
   width: 100%;
   height: 100%;
   min-height: 480px;
-  background-color: var(--map-indoor-bg);
-  font-family: var(--map-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  color: var(--map-indoor-text);
+  background-color: var(--map-indoor-bg, #ebe6da);
+  font-family: var(--map-font-sans, "Familjen Grotesk", sans-serif);
+  color: var(--map-indoor-text, #111d18);
   overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid var(--map-border, #b8c6be);
+  border-radius: var(--radius-sm, 3px);
+  border: 1px solid var(--map-border, #c4bdb0);
   user-select: none;
   touch-action: none;
 }

@@ -347,6 +347,18 @@ export function OutdoorMap({
       markerLayerRef.current = L.layerGroup().addTo(map);
       labelLayerRef.current = L.layerGroup().addTo(map);
 
+      map.on("movestart zoomstart", () => {
+        if (typeof document !== "undefined") {
+          document.body.setAttribute("data-map-interacting", "true");
+        }
+      });
+
+      map.on("moveend zoomend", () => {
+        if (typeof document !== "undefined") {
+          document.body.removeAttribute("data-map-interacting");
+        }
+      });
+
       map.on("zoomend", () => {
         setZoomLevel(map.getZoom());
       });
