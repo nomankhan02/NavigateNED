@@ -68,5 +68,11 @@
 - `web/src/map/types.ts`: TypeScript contracts for `OutdoorMapProps`, `CampusGraph`, `EvacuationOverlayData`, `TraceEvent`, and `TraceReplayState`.
 - `web/src/map/useTraceReplay.ts`: React hook driving play/pause/speed/seek state over `trace[]` algorithm events.
 - `web/src/ui/`: Reusable accessible UI components.
+- `web/src/ui/icons/`: Hand-drawn 24x24 inline SVG survey and campus icon set (`1.75px` stroke).
+- `web/src/ui/icons/types.ts`: `IconName`, `IconProps`, and shared `SvgFrame` 24x24 SVG primitive.
+- `web/src/ui/icons/navigation.tsx`: Survey navigation icons (`route`, `search`, `compass`, `locate`, `layers`, `swap`, `distance`, `graph`).
+- `web/src/ui/icons/campus.tsx`: Campus & evacuation icons (`entrance`, `exit`, `stairs`, `lift`, `floor`, `building`, `accessibility`, `assembly-point`, `hazard`, `blocked-path`, `people-flow`).
+- `web/src/ui/icons/controls.tsx`: Transport, directional, and theme icons (`play`, `pause`, `step`, `close`, `menu`, `chevrons`, `settings`, `sun`, `moon`).
+- `web/src/ui/icons/index.tsx`: Icon barrel exports, `<Icon name={...} />` lookup component, and `ICON_CATALOG`.
 - `web/src/styles/`: Vanilla CSS tokens and scoped CSS modules.
 - `web/src/styles/tokens.css`: Single-source Campus Survey Plate CSS custom properties (Daylight & Night plates, typography, vellum, chamfer, spacing, motion, and `--map-*` mappings).

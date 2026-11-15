@@ -30,6 +30,7 @@
 - Task C1 (Step 0 & Slice a) delivered:
   - Step 0(a) Skill Audit: Checked Antigravity built-in skills (`generative_ui` is for chat HTML embeds only) and Marketplace (`search_marketplace` for frontend/design/motion skills returned `[]`); no workspace frontend UI skills exist, proceeding directly with the "Campus Survey Plate" specification.
   - Step 0(b) & Slice (a): Installed self-hosted `@fontsource/bricolage-grotesque`, `@fontsource/familjen-grotesk`, and `@fontsource/azeret-mono`; defined Daylight & Night Survey Plate tokens, Frosted Tracing Vellum rules (`body[data-map-interacting="true"]` blur disable), 4px spacing, 2-4px crisp radii, 45° chamfer clip-paths, and unified `--map-*` / `--map-indoor-*` tokens in `web/src/styles/tokens.css`; documented full spec in `design.md`.
+  - Slice (b) Icons: Created 31 hand-drawn inline SVG survey & architectural icons on a unified `24x24` grid (`strokeWidth: 1.75`, `strokeLinecap: "round"`, `strokeLinejoin: "round"`) in `web/src/ui/icons/` (`types.ts`, `navigation.tsx`, `campus.tsx`, `controls.tsx`, `index.tsx`).
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.
