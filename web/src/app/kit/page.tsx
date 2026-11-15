@@ -33,19 +33,19 @@ import {
 import styles from "./kit.module.css";
 
 const COLOR_SWATCHES = [
-  { name: "Paper Base", token: "--color-paper" },
+  { name: "Canvas Base", token: "--color-bg-canvas" },
   { name: "Surface Panel", token: "--color-surface-panel" },
   { name: "Surface Elevated", token: "--color-surface-elevated" },
-  { name: "Surface Sunken", token: "--color-surface-sunken" },
-  { name: "Ink Primary", token: "--color-ink-primary" },
-  { name: "Ink Secondary", token: "--color-ink-secondary" },
-  { name: "Ink Muted", token: "--color-ink-muted" },
-  { name: "Hairline Rule", token: "--color-rule-strong" },
+  { name: "Surface Recessed", token: "--color-surface-recessed" },
+  { name: "Text Primary", token: "--color-text-primary" },
+  { name: "Text Secondary", token: "--color-text-secondary" },
+  { name: "Text Muted", token: "--color-text-muted" },
+  { name: "Border Strong", token: "--color-border-strong" },
   { name: "Network Teal", token: "--color-network-teal" },
-  { name: "Signal Vermilion", token: "--color-signal-vermilion" },
-  { name: "Signal Safe", token: "--color-signal-safe" },
-  { name: "Signal Hazard", token: "--color-signal-hazard" },
-  { name: "Signal Caution", token: "--color-signal-caution" },
+  { name: "Route Coral", token: "--color-signal-vermilion" },
+  { name: "Safe Green", token: "--color-safe-green" },
+  { name: "Hazard Red", token: "--color-hazard-red" },
+  { name: "Caution Amber", token: "--color-caution-amber" },
 ] as const;
 
 export default function KitPage() {
@@ -496,3 +496,4 @@ export default function KitPage() {
     </div>
   );
 }
+

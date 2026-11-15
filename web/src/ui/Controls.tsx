@@ -50,7 +50,6 @@ export function Toggle({
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={[
-          styles.button,
           styles.toggleTrack,
           checked ? styles.toggleTrackChecked : "",
         ]

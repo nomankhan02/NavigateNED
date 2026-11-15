@@ -32,7 +32,6 @@
 .segmentBtn:focus-visible,
 .chip:focus-visible,
 .chipRemove:focus-visible,
-.input:focus-visible,
 .listRowInteractive:focus-visible,
 .sheetHandleBtn:focus-visible,
 .toggleTrack:focus-visible {
@@ -211,8 +210,8 @@
   flex-shrink: 0;
   cursor: pointer;
   transition:
-    background-color var(--duration-fast) var(--ease-out-plate),
-    border-color var(--duration-fast) var(--ease-out-plate);
+    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toggleTrackChecked {
@@ -226,14 +225,22 @@
   background-color: var(--color-text-muted);
   border-radius: 1px;
   transform: translateX(0);
+  will-change: transform;
   transition:
-    transform var(--duration-fast) var(--ease-out-plate),
-    background-color var(--duration-fast) var(--ease-out-plate);
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toggleTrackChecked .toggleThumb {
   transform: translateX(20px);
   background-color: var(--color-text-inverse);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggleTrack,
+  .toggleThumb {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* --- SegmentedControl (Inset Well Track + Solid Vermilion Active Fill) --- */
@@ -411,8 +418,12 @@
 
 .inputShell:focus-within {
   background-color: var(--color-surface-elevated);
-  border-color: var(--color-signal-vermilion);
-  box-shadow: 0 0 0 1px var(--color-signal-vermilion);
+  outline: 2px solid var(--color-signal-vermilion);
+  outline-offset: 2px;
+}
+
+.input:focus-visible {
+  outline: none;
 }
 
 .inputShellError {
