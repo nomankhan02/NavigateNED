@@ -1148,3 +1148,378 @@ TEST_CASE("Task B3.4: Blocking a node on an evacuation path changes the path and
     }
 }
 
+// ============================================================================
+// Task B4 Tests: Turn-by-Turn Directions, GPS Progress & Live Rerouting
+// ============================================================================
+
+TEST_CASE("Task B4.1: Turn-by-Turn Directions on Straight & L-Shaped Routes and Turn Reversal Symmetry") {
+    // Build a synthetic graph with:
+    //   - A 4-node straight North corridor: s1 -> s2 -> s3 -> s4 (50m each = 150m total)
+    //   - An L-shaped path: s1 -> s2 (North 60m) -> e1 (East 40m), with landmark "Courtyard Fountain" at s2
+    //   - Diagonal branches at s2 for slight-right (35 deg) and sharp-right (140 deg) to test all turn classes
+    json syntheticGraph = {
+        {"meta", {{"campus", "NED Synthetic Turn Test"}}},
+        {"nodes", json::array({
+            {{"id", "s1"}, {"name", "South Gate"}, {"lat", 24.930000}, {"lng", 67.110000}, {"kind", "gate"}},
+            {{"id", "s2"}, {"name", ""},           {"lat", 24.930540}, {"lng", 67.110000}, {"kind", "junction"}},
+            {{"id", "s3"}, {"name", ""},           {"lat", 24.931080}, {"lng", 67.110000}, {"kind", "junction"}},
+            {{"id", "s4"}, {"name", "North Plaza"},{"lat", 24.931620}, {"lng", 67.110000}, {"kind", "junction"}},
+            {{"id", "e1"}, {"name", "East Lawn"},  {"lat", 24.930540}, {"lng", 67.110396}, {"kind", "junction"}},
+            {{"id", "ne1"},{"name", "NE Corner"},  {"lat", 24.930982}, {"lng", 67.110340}, {"kind", "junction"}},
+            {{"id", "se1"},{"name", "SE Corner"},  {"lat", 24.930126}, {"lng", 67.110380}, {"kind", "junction"}}
+        })},
+        {"edges", json::array({
+            {{"a", "s1"}, {"b", "s2"}, {"w", 60.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.930000, 67.110000}), json::array({24.930540, 67.110000})})}},
+            {{"a", "s2"}, {"b", "s3"}, {"w", 60.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.930540, 67.110000}), json::array({24.931080, 67.110000})})}},
+            {{"a", "s3"}, {"b", "s4"}, {"w", 60.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.931080, 67.110000}), json::array({24.931620, 67.110000})})}},
+            {{"a", "s2"}, {"b", "e1"}, {"w", 40.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.930540, 67.110000}), json::array({24.930540, 67.110396})})}},
+            {{"a", "s2"}, {"b", "ne1"}, {"w", 55.0}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "s2"}, {"b", "se1"}, {"w", 55.0}, {"kind", "walkway"}, {"accessible", true}}
+        })},
+        {"landmarks", json::array({
+            {{"id", "lm-fountain"}, {"name", "Courtyard Fountain"}, {"shortName", "Fountain"},
+             {"category", "amenity"}, {"nodeId", "s2"}, {"lat", 24.930545}, {"lng", 67.110005}}
+        })}
+    };
+
+    const auto loadRes = json::parse(call("load", syntheticGraph.dump().c_str()));
+    REQUIRE(loadRes.value("status", std::string("")) == "ok");
+
+    SUBCASE("Straight route merges consecutive straight edges into start, straight, arrive") {
+        json dirReq = {
+            {"from", "s1"},
+            {"to", "s4"},
+            {"algo", "dijkstra"},
+            {"accessible", false}
+        };
+        const auto dirRes = json::parse(call("directions", dirReq.dump().c_str()));
+        REQUIRE(dirRes.contains("maneuvers"));
+        const auto& m = dirRes["maneuvers"];
+        REQUIRE(m.size() == 3);
+        CHECK(m[0]["type"] == "start");
+        CHECK(m[0]["distanceM"].get<double>() == doctest::Approx(0.0));
+        CHECK(m[1]["type"] == "straight");
+        CHECK(m[1]["distanceM"].get<double>() == doctest::Approx(180.0));
+        CHECK(m[2]["type"] == "arrive");
+        CHECK(m[2]["distanceM"].get<double>() == doctest::Approx(0.0));
+
+        // Verify no raw node IDs appear in any maneuver text
+        for (const auto& step : m) {
+            const std::string txt = step["text"].get<std::string>();
+            CHECK(txt.find("s1") == std::string::npos);
+            CHECK(txt.find("s2") == std::string::npos);
+            CHECK(txt.find("s3") == std::string::npos);
+            CHECK(txt.find("s4") == std::string::npos);
+        }
+    }
+
+    SUBCASE("Known L-shaped route gives a right turn with exact distanceM and nearest landmark within 40m, and reverses to left") {
+        // Forward L-route: s1 -> s2 (North 60m) -> e1 (East 40m) => 90 deg right turn at s2
+        json fwdReq = {
+            {"from", "s1"},
+            {"to", "e1"},
+            {"algo", "dijkstra"},
+            {"accessible", false}
+        };
+        const auto fwdRes = json::parse(call("directions", fwdReq.dump().c_str()));
+        const auto& fwdM = fwdRes["maneuvers"];
+        REQUIRE(fwdM.size() == 4);
+        CHECK(fwdM[0]["type"] == "start");
+        CHECK(fwdM[1]["type"] == "straight");
+        CHECK(fwdM[1]["distanceM"].get<double>() == doctest::Approx(60.0));
+        CHECK(fwdM[2]["type"] == "right");
+        CHECK(fwdM[2]["distanceM"].get<double>() == doctest::Approx(40.0));
+        CHECK(fwdM[2]["atNodeId"] == "s2");
+        CHECK(fwdM[2].value("landmark", std::string("")) == "Courtyard Fountain");
+        CHECK(fwdM[2]["text"].get<std::string>().find("Courtyard Fountain") != std::string::npos);
+        CHECK(fwdM[3]["type"] == "arrive");
+
+        // Reversed L-route: e1 -> s2 (West 40m) -> s1 (South 60m) => 90 deg left turn at s2
+        json revReq = {
+            {"from", "e1"},
+            {"to", "s1"},
+            {"algo", "dijkstra"},
+            {"accessible", false}
+        };
+        const auto revRes = json::parse(call("directions", revReq.dump().c_str()));
+        const auto& revM = revRes["maneuvers"];
+        REQUIRE(revM.size() == 4);
+        CHECK(revM[0]["type"] == "start");
+        CHECK(revM[1]["type"] == "straight");
+        CHECK(revM[1]["distanceM"].get<double>() == doctest::Approx(40.0));
+        CHECK(revM[2]["type"] == "left");
+        CHECK(revM[2]["distanceM"].get<double>() == doctest::Approx(60.0));
+        CHECK(revM[2]["atNodeId"] == "s2");
+        CHECK(revM[2].value("landmark", std::string("")) == "Courtyard Fountain");
+        CHECK(revM[3]["type"] == "arrive");
+    }
+
+    SUBCASE("Slight and sharp turns also reverse symmetrically (slight-right <-> slight-left, sharp-right <-> sharp-left)") {
+        // s1 -> s2 -> ne1 (slight-right) vs ne1 -> s2 -> s1 (slight-left)
+        const auto slightFwd = json::parse(call("directions", R"({"from":"s1","to":"ne1"})"))["maneuvers"];
+        const auto slightRev = json::parse(call("directions", R"({"from":"ne1","to":"s1"})"))["maneuvers"];
+        REQUIRE(slightFwd.size() == 4);
+        REQUIRE(slightRev.size() == 4);
+        CHECK(slightFwd[2]["type"] == "slight-right");
+        CHECK(slightRev[2]["type"] == "slight-left");
+
+        // s1 -> s2 -> se1 (sharp-right) vs se1 -> s2 -> s1 (sharp-left)
+        const auto sharpFwd = json::parse(call("directions", R"({"from":"s1","to":"se1"})"))["maneuvers"];
+        const auto sharpRev = json::parse(call("directions", R"({"from":"se1","to":"s1"})"))["maneuvers"];
+        REQUIRE(sharpFwd.size() == 4);
+        REQUIRE(sharpRev.size() == 4);
+        CHECK(sharpFwd[2]["type"] == "sharp-right");
+        CHECK(sharpRev[2]["type"] == "sharp-left");
+    }
+}
+
+TEST_CASE("Task B4.2: GPS Progress Projection, Off-Route Detection & Noise Filtering") {
+    // Load the synthetic graph with known coordinates:
+    // s1 (24.930000, 67.110000) -> s2 (24.930540, 67.110000) [60m] -> e1 (24.930540, 67.110396) [40m]
+    json syntheticGraph = {
+        {"meta", {{"campus", "NED Synthetic Progress Test"}}},
+        {"nodes", json::array({
+            {{"id", "s1"}, {"name", "South Gate"}, {"lat", 24.930000}, {"lng", 67.110000}, {"kind", "gate"}},
+            {{"id", "s2"}, {"name", ""},           {"lat", 24.930540}, {"lng", 67.110000}, {"kind", "junction"}},
+            {{"id", "e1"}, {"name", "East Lawn"},  {"lat", 24.930540}, {"lng", 67.110396}, {"kind", "junction"}}
+        })},
+        {"edges", json::array({
+            {{"a", "s1"}, {"b", "s2"}, {"w", 60.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.930000, 67.110000}), json::array({24.930540, 67.110000})})}},
+            {{"a", "s2"}, {"b", "e1"}, {"w", 40.0}, {"kind", "walkway"}, {"accessible", true},
+             {"geometry", json::array({json::array({24.930540, 67.110000}), json::array({24.930540, 67.110396})})}}
+        })},
+        {"landmarks", json::array({
+            {{"id", "lm-fountain"}, {"name", "Courtyard Fountain"}, {"shortName", "Fountain"},
+             {"category", "amenity"}, {"nodeId", "s2"}, {"lat", 24.930540}, {"lng", 67.110000}}
+        })}
+    };
+    REQUIRE(json::parse(call("load", syntheticGraph.dump().c_str())).value("status", std::string("")) == "ok");
+
+    const auto routeRes = json::parse(call("route", R"({"from":"s1","to":"e1","algo":"dijkstra"})"));
+    REQUIRE(routeRes["found"].get<bool>() == true);
+    CHECK(routeRes["distance"].get<double>() == doctest::Approx(100.0));
+
+    // 1. Progress at the start of the route
+    json startReq = {
+        {"route", routeRes},
+        {"lat", 24.930000},
+        {"lng", 67.110000},
+        {"accuracyM", 5.0},
+        {"lastIndex", 0}
+    };
+    const auto startProg = json::parse(call("progress", startReq.dump().c_str()));
+    CHECK(startProg["distanceAlongM"].get<double>() == doctest::Approx(0.0).epsilon(0.05));
+    CHECK(startProg["remainingM"].get<double>() == doctest::Approx(100.0).epsilon(0.05));
+    CHECK(startProg["offRoute"].get<bool>() == false);
+    CHECK(startProg["arrived"].get<bool>() == false);
+
+    // 2. Progress at the middle of the route (at the turn corner s2: 60m along, 40m remaining)
+    json midReq = {
+        {"route", routeRes},
+        {"lat", 24.930540},
+        {"lng", 67.110000},
+        {"accuracyM", 5.0},
+        {"lastIndex", startProg["lastIndex"]}
+    };
+    const auto midProg = json::parse(call("progress", midReq.dump().c_str()));
+    CHECK(midProg["distanceAlongM"].get<double>() == doctest::Approx(60.0).epsilon(0.05));
+    CHECK(midProg["remainingM"].get<double>() == doctest::Approx(40.0).epsilon(0.05));
+    CHECK(midProg["offRoute"].get<bool>() == false);
+    CHECK(midProg["arrived"].get<bool>() == false);
+
+    // 3. Noisy GPS point jumping slightly backward (~8m south of s2) must NOT move progress backward
+    json noisyReq = {
+        {"route", routeRes},
+        {"lat", 24.930468},
+        {"lng", 67.110000},
+        {"accuracyM", 8.0},
+        {"lastIndex", midProg["lastIndex"]}
+    };
+    const auto noisyProg = json::parse(call("progress", noisyReq.dump().c_str()));
+    CHECK(noisyProg["distanceAlongM"].get<double>() >= midProg["distanceAlongM"].get<double>());
+    CHECK(noisyProg["remainingM"].get<double>() <= midProg["remainingM"].get<double>());
+    CHECK(noisyProg["offRoute"].get<bool>() == false);
+
+    // 4. Off-route point (> 25m and > 1.5 * accuracyM away from the polyline)
+    json offRouteReq = {
+        {"route", routeRes},
+        {"lat", 24.931200}, // ~73m north of s2-e1 segment
+        {"lng", 67.110200},
+        {"accuracyM", 10.0},
+        {"lastIndex", midProg["lastIndex"]}
+    };
+    const auto offRouteProg = json::parse(call("progress", offRouteReq.dump().c_str()));
+    CHECK(offRouteProg["offRoute"].get<bool>() == true);
+    CHECK(offRouteProg["offRouteDistanceM"].get<double>() > 25.0);
+
+    // 5. Progress at the end of the route (at e1) -> arrived == true
+    json endReq = {
+        {"route", routeRes},
+        {"lat", 24.930540},
+        {"lng", 67.110396},
+        {"accuracyM", 5.0},
+        {"lastIndex", midProg["lastIndex"]}
+    };
+    const auto endProg = json::parse(call("progress", endReq.dump().c_str()));
+    CHECK(endProg["distanceAlongM"].get<double>() == doctest::Approx(100.0).epsilon(0.05));
+    CHECK(endProg["remainingM"].get<double>() == doctest::Approx(0.0).epsilon(0.05));
+    CHECK(endProg["offRoute"].get<bool>() == false);
+    CHECK(endProg["arrived"].get<bool>() == true);
+}
+
+TEST_CASE("Task B4.3: Indoor-to-Outdoor Directions, Turn Reversal & Live Rerouting on Merged Campus Graph") {
+    const auto loadRes = loadRealMergedGraph();
+    REQUIRE(loadRes.value("status", std::string("")) == "ok");
+
+    SUBCASE("Indoor-to-outdoor route produces stairs-down/lift and enter-building with building, floor, and room names and zero raw node IDs") {
+        // Non-accessible route from CSIT 2nd floor room b-csit:201 to Main Gate n1 (uses stairs-down)
+        json stairsReq = {
+            {"from", "b-csit:201"},
+            {"to", "n1"},
+            {"algo", "dijkstra"},
+            {"accessible", false}
+        };
+        const auto stairsRes = json::parse(call("directions", stairsReq.dump().c_str()));
+        REQUIRE(stairsRes.contains("maneuvers"));
+        const auto& maneuvers = stairsRes["maneuvers"];
+        REQUIRE(maneuvers.size() >= 4);
+        CHECK(maneuvers.front()["type"] == "start");
+        CHECK(maneuvers.back()["type"] == "arrive");
+
+        bool hasStairsDown = false;
+        bool hasEnterBuilding = false;
+        for (const auto& step : maneuvers) {
+            const std::string t = step["type"].get<std::string>();
+            const std::string txt = step["text"].get<std::string>();
+            if (t == "stairs-down") {
+                hasStairsDown = true;
+                CHECK(txt.find("Ground Floor") != std::string::npos);
+            }
+            if (t == "enter-building") {
+                hasEnterBuilding = true;
+            }
+            // Ensure no raw node IDs appear in text
+            CHECK(txt.find("b-csit:") == std::string::npos);
+            CHECK(txt.find("f0_") == std::string::npos);
+            CHECK(txt.find("f2_") == std::string::npos);
+            CHECK(txt.find("n1") == std::string::npos);
+        }
+        CHECK(hasStairsDown);
+        CHECK(hasEnterBuilding);
+
+        // Accessible route from b-csit:201 to n1 (uses lift instead of stairs)
+        json liftReq = {
+            {"from", "b-csit:201"},
+            {"to", "n1"},
+            {"algo", "dijkstra"},
+            {"accessible", true}
+        };
+        const auto liftRes = json::parse(call("directions", liftReq.dump().c_str()));
+        bool hasLift = false;
+        for (const auto& step : liftRes["maneuvers"]) {
+            if (step["type"] == "lift") {
+                hasLift = true;
+                CHECK(step["text"].get<std::string>().find("Ground Floor") != std::string::npos);
+            }
+        }
+        CHECK(hasLift);
+
+        // Outdoor-to-indoor route (n1 -> b-csit:201) produces enter-building and stairs-up
+        json upReq = {
+            {"from", "n1"},
+            {"to", "b-csit:201"},
+            {"algo", "dijkstra"},
+            {"accessible", false}
+        };
+        const auto upRes = json::parse(call("directions", upReq.dump().c_str()));
+        bool hasStairsUp = false;
+        bool hasEnterBldgUp = false;
+        for (const auto& step : upRes["maneuvers"]) {
+            if (step["type"] == "stairs-up") {
+                hasStairsUp = true;
+                CHECK(step["text"].get<std::string>().find("Second Floor") != std::string::npos);
+            }
+            if (step["type"] == "enter-building") {
+                hasEnterBldgUp = true;
+            }
+        }
+        CHECK(hasStairsUp);
+        CHECK(hasEnterBldgUp);
+    }
+
+    SUBCASE("Reversing a multi-turn outdoor campus route reverses every turn direction symmetrically") {
+        const auto fwdRoute = json::parse(call("route", R"({"from":"n1","to":"n76","algo":"dijkstra"})"));
+        REQUIRE(fwdRoute["found"].get<bool>() == true);
+        auto revRoute = fwdRoute;
+        auto revPath = fwdRoute["path"].get<std::vector<std::string>>();
+        std::reverse(revPath.begin(), revPath.end());
+        revRoute["path"] = revPath;
+
+        const auto fwdDirs = json::parse(call("directions", json({{"route", fwdRoute}}).dump().c_str()))["maneuvers"];
+        const auto revDirs = json::parse(call("directions", json({{"route", revRoute}}).dump().c_str()))["maneuvers"];
+
+        auto isTurnType = [](const std::string& t) {
+            return t == "left" || t == "right" ||
+                   t == "slight-left" || t == "slight-right" ||
+                   t == "sharp-left" || t == "sharp-right";
+        };
+        auto flipTurnType = [](const std::string& t) -> std::string {
+            if (t == "left") return "right";
+            if (t == "right") return "left";
+            if (t == "slight-left") return "slight-right";
+            if (t == "slight-right") return "slight-left";
+            if (t == "sharp-left") return "sharp-right";
+            if (t == "sharp-right") return "sharp-left";
+            return t;
+        };
+
+        std::vector<std::pair<std::string, std::string>> fwdTurns;
+        for (const auto& m : fwdDirs) {
+            const std::string t = m["type"].get<std::string>();
+            if (isTurnType(t)) {
+                fwdTurns.emplace_back(m["atNodeId"].get<std::string>(), t);
+            }
+        }
+        std::vector<std::pair<std::string, std::string>> revTurns;
+        for (const auto& m : revDirs) {
+            const std::string t = m["type"].get<std::string>();
+            if (isTurnType(t)) {
+                revTurns.emplace_back(m["atNodeId"].get<std::string>(), t);
+            }
+        }
+
+        REQUIRE(!fwdTurns.empty());
+        REQUIRE(fwdTurns.size() == revTurns.size());
+        std::reverse(revTurns.begin(), revTurns.end());
+        for (size_t i = 0; i < fwdTurns.size(); ++i) {
+            CHECK(fwdTurns[i].first == revTurns[i].first);
+            CHECK(flipTurnType(fwdTurns[i].second) == revTurns[i].second);
+        }
+    }
+
+    SUBCASE("Live GPS reroute snaps to nearest outdoor node/edge and returns deterministic route and directions") {
+        json rerouteReq = {
+            {"from", {{"lat", 24.9325}, {"lng", 67.1135}}},
+            {"to", "b-library"},
+            {"accessible", false}
+        };
+        const std::string r1Str = call("reroute", rerouteReq.dump().c_str());
+        const std::string r2Str = call("reroute", rerouteReq.dump().c_str());
+        CHECK(r1Str == r2Str); // Deterministic across identical calls
+
+        const auto r1 = json::parse(r1Str);
+        CHECK(r1["route"]["found"].get<bool>() == true);
+        CHECK(r1["route"]["distance"].get<double>() > 0.0);
+        REQUIRE(r1.contains("maneuvers"));
+        CHECK(r1["maneuvers"].size() >= 2);
+        CHECK(r1["maneuvers"].front()["type"] == "start");
+        CHECK(r1["maneuvers"].back()["type"] == "arrive");
+    }
+}
+
+

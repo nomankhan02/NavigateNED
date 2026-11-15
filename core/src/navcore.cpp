@@ -57,17 +57,23 @@
  *              - 10.2 Min-Cost Max-Flow Assignment (Successive Shortest Paths / SPFA)
  *              - 10.3 Evacuation Mode Comparison (Nearest vs Capacity-Constrained)
  *
- *   SECTION 11: Multi-Algorithm Benchmark Comparator
+ *   SECTION 11: Turn-by-Turn Directions, GPS Progress & Live Rerouting
+ *              - 11.1 Polyline Bearing Calculation, Turn Classification & Landmark Maneuvers
+ *              - 11.2 GPS Polyline Segment Projection, Off-Route Detection & Noise Filtering
+ *              - 11.3 Live GPS Graph Snapping & Rerouting
+ *
+ *   SECTION 12: Multi-Algorithm Benchmark Comparator
  *              - Side-by-side timing (microseconds), visited count, and distance
  *
- *   SECTION 12: WASM / Native JSON Dispatcher — call(fn, argsJson)
+ *   SECTION 13: WASM / Native JSON Dispatcher — call(fn, argsJson)
  *              - Handlers: "ping", "load", "route", "compare", "search",
  *                "cacheStats", "allPairs", "mst", "tsp", "criticalPoints",
- *                "evacuate", "nearestAssembly", "evacuationCompare"
+ *                "evacuate", "nearestAssembly", "evacuationCompare",
+ *                "directions", "progress", "reroute"
  *              - Exception-safe C ABI entry point & #ifdef __EMSCRIPTEN__ export
  *
- *   SECTION 13: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
- *              - Terminal commands demonstrating every algorithm including evacuate
+ *   SECTION 14: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+ *              - Terminal commands demonstrating every algorithm including directions & progress
  * ============================================================================
  */
 
@@ -196,6 +202,9 @@ struct Node {
 /**
  * Represents a directed edge in the adjacency list.
  * Undirected edges in JSON (oneway: false) are stored as two symmetric directed edges.
+ * Optional `geometry` stores `[lat, lng]` points oriented from `from` to `to` for
+ * display, turn-by-turn bearing calculation, and GPS progress snapping only;
+ * all routing algorithms use `w` exclusively.
  */
 struct Edge {
     int from = -1;
@@ -205,6 +214,7 @@ struct Edge {
     bool accessible = true;    // false for stairs, true for ramps/lifts/walkways
     bool oneway = false;
     bool covered = false;
+    std::vector<std::pair<double, double>> geometry; // Optional [lat, lng] polyline points (from -> to)
 };
 
 /**
@@ -691,13 +701,17 @@ public:
     }
 
     void addDirectedEdge(int u, int v, double w, const std::string& kind,
-                         bool accessible, bool oneway, bool covered) {
+                         bool accessible, bool oneway, bool covered,
+                         std::vector<std::pair<double, double>> geom = {}) {
         for (auto& existing : adj[u]) {
             if (existing.to == v && existing.kind == kind &&
                 std::abs(existing.w - w) < 1e-9) {
                 existing.accessible = accessible;
                 existing.oneway = oneway;
                 existing.covered = covered;
+                if (!geom.empty()) {
+                    existing.geometry = std::move(geom);
+                }
                 return;
             }
         }
@@ -709,17 +723,20 @@ public:
         e.accessible = accessible;
         e.oneway = oneway;
         e.covered = covered;
+        e.geometry = std::move(geom);
         adj[u].push_back(std::move(e));
     }
 
     void addEdge(const std::string& aId, const std::string& bId, double w,
                  const std::string& kind = "walk", bool accessible = true,
-                 bool oneway = false, bool covered = false) {
+                 bool oneway = false, bool covered = false,
+                 const std::vector<std::pair<double, double>>& geom = {}) {
         const int u = ensureNode(aId);
         const int v = ensureNode(bId);
-        addDirectedEdge(u, v, w, kind, accessible, oneway, covered);
+        addDirectedEdge(u, v, w, kind, accessible, oneway, covered, geom);
         if (!oneway) {
-            addDirectedEdge(v, u, w, kind, accessible, oneway, covered);
+            std::vector<std::pair<double, double>> revGeom(geom.rbegin(), geom.rend());
+            addDirectedEdge(v, u, w, kind, accessible, oneway, covered, std::move(revGeom));
         }
         logicalEdgeCount++;
     }
@@ -850,7 +867,17 @@ public:
                 const bool accessible = ej.value("accessible", defaultAcc);
                 const bool oneway = ej.value("oneway", false);
                 const bool covered = ej.value("covered", false);
-                addEdge(a, b, w, kind, accessible, oneway, covered);
+
+                std::vector<std::pair<double, double>> geom;
+                if (ej.contains("geometry") && ej["geometry"].is_array()) {
+                    for (const auto& pt : ej["geometry"]) {
+                        if (pt.is_array() && pt.size() >= 2 &&
+                            pt[0].is_number() && pt[1].is_number()) {
+                            geom.push_back({pt[0].get<double>(), pt[1].get<double>()});
+                        }
+                    }
+                }
+                addEdge(a, b, w, kind, accessible, oneway, covered, geom);
             }
         }
     }
@@ -3520,7 +3547,1045 @@ inline std::pair<EvacResult, EvacResult> compareEvacuationModes(
 }
 
 // ============================================================================
-// SECTION 11: Multi-Algorithm Benchmark Comparator
+// SECTION 11: Turn-by-Turn Directions, GPS Progress & Live Rerouting
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 11.1 Polyline Bearing Calculation, Turn Classification & Landmark Maneuvers
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: Turn-by-Turn Directions Generator (Polyline Bearings & Turn Classifier)
+ * What it does:
+ *   Converts a computed path of outdoor and indoor graph vertices into a sequence
+ *   of human-readable navigation maneuvers (`"start"`, `"straight"`, `"slight-left"`,
+ *   `"left"`, `"sharp-left"`, `"slight-right"`, `"right"`, `"sharp-right"`,
+ *   `"enter-building"`, `"stairs-up"`, `"stairs-down"`, `"lift"`, `"arrive"`).
+ *   Computes compass bearings along oriented edge `geometry` polylines, classifies
+ *   turns by signed bearing delta (`|delta| < 25 deg` = straight, merging consecutive
+ *   straight segments), attaches the nearest campus landmark within 40 m of each
+ *   turn point, and replaces all raw node IDs with human-readable landmark,
+ *   building, floor, and room names.
+ * Time Complexity:
+ *   O(P * L + G) time, where P is path vertex count, L is landmark count (for
+ *   40 m proximity lookup), and G is total edge geometry points along the path.
+ * Where the app uses it:
+ *   Turn-by-turn navigation card deck (`call("directions")`), live rerouting
+ *   (`call("reroute")`), and the `directions` CLI command.
+ */
+struct Maneuver {
+    std::string type;       // "start"|"straight"|"slight-left"|"left"|"sharp-left"|"slight-right"|"right"|"sharp-right"|"enter-building"|"stairs-up"|"stairs-down"|"lift"|"arrive"
+    std::string text;       // Human-readable instruction (never uses raw node IDs)
+    double distanceM = 0.0; // Distance in meters covered by this maneuver
+    std::string atNodeId;   // Graph node ID where the maneuver begins
+    double lat = 0.0;
+    double lng = 0.0;
+    std::string landmark;   // Optional nearest landmark name within 40 m
+    double cumDistanceAtStartM = 0.0; // Cumulative distance from route start where this maneuver triggers
+};
+
+/**
+ * Computes initial compass bearing in degrees [0, 360) from (lat1, lng1) to (lat2, lng2)
+ * using a symmetric local tangent-plane projection (0 = North, 90 = East, 180 = South, 270 = West).
+ * Guaranteed symmetric under endpoint reversal: bearing(B, A) == (bearing(A, B) + 180) mod 360.
+ */
+inline double computeBearingDegrees(double lat1, double lng1, double lat2, double lng2) {
+    const double midLatRad = ((lat1 + lat2) * 0.5) * (kPi / 180.0);
+    const double dy = (lat2 - lat1) * (kPi / 180.0) * kEarthRadiusMeters;
+    const double dx = (lng2 - lng1) * (kPi / 180.0) * kEarthRadiusMeters * std::cos(midLatRad);
+    if (std::abs(dx) < 1e-12 && std::abs(dy) < 1e-12) {
+        return 0.0;
+    }
+    double deg = std::atan2(dx, dy) * (180.0 / kPi);
+    if (deg < 0.0) deg += 360.0;
+    if (deg >= 360.0) deg -= 360.0;
+    return deg;
+}
+
+/**
+ * Computes the signed turn angle in (-180, +180] degrees from `inBearing` to `outBearing`.
+ * Positive values indicate clockwise (right) turns; negative values indicate counter-clockwise (left) turns.
+ */
+inline double computeSignedTurnDegrees(double inBearing, double outBearing) {
+    double diff = std::fmod(outBearing - inBearing, 360.0);
+    if (diff <= -180.0) diff += 360.0;
+    if (diff > 180.0) diff -= 360.0;
+    return diff;
+}
+
+/**
+ * Classifies a signed bearing change (degrees) into a maneuver type string.
+ * |delta| < 25 deg -> "straight"
+ * 25..55 deg       -> "slight-left" / "slight-right"
+ * 55..125 deg      -> "left" / "right"
+ * > 125 deg        -> "sharp-left" / "sharp-right"
+ */
+inline std::string classifyTurnType(double signedTurnDeg) {
+    const double absDeg = std::abs(signedTurnDeg);
+    if (absDeg < 25.0) {
+        return "straight";
+    }
+    const bool isRight = (signedTurnDeg > 0.0);
+    if (absDeg < 55.0) {
+        return isRight ? "slight-right" : "slight-left";
+    }
+    if (absDeg <= 125.0) {
+        return isRight ? "right" : "left";
+    }
+    return isRight ? "sharp-right" : "sharp-left";
+}
+
+inline std::string turnVerbPhrase(const std::string& turnType) {
+    if (turnType == "slight-left") return "Bear slightly left";
+    if (turnType == "left") return "Turn left";
+    if (turnType == "sharp-left") return "Turn sharply left";
+    if (turnType == "slight-right") return "Bear slightly right";
+    if (turnType == "right") return "Turn right";
+    if (turnType == "sharp-right") return "Turn sharply right";
+    return "Continue straight";
+}
+
+/**
+ * Finds the nearest landmark name within `maxMeters` (default 40 m) of `(lat, lng)`.
+ * Breaks ties deterministically by landmark ID. Returns empty string if none within range.
+ */
+inline std::string findNearestLandmarkWithin(const Graph& g, double lat, double lng,
+                                             double maxMeters = 40.0) {
+    std::string bestName;
+    std::string bestId;
+    double bestDist = maxMeters + 1e-9;
+
+    for (const auto& lm : g.landmarks) {
+        if (lm.name.empty() || lm.nodeId.empty()) continue;
+        const int nIdx = g.getNodeIndex(lm.nodeId);
+        if (nIdx < 0 || !g.nodes[nIdx].hasCoords) continue;
+        const double d = haversineMeters(lat, lng, g.nodes[nIdx].lat, g.nodes[nIdx].lng);
+        if (d <= maxMeters) {
+            if (bestName.empty() || d + 1e-9 < bestDist ||
+                (std::abs(d - bestDist) <= 1e-9 && lm.id < bestId)) {
+                bestDist = d;
+                bestName = lm.name;
+                bestId = lm.id;
+            }
+        }
+    }
+
+    if (!bestName.empty()) {
+        return bestName;
+    }
+
+    // Fallback: check named outdoor nodes (e.g. gates or assembly zones) within maxMeters
+    for (const auto& n : g.nodes) {
+        if (n.isIndoor || !n.hasCoords || n.name.empty()) continue;
+        const double d = haversineMeters(lat, lng, n.lat, n.lng);
+        if (d <= maxMeters) {
+            if (bestName.empty() || d + 1e-9 < bestDist ||
+                (std::abs(d - bestDist) <= 1e-9 && n.id < bestId)) {
+                bestDist = d;
+                bestName = n.name;
+                bestId = n.id;
+            }
+        }
+    }
+
+    return bestName;
+}
+
+/**
+ * Produces a human-readable location name for `nodeIdx` that NEVER exposes raw
+ * node IDs (like "n12" or "b-csit:f0_cn_1").
+ */
+inline std::string describeHumanNodeLocation(const Graph& g, int nodeIdx) {
+    if (nodeIdx < 0 || nodeIdx >= g.nodeCount()) return "campus walkway";
+    const Node& n = g.nodes[nodeIdx];
+
+    if (n.isIndoor) {
+        std::string bName = n.buildingName;
+        if (bName.empty() && !n.buildingId.empty()) {
+            auto it = g.buildingNames.find(n.buildingId);
+            if (it != g.buildingNames.end()) bName = it->second;
+        }
+        if (bName.empty()) bName = "building";
+
+        const std::string fl = g.floorLabel(nodeIdx);
+        if (!n.name.empty()) {
+            return n.name + " (" + bName + ", " + fl + ")";
+        }
+        if (n.kind == "entrance") return "Main Entrance (" + bName + ", " + fl + ")";
+        if (n.kind == "exit") return "Emergency Exit (" + bName + ", " + fl + ")";
+        if (n.kind == "stairs") return "Staircase (" + bName + ", " + fl + ")";
+        if (n.kind == "lift") return "Elevator (" + bName + ", " + fl + ")";
+        return fl + " corridor (" + bName + ")";
+    }
+
+    if (!n.name.empty()) {
+        return n.name;
+    }
+    auto lmIt = g.nodeToLandmarkNames.find(n.id);
+    if (lmIt != g.nodeToLandmarkNames.end() && !lmIt->second.empty()) {
+        return lmIt->second.front();
+    }
+    if (n.hasCoords) {
+        const std::string near40 = findNearestLandmarkWithin(g, n.lat, n.lng, 40.0);
+        if (!near40.empty()) {
+            return near40;
+        }
+        const std::string nearAny = findNearestLandmarkWithin(g, n.lat, n.lng, 2000.0);
+        if (!nearAny.empty()) {
+            return "walkway near " + nearAny;
+        }
+    }
+    return "campus walkway";
+}
+
+/**
+ * Returns the oriented sequence of `[lat, lng]` points for directed edge `(u -> v)`.
+ * Uses `e.geometry` when present (orienting it from `u` to `v`), or falls back
+ * to the straight segment `[(u.lat, u.lng), (v.lat, v.lng)]`.
+ */
+inline std::vector<std::pair<double, double>> getOrientedEdgeGeometry(
+    const Graph& g, int u, int v, const Edge* e) {
+    std::vector<std::pair<double, double>> pts;
+    const Node& nu = g.nodes[u];
+    const Node& nv = g.nodes[v];
+
+    if (e && e->geometry.size() >= 2 && !nu.isIndoor && !nv.isIndoor) {
+        pts = e->geometry;
+        if (nu.hasCoords && nv.hasCoords) {
+            const double dFrontU = haversineMeters(pts.front().first, pts.front().second, nu.lat, nu.lng);
+            const double dBackU = haversineMeters(pts.back().first, pts.back().second, nu.lat, nu.lng);
+            if (dBackU + 1e-6 < dFrontU) {
+                std::reverse(pts.begin(), pts.end());
+            }
+            // Pin exact node endpoints so consecutive edges stitch seamlessly and symmetrically
+            pts.front() = {nu.lat, nu.lng};
+            pts.back() = {nv.lat, nv.lng};
+        }
+        return pts;
+    }
+
+    pts.push_back({nu.lat, nu.lng});
+    pts.push_back({nv.lat, nv.lng});
+    return pts;
+}
+
+/**
+ * Computes the incoming compass bearing arriving at `v` along edge `(u -> v)`
+ * using its oriented geometry, and the outgoing compass bearing departing `u`
+ * along edge `(u -> v)` using its oriented geometry.
+ */
+inline double getEdgeOutgoingBearing(const Graph& g, int u, int v, const Edge* e) {
+    const auto pts = getOrientedEdgeGeometry(g, u, v, e);
+    const auto [lat0, lng0] = pts.front();
+    for (size_t i = 1; i < pts.size(); ++i) {
+        if (haversineMeters(lat0, lng0, pts[i].first, pts[i].second) > 0.25) {
+            return computeBearingDegrees(lat0, lng0, pts[i].first, pts[i].second);
+        }
+    }
+    return computeBearingDegrees(pts.front().first, pts.front().second,
+                                 pts.back().first, pts.back().second);
+}
+
+inline double getEdgeIncomingBearing(const Graph& g, int u, int v, const Edge* e) {
+    const auto pts = getOrientedEdgeGeometry(g, u, v, e);
+    const auto [latEnd, lngEnd] = pts.back();
+    for (size_t i = pts.size() - 1; i > 0; --i) {
+        const auto [latPrev, lngPrev] = pts[i - 1];
+        if (haversineMeters(latPrev, lngPrev, latEnd, lngEnd) > 0.25) {
+            return computeBearingDegrees(latPrev, lngPrev, latEnd, lngEnd);
+        }
+    }
+    return computeBearingDegrees(pts.front().first, pts.front().second,
+                                 pts.back().first, pts.back().second);
+}
+
+/**
+ * Generates the full list of turn-by-turn maneuvers for a sequence of graph node
+ * indices `pathIndices`.
+ */
+inline std::vector<Maneuver> computeDirectionsForPath(
+    const Graph& g,
+    const std::vector<int>& pathIndices,
+    const RouteOptions& opts = RouteOptions{}) {
+    std::vector<Maneuver> maneuvers;
+    if (pathIndices.empty()) {
+        return maneuvers;
+    }
+
+    const int startIdx = pathIndices.front();
+    const int destIdx = pathIndices.back();
+    if (startIdx < 0 || startIdx >= g.nodeCount() || destIdx < 0 || destIdx >= g.nodeCount()) {
+        return maneuvers;
+    }
+
+    // 1. Emit initial "start" maneuver
+    {
+        Maneuver startM;
+        startM.type = "start";
+        startM.atNodeId = g.nodes[startIdx].id;
+        startM.lat = g.nodes[startIdx].lat;
+        startM.lng = g.nodes[startIdx].lng;
+        startM.distanceM = 0.0;
+        startM.cumDistanceAtStartM = 0.0;
+        if (!g.nodes[startIdx].isIndoor && g.nodes[startIdx].hasCoords) {
+            startM.landmark = findNearestLandmarkWithin(g, startM.lat, startM.lng, 40.0);
+        } else if (g.nodes[startIdx].isIndoor) {
+            startM.landmark = g.nodes[startIdx].buildingName;
+        }
+        startM.text = "Start at " + describeHumanNodeLocation(g, startIdx);
+        maneuvers.push_back(std::move(startM));
+    }
+
+    double cumDistM = 0.0;
+    const size_t numEdges = (pathIndices.size() >= 2) ? (pathIndices.size() - 1) : 0;
+
+    auto resolveEdge = [&](int u, int v) -> std::pair<const Edge*, double> {
+        const Edge* e = findTraversedEdge(g, u, v, opts);
+        if (!e) {
+            for (const auto& cand : g.adj[u]) {
+                if (cand.to == v) {
+                    e = &cand;
+                    break;
+                }
+            }
+        }
+        double w = e ? e->w : 0.0;
+        if (!e && g.nodes[u].hasCoords && g.nodes[v].hasCoords) {
+            w = haversineMeters(g.nodes[u].lat, g.nodes[u].lng, g.nodes[v].lat, g.nodes[v].lng);
+        }
+        return {e, w};
+    };
+
+    size_t i = 0;
+    while (i < numEdges) {
+        const int u = pathIndices[i];
+        const int v = pathIndices[i + 1];
+        const Node& nu = g.nodes[u];
+        const Node& nv = g.nodes[v];
+        const auto [e, w] = resolveEdge(u, v);
+
+        // Case A: Outdoor <-> Indoor building transition ("enter-building")
+        if (nu.isIndoor != nv.isIndoor) {
+            const int indoorIdx = nu.isIndoor ? u : v;
+            const Node& indNode = g.nodes[indoorIdx];
+            std::string bName = indNode.buildingName;
+            if (bName.empty() && !indNode.buildingId.empty()) {
+                auto it = g.buildingNames.find(indNode.buildingId);
+                if (it != g.buildingNames.end()) bName = it->second;
+            }
+            if (bName.empty()) bName = "building";
+            const std::string entName = indNode.name.empty() ? "Main Entrance" : indNode.name;
+
+            Maneuver m;
+            m.type = "enter-building";
+            m.atNodeId = indNode.id;
+            m.lat = nu.hasCoords ? nu.lat : nv.lat;
+            m.lng = nu.hasCoords ? nu.lng : nv.lng;
+            m.distanceM = w;
+            m.cumDistanceAtStartM = cumDistM;
+            m.landmark = bName;
+            if (!nu.isIndoor && nv.isIndoor) {
+                m.text = "Enter " + bName + " through " + entName + " (" + g.floorLabel(v) + ")";
+            } else {
+                m.text = "Exit " + bName + " through " + entName + " to outdoor walkway";
+            }
+            maneuvers.push_back(std::move(m));
+            cumDistM += w;
+            ++i;
+            continue;
+        }
+
+        // Case B: Indoor segment (stairs-up, stairs-down, lift, or indoor floor corridor walk)
+        if (nu.isIndoor && nv.isIndoor) {
+            const std::string edgeKind = e ? e->kind : "walk";
+            std::string bName = nu.buildingName;
+            if (bName.empty() && !nu.buildingId.empty()) {
+                auto it = g.buildingNames.find(nu.buildingId);
+                if (it != g.buildingNames.end()) bName = it->second;
+            }
+            if (bName.empty()) bName = "building";
+
+            if (edgeKind == "stairs" || edgeKind == "lift") {
+                const int startVertIdx = u;
+                const double startCum = cumDistM;
+                double vertDist = 0.0;
+                int endVertIdx = u;
+                while (i < numEdges) {
+                    const int cu = pathIndices[i];
+                    const int cv = pathIndices[i + 1];
+                    if (!g.nodes[cu].isIndoor || !g.nodes[cv].isIndoor) break;
+                    const auto [ce, cw] = resolveEdge(cu, cv);
+                    const std::string ck = ce ? ce->kind : "walk";
+                    if (ck != edgeKind) break;
+                    vertDist += cw;
+                    cumDistM += cw;
+                    endVertIdx = cv;
+                    ++i;
+                }
+
+                const int startFl = g.nodes[startVertIdx].floor;
+                const int endFl = g.nodes[endVertIdx].floor;
+                Maneuver m;
+                m.atNodeId = g.nodes[startVertIdx].id;
+                m.lat = g.nodes[startVertIdx].lat;
+                m.lng = g.nodes[startVertIdx].lng;
+                m.distanceM = vertDist;
+                m.cumDistanceAtStartM = startCum;
+                m.landmark = bName;
+
+                if (edgeKind == "lift") {
+                    m.type = "lift";
+                    m.text = "Take the lift from " + g.floorLabel(startVertIdx) +
+                             " to " + g.floorLabel(endVertIdx) + " in " + bName;
+                } else if (endFl >= startFl) {
+                    m.type = "stairs-up";
+                    m.text = "Take the stairs up from " + g.floorLabel(startVertIdx) +
+                             " to " + g.floorLabel(endVertIdx) + " in " + bName;
+                } else {
+                    m.type = "stairs-down";
+                    m.text = "Take the stairs down from " + g.floorLabel(startVertIdx) +
+                             " to " + g.floorLabel(endVertIdx) + " in " + bName;
+                }
+                maneuvers.push_back(std::move(m));
+                continue;
+            } else {
+                // Consecutive indoor corridor walk edges on the same floor
+                const int startWalkIdx = u;
+                const int walkFloor = nu.floor;
+                const double startCum = cumDistM;
+                double walkDist = 0.0;
+                int endWalkIdx = u;
+                while (i < numEdges) {
+                    const int cu = pathIndices[i];
+                    const int cv = pathIndices[i + 1];
+                    if (!g.nodes[cu].isIndoor || !g.nodes[cv].isIndoor) break;
+                    const auto [ce, cw] = resolveEdge(cu, cv);
+                    const std::string ck = ce ? ce->kind : "walk";
+                    if (ck != "walk" || g.nodes[cv].floor != walkFloor) break;
+                    walkDist += cw;
+                    cumDistM += cw;
+                    endWalkIdx = cv;
+                    ++i;
+                }
+
+                Maneuver m;
+                m.type = "straight";
+                m.atNodeId = g.nodes[startWalkIdx].id;
+                m.lat = g.nodes[startWalkIdx].lat;
+                m.lng = g.nodes[startWalkIdx].lng;
+                m.distanceM = walkDist;
+                m.cumDistanceAtStartM = startCum;
+                m.landmark = bName;
+                m.text = "Walk along " + g.floorLabel(startWalkIdx) + " in " + bName +
+                         " toward " + describeHumanNodeLocation(g, endWalkIdx) +
+                         " (" + formatMeters(walkDist) + " m)";
+                maneuvers.push_back(std::move(m));
+                continue;
+            }
+        }
+
+        // Case C: Contiguous outdoor run of edges pathIndices[runStart .. runEnd]
+        size_t runEnd = i;
+        while (runEnd < numEdges &&
+               !g.nodes[pathIndices[runEnd]].isIndoor &&
+               !g.nodes[pathIndices[runEnd + 1]].isIndoor) {
+            ++runEnd;
+        }
+
+        // Process outdoor edges k = i .. runEnd - 1
+        // The first outdoor edge in the run begins a "straight" maneuver; subsequent outdoor
+        // edges either merge into the current maneuver if |turnAngle| < 25 deg, or start a
+        // new turn maneuver ("slight-left", "left", "sharp-left", "slight-right", "right", "sharp-right").
+        for (size_t k = i; k < runEnd; ++k) {
+            const int curU = pathIndices[k];
+            const int curV = pathIndices[k + 1];
+            const auto [curEdge, curW] = resolveEdge(curU, curV);
+
+            if (k == i) {
+                // Start of outdoor run -> emit "straight" maneuver at curU
+                Maneuver m;
+                m.type = "straight";
+                m.atNodeId = g.nodes[curU].id;
+                m.lat = g.nodes[curU].lat;
+                m.lng = g.nodes[curU].lng;
+                m.distanceM = curW;
+                m.cumDistanceAtStartM = cumDistM;
+                m.landmark = findNearestLandmarkWithin(g, m.lat, m.lng, 40.0);
+                if (!m.landmark.empty()) {
+                    m.text = "Continue straight past " + m.landmark + " for " + formatMeters(m.distanceM) + " m";
+                } else {
+                    m.text = "Continue straight for " + formatMeters(m.distanceM) + " m";
+                }
+                maneuvers.push_back(std::move(m));
+            } else {
+                const int prevU = pathIndices[k - 1];
+                const auto [prevEdge, prevW] = resolveEdge(prevU, curU);
+                (void)prevW;
+
+                const double inBearing = getEdgeIncomingBearing(g, prevU, curU, prevEdge);
+                const double outBearing = getEdgeOutgoingBearing(g, curU, curV, curEdge);
+                const double signedDelta = computeSignedTurnDegrees(inBearing, outBearing);
+                const std::string turnType = classifyTurnType(signedDelta);
+
+                if (turnType == "straight") {
+                    // Merge consecutive straight outdoor segment into the active outdoor maneuver
+                    Maneuver& prevM = maneuvers.back();
+                    prevM.distanceM += curW;
+                    if (prevM.type == "straight") {
+                        if (!prevM.landmark.empty()) {
+                            prevM.text = "Continue straight past " + prevM.landmark +
+                                         " for " + formatMeters(prevM.distanceM) + " m";
+                        } else {
+                            prevM.text = "Continue straight for " + formatMeters(prevM.distanceM) + " m";
+                        }
+                    } else {
+                        const std::string verb = turnVerbPhrase(prevM.type);
+                        if (!prevM.landmark.empty()) {
+                            prevM.text = verb + " at " + prevM.landmark +
+                                         " and continue for " + formatMeters(prevM.distanceM) + " m";
+                        } else {
+                            prevM.text = verb + " and continue for " + formatMeters(prevM.distanceM) + " m";
+                        }
+                    }
+                } else {
+                    // Emit turn maneuver at node curU
+                    Maneuver m;
+                    m.type = turnType;
+                    m.atNodeId = g.nodes[curU].id;
+                    m.lat = g.nodes[curU].lat;
+                    m.lng = g.nodes[curU].lng;
+                    m.distanceM = curW;
+                    m.cumDistanceAtStartM = cumDistM;
+                    m.landmark = findNearestLandmarkWithin(g, m.lat, m.lng, 40.0);
+
+                    const std::string verb = turnVerbPhrase(turnType);
+                    if (!m.landmark.empty()) {
+                        m.text = verb + " at " + m.landmark + " and continue for " + formatMeters(m.distanceM) + " m";
+                    } else {
+                        m.text = verb + " and continue for " + formatMeters(m.distanceM) + " m";
+                    }
+                    maneuvers.push_back(std::move(m));
+                }
+            }
+
+            cumDistM += curW;
+        }
+
+        i = runEnd;
+    }
+
+    // Final "arrive" maneuver at destination
+    {
+        Maneuver arriveM;
+        arriveM.type = "arrive";
+        arriveM.atNodeId = g.nodes[destIdx].id;
+        arriveM.lat = g.nodes[destIdx].lat;
+        arriveM.lng = g.nodes[destIdx].lng;
+        arriveM.distanceM = 0.0;
+        arriveM.cumDistanceAtStartM = cumDistM;
+        if (!g.nodes[destIdx].isIndoor && g.nodes[destIdx].hasCoords) {
+            arriveM.landmark = findNearestLandmarkWithin(g, arriveM.lat, arriveM.lng, 40.0);
+        } else if (g.nodes[destIdx].isIndoor) {
+            arriveM.landmark = g.nodes[destIdx].buildingName;
+        }
+        arriveM.text = "Arrive at " + describeHumanNodeLocation(g, destIdx);
+        maneuvers.push_back(std::move(arriveM));
+    }
+
+    return maneuvers;
+}
+
+// ----------------------------------------------------------------------------
+// 11.2 GPS Polyline Segment Projection, Off-Route Detection & Noise Filtering
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: GPS Polyline Segment Projection & Noise-Filtered Route Progress
+ * What it does:
+ *   Constructs the detailed metric route polyline (expanding each outdoor edge's
+ *   oriented `geometry` waypoints and scaling sub-segments to match edge weight `w`),
+ *   projects the user's live GPS `(lat, lng)` onto every polyline segment in a
+ *   local flat-earth metric frame, and selects the best segment (biasing toward
+ *   forward segments `>= lastIndex`). Computes `distanceAlongM`, `remainingM`,
+ *   `nextManeuverIndex`, `distanceToNextM`, `offRouteDistanceM`, `offRoute`
+ *   (`offRouteDistanceM > max(25 m, 1.5 * accuracyM)`), and `arrived`. Filters
+ *   GPS noise so progress never jumps backward by more than 15 m (and stays
+ *   monotonic non-decreasing when `lastIndex` is tracked).
+ * Time Complexity:
+ *   O(S + M) time per GPS fix, where S is the number of polyline sub-segments
+ *   and M is the number of maneuvers along the route.
+ * Where the app uses it:
+ *   Live "Navigate With Me" GPS tracker (`call("progress")`) and `progress` CLI command.
+ */
+struct PolylineSegment {
+    double latA = 0.0;
+    double lngA = 0.0;
+    double latB = 0.0;
+    double lngB = 0.0;
+    double startCumDistM = 0.0;
+    double weightM = 0.0;
+    int edgeIndex = 0; // Index of graph edge along pathIndices [0 .. path.size()-2]
+};
+
+struct DetailedRoutePolyline {
+    std::vector<PolylineSegment> segments;
+    double totalDistanceM = 0.0;
+    std::vector<double> edgeStartCumDistM;
+    uint64_t pathHash = 0;
+};
+
+inline DetailedRoutePolyline buildDetailedRoutePolyline(
+    const Graph& g,
+    const std::vector<int>& pathIndices,
+    const RouteOptions& opts = RouteOptions{}) {
+    DetailedRoutePolyline poly;
+
+    // Compute deterministic FNV-1a hash of pathIndices to identify the active route
+    uint64_t h = 14695981039346656037ULL;
+    for (int idx : pathIndices) {
+        h ^= static_cast<uint64_t>(static_cast<uint32_t>(idx));
+        h *= 1099511628211ULL;
+    }
+    poly.pathHash = h;
+
+    if (pathIndices.size() < 2) {
+        poly.edgeStartCumDistM.push_back(0.0);
+        return poly;
+    }
+
+    double cumDist = 0.0;
+    for (size_t i = 0; i + 1 < pathIndices.size(); ++i) {
+        poly.edgeStartCumDistM.push_back(cumDist);
+        const int u = pathIndices[i];
+        const int v = pathIndices[i + 1];
+        if (u < 0 || v < 0 || u >= g.nodeCount() || v >= g.nodeCount()) continue;
+
+        const Edge* e = findTraversedEdge(g, u, v, opts);
+        if (!e) {
+            for (const auto& cand : g.adj[u]) {
+                if (cand.to == v) {
+                    e = &cand;
+                    break;
+                }
+            }
+        }
+        double edgeW = e ? e->w : 0.0;
+        if (!e && g.nodes[u].hasCoords && g.nodes[v].hasCoords) {
+            edgeW = haversineMeters(g.nodes[u].lat, g.nodes[u].lng, g.nodes[v].lat, g.nodes[v].lng);
+        }
+
+        const auto pts = getOrientedEdgeGeometry(g, u, v, e);
+        if (pts.size() <= 2) {
+            PolylineSegment seg;
+            seg.latA = pts.front().first;
+            seg.lngA = pts.front().second;
+            seg.latB = pts.back().first;
+            seg.lngB = pts.back().second;
+            seg.startCumDistM = cumDist;
+            seg.weightM = edgeW;
+            seg.edgeIndex = static_cast<int>(i);
+            poly.segments.push_back(seg);
+            cumDist += edgeW;
+        } else {
+            std::vector<double> rawLengths(pts.size() - 1, 0.0);
+            double rawSum = 0.0;
+            for (size_t k = 0; k + 1 < pts.size(); ++k) {
+                rawLengths[k] = haversineMeters(pts[k].first, pts[k].second,
+                                                pts[k + 1].first, pts[k + 1].second);
+                rawSum += rawLengths[k];
+            }
+            for (size_t k = 0; k + 1 < pts.size(); ++k) {
+                const double frac = (rawSum > 1e-9)
+                                        ? (rawLengths[k] / rawSum)
+                                        : (1.0 / static_cast<double>(pts.size() - 1));
+                const double subW = edgeW * frac;
+                PolylineSegment seg;
+                seg.latA = pts[k].first;
+                seg.lngA = pts[k].second;
+                seg.latB = pts[k + 1].first;
+                seg.lngB = pts[k + 1].second;
+                seg.startCumDistM = cumDist;
+                seg.weightM = subW;
+                seg.edgeIndex = static_cast<int>(i);
+                poly.segments.push_back(seg);
+                cumDist += subW;
+            }
+        }
+    }
+    poly.edgeStartCumDistM.push_back(cumDist);
+    poly.totalDistanceM = cumDist;
+    return poly;
+}
+
+/**
+ * Projects a GPS point `(lat, lng)` onto a single segment `(latA, lngA) -> (latB, lngB)`,
+ * returning `(perpendicularDistanceM, fractionTIn0To1, projectedLat, projectedLng)`.
+ */
+inline void projectPointOntoSegment(double lat, double lng,
+                                    double latA, double lngA,
+                                    double latB, double lngB,
+                                    double& outPerpDistM,
+                                    double& outT,
+                                    double& outProjLat,
+                                    double& outProjLng) {
+    const double midLatRad = ((latA + latB) * 0.5) * (kPi / 180.0);
+    const double cosLat = std::cos(midLatRad);
+
+    const double bx = (lngB - lngA) * (kPi / 180.0) * kEarthRadiusMeters * cosLat;
+    const double by = (latB - latA) * (kPi / 180.0) * kEarthRadiusMeters;
+    const double qx = (lng - lngA) * (kPi / 180.0) * kEarthRadiusMeters * cosLat;
+    const double qy = (lat - latA) * (kPi / 180.0) * kEarthRadiusMeters;
+
+    const double lenSq = bx * bx + by * by;
+    if (lenSq < 1e-12) {
+        outT = 0.0;
+        outPerpDistM = std::hypot(qx, qy);
+        outProjLat = latA;
+        outProjLng = lngA;
+        return;
+    }
+
+    double t = (qx * bx + qy * by) / lenSq;
+    t = std::max(0.0, std::min(1.0, t));
+    outT = t;
+
+    const double dx = qx - t * bx;
+    const double dy = qy - t * by;
+    outPerpDistM = std::hypot(dx, dy);
+    outProjLat = latA + t * (latB - latA);
+    outProjLng = lngA + t * (lngB - lngA);
+}
+
+struct ProgressStateTracker {
+    uint64_t pathHash = 0;
+    double lastDistanceAlongM = 0.0;
+    int lastSegmentIndex = 0;
+    bool valid = false;
+};
+
+inline ProgressStateTracker& globalProgressTracker() {
+    static ProgressStateTracker tracker;
+    return tracker;
+}
+
+struct ProgressResult {
+    double distanceAlongM = 0.0;
+    double remainingM = 0.0;
+    int nextManeuverIndex = 0;
+    double distanceToNextM = 0.0;
+    bool offRoute = false;
+    double offRouteDistanceM = 0.0;
+    bool arrived = false;
+    int matchedIndex = 0;
+    double snappedLat = 0.0;
+    double snappedLng = 0.0;
+};
+
+inline ProgressResult computeRouteProgress(const Graph& g,
+                                           const std::vector<int>& pathIndices,
+                                           double lat,
+                                           double lng,
+                                           double accuracyM,
+                                           int lastIndex,
+                                           bool hasExplicitLastIndex,
+                                           double explicitLastAlongM = -1.0) {
+    ProgressResult res;
+    if (pathIndices.empty()) {
+        return res;
+    }
+
+    const DetailedRoutePolyline poly = buildDetailedRoutePolyline(g, pathIndices);
+    const std::vector<Maneuver> maneuvers = computeDirectionsForPath(g, pathIndices);
+    const double totalDist = poly.totalDistanceM;
+
+    if (poly.segments.empty()) {
+        const int u = pathIndices.front();
+        res.offRouteDistanceM = haversineMeters(lat, lng, g.nodes[u].lat, g.nodes[u].lng);
+        const double threshold = std::max(25.0, 1.5 * std::max(0.0, accuracyM));
+        res.offRoute = (res.offRouteDistanceM > threshold);
+        res.arrived = !res.offRoute;
+        res.snappedLat = g.nodes[u].lat;
+        res.snappedLng = g.nodes[u].lng;
+        return res;
+    }
+
+    ProgressStateTracker& tracker = globalProgressTracker();
+    const bool sameRouteAsPrev = (tracker.valid && tracker.pathHash == poly.pathHash);
+
+    // Determine reference previous progress distance along the route
+    double refAlongM = 0.0;
+    bool hasReference = false;
+    int refSegIdx = 0;
+
+    if (explicitLastAlongM >= 0.0) {
+        refAlongM = explicitLastAlongM;
+        hasReference = true;
+    } else if (hasExplicitLastIndex && lastIndex >= 0) {
+        hasReference = true;
+        // `lastIndex` may refer to a graph path edge/node index or a polyline segment index
+        if (static_cast<size_t>(lastIndex) < poly.edgeStartCumDistM.size()) {
+            refAlongM = poly.edgeStartCumDistM[static_cast<size_t>(lastIndex)];
+        } else if (static_cast<size_t>(lastIndex) < poly.segments.size()) {
+            refAlongM = poly.segments[static_cast<size_t>(lastIndex)].startCumDistM;
+        }
+        if (sameRouteAsPrev && lastIndex >= tracker.lastSegmentIndex) {
+            refAlongM = std::max(refAlongM, tracker.lastDistanceAlongM);
+        }
+        refSegIdx = lastIndex;
+    } else if (sameRouteAsPrev) {
+        refAlongM = tracker.lastDistanceAlongM;
+        refSegIdx = tracker.lastSegmentIndex;
+    }
+
+    // Evaluate all polyline segments; when `lastIndex` is provided, prefer forward segments
+    // (`edgeIndex >= lastIndex` or `segIdx >= lastIndex`) unless a backward segment is much closer.
+    int bestSeg = 0;
+    double bestScore = kInf;
+    double bestPerpDist = kInf;
+    double bestAlong = 0.0;
+    double bestProjLat = poly.segments[0].latA;
+    double bestProjLng = poly.segments[0].lngA;
+
+    for (size_t s = 0; s < poly.segments.size(); ++s) {
+        const auto& seg = poly.segments[s];
+        double perpDist = 0.0;
+        double t = 0.0;
+        double pLat = 0.0;
+        double pLng = 0.0;
+        projectPointOntoSegment(lat, lng, seg.latA, seg.lngA, seg.latB, seg.lngB,
+                                perpDist, t, pLat, pLng);
+
+        const double candAlong = seg.startCumDistM + t * seg.weightM;
+        double score = perpDist;
+
+        if (hasExplicitLastIndex && lastIndex >= 0) {
+            // Bias toward forward segments relative to lastIndex
+            if (seg.edgeIndex < refSegIdx && static_cast<int>(s) < refSegIdx) {
+                score += 12.0;
+            }
+            if (candAlong + 15.0 < refAlongM) {
+                score += 20.0;
+            }
+        }
+
+        if (score + 1e-9 < bestScore) {
+            bestScore = score;
+            bestSeg = static_cast<int>(s);
+            bestPerpDist = perpDist;
+            bestAlong = candAlong;
+            bestProjLat = pLat;
+            bestProjLng = pLng;
+        }
+    }
+
+    // Also compute the true minimum perpendicular distance across all segments for accurate offRoute detection
+    double trueMinPerpDist = bestPerpDist;
+    for (size_t s = 0; s < poly.segments.size(); ++s) {
+        const auto& seg = poly.segments[s];
+        double perpDist = 0.0, t = 0.0, pLat = 0.0, pLng = 0.0;
+        projectPointOntoSegment(lat, lng, seg.latA, seg.lngA, seg.latB, seg.lngB,
+                                perpDist, t, pLat, pLng);
+        trueMinPerpDist = std::min(trueMinPerpDist, perpDist);
+    }
+
+    double clampedAlong = bestAlong;
+    if (hasReference) {
+        // When `lastIndex` (or `lastDistanceAlongM`) is explicitly passed, never move progress backward
+        clampedAlong = std::max(clampedAlong, refAlongM);
+    } else if (sameRouteAsPrev && bestAlong < tracker.lastDistanceAlongM) {
+        // Without explicit `lastIndex`, if the point is a noisy reading behind the previous
+        // position (and not a fresh reset to the exact start of the route at 0.0 m), prevent
+        // backward jump.
+        const double backwardDelta = tracker.lastDistanceAlongM - bestAlong;
+        if (bestAlong > 1.0 && backwardDelta <= 45.0) {
+            clampedAlong = tracker.lastDistanceAlongM;
+        }
+    }
+
+    clampedAlong = std::max(0.0, std::min(totalDist, clampedAlong));
+    const double remaining = std::max(0.0, totalDist - clampedAlong);
+
+    const double offRouteThreshold = std::max(25.0, 1.5 * std::max(0.0, accuracyM));
+    const bool isOffRoute = (trueMinPerpDist > offRouteThreshold);
+    const double arrivalTolerance = std::min(10.0, std::max(1.5, totalDist * 0.08));
+    const bool hasArrived = (!isOffRoute && remaining <= arrivalTolerance);
+
+    // Find nextManeuverIndex and distanceToNextM
+    int nextManIdx = static_cast<int>(maneuvers.size()) > 0
+                         ? static_cast<int>(maneuvers.size()) - 1
+                         : 0;
+    double distToNext = remaining;
+    for (size_t m = 1; m < maneuvers.size(); ++m) {
+        if (maneuvers[m].cumDistanceAtStartM > clampedAlong + 0.5 || m + 1 == maneuvers.size()) {
+            nextManIdx = static_cast<int>(m);
+            distToNext = std::max(0.0, maneuvers[m].cumDistanceAtStartM - clampedAlong);
+            break;
+        }
+    }
+    if (hasArrived && !maneuvers.empty()) {
+        nextManIdx = static_cast<int>(maneuvers.size()) - 1;
+        distToNext = 0.0;
+    }
+
+    // Determine the matched edge/segment index (advancing to the next edge when at a junction vertex)
+    int matchedEdgeIdx = poly.segments[bestSeg].edgeIndex;
+    if (bestSeg + 1 < static_cast<int>(poly.segments.size()) &&
+        clampedAlong >= poly.segments[bestSeg + 1].startCumDistM - 1e-4) {
+        matchedEdgeIdx = poly.segments[bestSeg + 1].edgeIndex;
+    }
+    if (hasExplicitLastIndex && lastIndex > matchedEdgeIdx &&
+        lastIndex < static_cast<int>(pathIndices.size())) {
+        matchedEdgeIdx = lastIndex;
+    }
+
+    // Update tracker for subsequent calls on the same route
+    tracker.valid = true;
+    tracker.pathHash = poly.pathHash;
+    tracker.lastDistanceAlongM = clampedAlong;
+    tracker.lastSegmentIndex = matchedEdgeIdx;
+
+    res.distanceAlongM = clampedAlong;
+    res.remainingM = hasArrived ? 0.0 : remaining;
+    res.nextManeuverIndex = nextManIdx;
+    res.distanceToNextM = distToNext;
+    res.offRoute = isOffRoute;
+    res.offRouteDistanceM = trueMinPerpDist;
+    res.arrived = hasArrived;
+    res.matchedIndex = matchedEdgeIdx;
+    res.snappedLat = bestProjLat;
+    res.snappedLng = bestProjLng;
+    return res;
+}
+
+// ----------------------------------------------------------------------------
+// 11.3 Live GPS Graph Snapping & Rerouting
+// ----------------------------------------------------------------------------
+
+/**
+ * Algorithm: GPS Graph Node / Edge-Polyline Snapper & Live Rerouter
+ * What it does:
+ *   Projects an arbitrary off-route GPS coordinate `(lat, lng)` onto all
+ *   traversable outdoor graph nodes and edge `geometry` polylines to identify
+ *   the nearest accessible entry point on the campus footpath network, then
+ *   computes both a new optimal route (`computeRoute`) and turn-by-turn
+ *   maneuvers (`computeDirectionsForPath`) to the destination `to`.
+ * Time Complexity:
+ *   O((V + E) log V + G) time, where G is total outdoor edge geometry points.
+ * Where the app uses it:
+ *   Automatic off-route recovery (`call("reroute", {from: {lat, lng}, to, accessible})`).
+ */
+struct RerouteSnapResult {
+    int snappedNodeIdx = -1;
+    std::string snappedNodeId;
+    double snappedLat = 0.0;
+    double snappedLng = 0.0;
+    double snapDistanceM = 0.0;
+    RouteResult route;
+    std::vector<Maneuver> maneuvers;
+};
+
+inline RerouteSnapResult snapAndRerouteFromGps(const Graph& g,
+                                               double lat,
+                                               double lng,
+                                               int toIdx,
+                                               const RouteOptions& opts) {
+    RerouteSnapResult out;
+    if (toIdx < 0 || toIdx >= g.nodeCount()) {
+        out.route.error = "Invalid destination node for reroute";
+        return out;
+    }
+
+    // 1. Find closest non-blocked outdoor graph node
+    int bestNodeIdx = -1;
+    double bestNodeDistM = kInf;
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        const Node& n = g.nodes[u];
+        if (n.isIndoor || !n.hasCoords || opts.isNodeBlocked(u)) continue;
+        const double d = haversineMeters(lat, lng, n.lat, n.lng);
+        if (bestNodeIdx < 0 || d + 1e-9 < bestNodeDistM ||
+            (std::abs(d - bestNodeDistM) <= 1e-9 && n.id < g.nodes[bestNodeIdx].id)) {
+            bestNodeDistM = d;
+            bestNodeIdx = u;
+        }
+    }
+
+    // 2. Also project onto all traversable outdoor edge geometries to see if an edge interior is closer
+    int bestEdgeU = -1;
+    int bestEdgeV = -1;
+    double bestEdgePerpM = kInf;
+    double bestEdgeProjLat = lat;
+    double bestEdgeProjLng = lng;
+
+    for (int u = 0; u < g.nodeCount(); ++u) {
+        if (g.nodes[u].isIndoor || opts.isNodeBlocked(u)) continue;
+        for (const auto& e : g.adj[u]) {
+            if (g.nodes[e.to].isIndoor || !g.canTraverse(u, e, opts)) continue;
+            const auto pts = getOrientedEdgeGeometry(g, u, e.to, &e);
+            for (size_t k = 0; k + 1 < pts.size(); ++k) {
+                double perp = 0.0, t = 0.0, pLat = 0.0, pLng = 0.0;
+                projectPointOntoSegment(lat, lng, pts[k].first, pts[k].second,
+                                        pts[k + 1].first, pts[k + 1].second,
+                                        perp, t, pLat, pLng);
+                if (perp + 1e-9 < bestEdgePerpM) {
+                    bestEdgePerpM = perp;
+                    bestEdgeU = u;
+                    bestEdgeV = e.to;
+                    bestEdgeProjLat = pLat;
+                    bestEdgeProjLng = pLng;
+                }
+            }
+        }
+    }
+
+    // Candidate start nodes to evaluate: closest node, plus endpoints of closest edge
+    std::vector<int> candidates;
+    if (bestNodeIdx >= 0) candidates.push_back(bestNodeIdx);
+    if (bestEdgeU >= 0 && std::find(candidates.begin(), candidates.end(), bestEdgeU) == candidates.end()) {
+        candidates.push_back(bestEdgeU);
+    }
+    if (bestEdgeV >= 0 && std::find(candidates.begin(), candidates.end(), bestEdgeV) == candidates.end()) {
+        candidates.push_back(bestEdgeV);
+    }
+
+    int chosenStart = bestNodeIdx;
+    RouteResult chosenRoute;
+    double bestTotalObj = kInf;
+
+    for (int cand : candidates) {
+        RouteResult r = computeRoute(g, cand, toIdx, opts);
+        if (!r.found) continue;
+        const double walkToCand = haversineMeters(lat, lng, g.nodes[cand].lat, g.nodes[cand].lng);
+        const double obj = walkToCand + r.distance;
+        if (!chosenRoute.found || obj + 1e-9 < bestTotalObj) {
+            bestTotalObj = obj;
+            chosenStart = cand;
+            chosenRoute = std::move(r);
+        }
+    }
+
+    if (chosenStart >= 0) {
+        out.snappedNodeIdx = chosenStart;
+        out.snappedNodeId = g.nodes[chosenStart].id;
+        if (bestEdgePerpM < bestNodeDistM) {
+            out.snappedLat = bestEdgeProjLat;
+            out.snappedLng = bestEdgeProjLng;
+            out.snapDistanceM = bestEdgePerpM;
+        } else {
+            out.snappedLat = g.nodes[chosenStart].lat;
+            out.snappedLng = g.nodes[chosenStart].lng;
+            out.snapDistanceM = bestNodeDistM;
+        }
+    }
+
+    out.route = std::move(chosenRoute);
+    if (out.route.found) {
+        out.maneuvers = computeDirectionsForPath(g, out.route.pathIndices, opts);
+    }
+    return out;
+}
+
+// ============================================================================
+// SECTION 12: Multi-Algorithm Benchmark Comparator
 // ============================================================================
 
 /**
@@ -3802,6 +4867,7 @@ inline std::string handleLoad(const std::string& argsJson) {
     Graph& g = globalGraph();
     g.loadFromJsonValue(parsed);
     globalRouteCache().resetAll(globalRouteCache().capacity());
+    globalProgressTracker() = ProgressStateTracker{};
 
     json res = {
         {"status", "ok"},
@@ -4213,6 +5279,241 @@ inline std::string handleEvacuationCompare(const std::string& argsJson) {
     return out.dump();
 }
 
+/**
+ * Extracts a sequence of graph node indices from `args`, supporting:
+ *   1. `{route: {path: [...]}}` or `{route: ["n1", "n2", ...]}`
+ *   2. `{path: ["n1", "n2", ...]}`
+ *   3. `{from, to, algo?, accessible?, avoid?}` (computes route on the fly)
+ */
+inline bool resolvePathIndicesFromArgs(const Graph& g, const json& args,
+                                       std::vector<int>& outPathIndices,
+                                       RouteOptions& outOpts,
+                                       std::string& outError) {
+    outPathIndices.clear();
+    outError.clear();
+    outOpts = parseRouteOptions(g, args);
+
+    auto extractFromPathArray = [&](const json& arr) -> bool {
+        if (!arr.is_array()) return false;
+        for (const auto& item : arr) {
+            if (!item.is_string()) continue;
+            const int idx = resolveEndpointIndex(g, item.get<std::string>());
+            if (idx < 0) {
+                outError = "Unknown node ID in route path: " + item.get<std::string>();
+                return false;
+            }
+            outPathIndices.push_back(idx);
+        }
+        return true;
+    };
+
+    if (args.contains("route")) {
+        const auto& rVal = args["route"];
+        if (rVal.is_object()) {
+            if (rVal.contains("found") && rVal["found"].is_boolean() && !rVal["found"].get<bool>()) {
+                return true; // Unreachable route -> empty path
+            }
+            if (rVal.contains("path") && rVal["path"].is_array()) {
+                return extractFromPathArray(rVal["path"]);
+            }
+        } else if (rVal.is_array()) {
+            return extractFromPathArray(rVal);
+        }
+    }
+
+    if (args.contains("path") && args["path"].is_array()) {
+        return extractFromPathArray(args["path"]);
+    }
+
+    if (args.contains("from") && args.contains("to") &&
+        args["from"].is_string() && args["to"].is_string()) {
+        const std::string fromId = args["from"].get<std::string>();
+        const std::string toId = args["to"].get<std::string>();
+        const int fromIdx = resolveEndpointIndex(g, fromId);
+        const int toIdx = resolveEndpointIndex(g, toId);
+        if (fromIdx < 0) {
+            outError = "Unknown 'from' node ID: " + fromId;
+            return false;
+        }
+        if (toIdx < 0) {
+            outError = "Unknown 'to' node ID: " + toId;
+            return false;
+        }
+        const RouteResult r = computeRoute(g, fromIdx, toIdx, outOpts);
+        if (r.found) {
+            outPathIndices = r.pathIndices;
+        }
+        return true;
+    }
+
+    outError = "Either 'route' (with 'path') or 'from'/'to' must be provided";
+    return false;
+}
+
+inline json serializeManeuversArray(const std::vector<Maneuver>& maneuvers) {
+    json arr = json::array();
+    for (const auto& m : maneuvers) {
+        json item = {
+            {"type", m.type},
+            {"text", m.text},
+            {"distanceM", m.distanceM},
+            {"atNodeId", m.atNodeId},
+            {"lat", m.lat},
+            {"lng", m.lng}
+        };
+        if (!m.landmark.empty()) {
+            item["landmark"] = m.landmark;
+        }
+        arr.push_back(std::move(item));
+    }
+    return arr;
+}
+
+inline std::string handleDirections(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    std::vector<int> pathIndices;
+    RouteOptions opts;
+    std::string err;
+    if (!resolvePathIndicesFromArgs(g, args, pathIndices, opts, err)) {
+        return makeErrorJson(err);
+    }
+
+    const std::vector<Maneuver> maneuvers = computeDirectionsForPath(g, pathIndices, opts);
+    double totalDistM = 0.0;
+    for (const auto& m : maneuvers) {
+        totalDistM += m.distanceM;
+    }
+
+    json out = {
+        {"maneuvers", serializeManeuversArray(maneuvers)},
+        {"totalDistanceM", totalDistM}
+    };
+    return out.dump();
+}
+
+inline std::string handleProgress(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    if (!args.contains("lat") || !args.contains("lng") ||
+        !args["lat"].is_number() || !args["lng"].is_number()) {
+        return makeErrorJson("'lat' and 'lng' numeric coordinates are required for progress");
+    }
+
+    std::vector<int> pathIndices;
+    RouteOptions opts;
+    std::string err;
+    if (!resolvePathIndicesFromArgs(g, args, pathIndices, opts, err)) {
+        return makeErrorJson(err);
+    }
+
+    const double lat = args["lat"].get<double>();
+    const double lng = args["lng"].get<double>();
+    const double accuracyM = args.value("accuracyM", args.value("accuracy", 0.0));
+    const bool hasLastIndex = args.contains("lastIndex") && args["lastIndex"].is_number_integer();
+    const int lastIndex = hasLastIndex ? args["lastIndex"].get<int>() : -1;
+    const double explicitLastAlongM =
+        (args.contains("lastDistanceAlongM") && args["lastDistanceAlongM"].is_number())
+            ? args["lastDistanceAlongM"].get<double>()
+            : -1.0;
+
+    const ProgressResult prog = computeRouteProgress(
+        g, pathIndices, lat, lng, accuracyM, lastIndex, hasLastIndex, explicitLastAlongM);
+
+    json out = {
+        {"distanceAlongM", prog.distanceAlongM},
+        {"remainingM", prog.remainingM},
+        {"nextManeuverIndex", prog.nextManeuverIndex},
+        {"distanceToNextM", prog.distanceToNextM},
+        {"offRoute", prog.offRoute},
+        {"offRouteDistanceM", prog.offRouteDistanceM},
+        {"arrived", prog.arrived},
+        {"lastIndex", prog.matchedIndex},
+        {"snappedLat", prog.snappedLat},
+        {"snappedLng", prog.snappedLng}
+    };
+    return out.dump();
+}
+
+inline std::string handleReroute(const std::string& argsJson) {
+    const json args = argsJson.empty() ? json::object() : json::parse(argsJson);
+    const Graph& g = globalGraph();
+    if (g.nodeCount() == 0) {
+        return makeErrorJson("Graph is not loaded");
+    }
+
+    const std::string toId = args.value("to", "");
+    if (toId.empty()) {
+        return makeErrorJson("'to' node or landmark ID is required for reroute");
+    }
+    const int toIdx = resolveEndpointIndex(g, toId);
+    if (toIdx < 0) {
+        return makeErrorJson("Unknown 'to' node ID: " + toId);
+    }
+
+    double fromLat = 0.0;
+    double fromLng = 0.0;
+    bool hasGps = false;
+
+    if (args.contains("from") && args["from"].is_object()) {
+        const auto& fObj = args["from"];
+        if (fObj.contains("lat") && fObj.contains("lng") &&
+            fObj["lat"].is_number() && fObj["lng"].is_number()) {
+            fromLat = fObj["lat"].get<double>();
+            fromLng = fObj["lng"].get<double>();
+            hasGps = true;
+        }
+    } else if (args.contains("lat") && args.contains("lng") &&
+               args["lat"].is_number() && args["lng"].is_number()) {
+        fromLat = args["lat"].get<double>();
+        fromLng = args["lng"].get<double>();
+        hasGps = true;
+    } else if (args.contains("from") && args["from"].is_string()) {
+        const int fIdx = resolveEndpointIndex(g, args["from"].get<std::string>());
+        if (fIdx >= 0 && g.nodes[fIdx].hasCoords) {
+            fromLat = g.nodes[fIdx].lat;
+            fromLng = g.nodes[fIdx].lng;
+            hasGps = true;
+        }
+    }
+
+    if (!hasGps) {
+        return makeErrorJson("reroute requires 'from: {lat, lng}' coordinates");
+    }
+
+    const RouteOptions opts = parseRouteOptions(g, args);
+    const RerouteSnapResult rr = snapAndRerouteFromGps(g, fromLat, fromLng, toIdx, opts);
+
+    // Reset progress tracker for the newly rerouted path
+    globalProgressTracker() = ProgressStateTracker{};
+
+    json routeJson = json::parse(serializeRouteResult(rr.route));
+    json maneuversArr = serializeManeuversArray(rr.maneuvers);
+
+    json out = {
+        {"found", rr.route.found},
+        {"distance", rr.route.distance},
+        {"path", rr.route.path},
+        {"steps", rr.route.steps},
+        {"snappedNodeId", rr.snappedNodeId},
+        {"snappedLat", rr.snappedLat},
+        {"snappedLng", rr.snappedLng},
+        {"snapDistanceM", rr.snapDistanceM},
+        {"route", std::move(routeJson)},
+        {"maneuvers", maneuversArr},
+        {"directions", {{"maneuvers", std::move(maneuversArr)}}}
+    };
+    return out.dump();
+}
+
 } // namespace detail
 } // namespace navcore
 
@@ -4254,6 +5555,12 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
             buffer = navcore::detail::handleNearestAssembly(args);
         } else if (functionName == "evacuationCompare") {
             buffer = navcore::detail::handleEvacuationCompare(args);
+        } else if (functionName == "directions") {
+            buffer = navcore::detail::handleDirections(args);
+        } else if (functionName == "progress") {
+            buffer = navcore::detail::handleProgress(args);
+        } else if (functionName == "reroute") {
+            buffer = navcore::detail::handleReroute(args);
         } else {
             buffer = navcore::detail::makeErrorJson("Unknown or unimplemented function: " + functionName);
         }
@@ -4268,7 +5575,7 @@ NAVCORE_EXPORT const char* call(const char* fn, const char* argsJson) {
 } // extern "C"
 
 // ============================================================================
-// SECTION 13: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
+// SECTION 14: Optional Terminal CLI Runner (#ifdef NAVCORE_CLI)
 // ============================================================================
 
 #ifdef NAVCORE_CLI
@@ -4288,7 +5595,10 @@ int main(int argc, char* argv[]) {
                   << "  navcore_cli criticalPoints [--data <dirOrFile>]\n"
                   << "  navcore_cli nearestAssembly <from> [--allow-lifts] [--data <dirOrFile>]\n"
                   << "  navcore_cli evacuate [nearest|capacity] [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n"
-                  << "  navcore_cli evacuationCompare [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n";
+                  << "  navcore_cli evacuationCompare [node:count ...] [--allow-lifts] [--data <dirOrFile>]\n"
+                  << "  navcore_cli directions <from> <to> [--accessible] [--data <dirOrFile>]\n"
+                  << "  navcore_cli progress <from> <to> <lat> <lng> [--accessible] [--data <dirOrFile>]\n"
+                  << "  navcore_cli reroute <lat> <lng> <to> [--accessible] [--data <dirOrFile>]\n";
         return 1;
     }
 
@@ -4478,6 +5788,62 @@ int main(int argc, char* argv[]) {
             {"people", buildEvacPeopleJson(0)}
         };
         std::cout << json::parse(call("evacuationCompare", cmpArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "directions") {
+        const std::string fromId = positional.size() >= 1 ? positional[0] : "b-csit:201";
+        const std::string toId   = positional.size() >= 2 ? positional[1] : "n1";
+        json dirArgs = {
+            {"from", fromId},
+            {"to", toId},
+            {"algo", algoOverride.empty() ? "dijkstra" : algoOverride},
+            {"accessible", accessible}
+        };
+        std::cout << json::parse(call("directions", dirArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "progress") {
+        const std::string fromId = positional.size() >= 1 ? positional[0] : "b-csit:201";
+        const std::string toId   = positional.size() >= 2 ? positional[1] : "n1";
+        double lat = 24.9333;
+        double lng = 67.1103;
+        if (positional.size() >= 4) {
+            try {
+                lat = std::stod(positional[2]);
+                lng = std::stod(positional[3]);
+            } catch (...) {}
+        }
+        json routeArgs = {
+            {"from", fromId},
+            {"to", toId},
+            {"algo", algoOverride.empty() ? "dijkstra" : algoOverride},
+            {"accessible", accessible}
+        };
+        const auto routeRes = json::parse(call("route", routeArgs.dump().c_str()));
+        json progArgs = {
+            {"route", routeRes},
+            {"lat", lat},
+            {"lng", lng}
+        };
+        std::cout << json::parse(call("progress", progArgs.dump().c_str())).dump(2) << "\n";
+        return 0;
+    } else if (cmd == "reroute") {
+        double lat = 24.9333;
+        double lng = 67.1103;
+        std::string toId = "b-library";
+        if (positional.size() >= 2) {
+            try {
+                lat = std::stod(positional[0]);
+                lng = std::stod(positional[1]);
+            } catch (...) {}
+        }
+        if (positional.size() >= 3) {
+            toId = positional[2];
+        }
+        json rerouteArgs = {
+            {"from", {{"lat", lat}, {"lng", lng}}},
+            {"to", toId},
+            {"accessible", accessible}
+        };
+        std::cout << json::parse(call("reroute", rerouteArgs.dump().c_str())).dump(2) << "\n";
         return 0;
     } else {
         std::cerr << "Unknown CLI command: " << cmd << "\n";
