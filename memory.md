@@ -48,6 +48,7 @@
 - Task C2 (Audit, Dev Scripts & WASM Wiring):
   - Dev scripts: Added `dev` (`next dev -p 3008`), `dev:fresh` (`kill-port 3008` + `.next` clean + `next dev -p 3008` — use `npm run dev:fresh` whenever old UI shows up), and `NEXT_PUBLIC_BUILD_ID` in `web/next.config.ts` shown in the shell footer; copied `data/evac.json` to `web/public/data/evac.json`.
   - Pre-C2 Audit: Already working: `OutdoorMap` geometry-aware route rendering, `IndoorMap` floor switcher/route/userNode, `navcore.ts` `getNavCore()`/`pingCore()`, `AppShell` search dropdowns & Explore category filter. Missing: typed WASM wrappers for `loadAllCampusData`/`route`/`directions`/etc., `OutdoorMap` `fitBounds` on route, Floyd-Warshall in algorithm picker, live `route`+`directions` wiring, outdoor/indoor leg splitting with `"Enter <building>?"` + `IndoorMap` stepper & `"I'm here"`, and Explore details + `"Directions to here"` / `"Open indoor map"`.
+  - Step C2-b delivered: Typed WASM wrapper (`web/src/core/navcore.ts`) with `ensureAllCampusDataLoaded()` (697 nodes + `evac.json`), `computeRoute()`, `getDirections()`, `compareAlgorithms()`, `searchCampus()`, plus `OutdoorMap` `fitBounds` on route changes.
 
 ## Delivery Note for Members B & C
 1. **Outdoor Graph (`data/graph.json` & `web/public/data/graph.json`)**: 86 nodes (`n1`..`n86`), 108 edges (`w` in meters), 55 landmarks (`b-<slug>`), and `masterPlanControlCorners` in `meta`.

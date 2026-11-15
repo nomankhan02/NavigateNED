@@ -43,6 +43,7 @@
 - `web/next.config.ts`: Next.js config with static export, cache headers, and `devIndicators` disabled.
 - `web/public/favicon.svg`: Static 30° isometric "N" Harbor Chart vector favicon.
 - `web/public/apple-touch-icon.png`: 180x180 anti-aliased isometric "N" app icon.
+- `web/public/data/evac.json`: Static public emergency evacuation dataset (7 assembly areas, 12 building exits).
 - `web/public/data/graph.json`: Static public campus graph dataset for web runtime consumption.
 - `web/public/data/indoor/`: Static public indoor floor plan datasets for client-only loading.
 - `web/public/map/ned_master_plan.jpg`: Calibrated master plan map overlay source image.
@@ -56,7 +57,7 @@
 - `web/src/app/_map-dev/indoor/page.tsx`: Temporary dev harness page verifying `IndoorMap` multi-floor rendering, evacuation, and trace replay.
 - `web/src/app/%5Fmap-dev/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev`.
 - `web/src/app/%5Fmap-dev/indoor/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev/indoor`.
-- `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime.
+- `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime (`ensureAllCampusDataLoaded`, `computeRoute`, `getDirections`, `compareAlgorithms`, `searchCampus`).
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
 - `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, and straight-line fallbacks.
 - `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, geometry helpers, and all map TypeScript interfaces.

@@ -912,6 +912,14 @@ export function OutdoorMap({
       icon: L.divIcon({ className: "", iconSize: [0, 0], html: endHtml }),
       interactive: false,
     }).addTo(rtGroup);
+
+    if (coords.length >= 2) {
+      map.fitBounds(L.latLngBounds(coords), {
+        padding: [48, 48],
+        maxZoom: 19,
+        animate: true,
+      });
+    }
   }, [isReady, graph, route]);
 
   // 5. Layer (e): Highlighted Node IDs

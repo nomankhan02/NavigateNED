@@ -1,6 +1,9 @@
 /**
- * Type-safe client bridge and in-memory module caching for C++ WASM navcore.
+ * Type-safe client bridge and in-memory module + dataset caching for C++ WASM navcore.
  */
+
+import type { CampusGraph, TraceEvent } from "@/map/types";
+import type { IndoorBuilding } from "@/map/indoor/types";
 
 export interface PingResponse {
   status: string;
@@ -10,7 +13,112 @@ export interface PingResponse {
 export interface LoadResponse {
   status: "ok" | "error";
   nodeCount?: number;
+  edgeCount?: number;
+  indoorBuildings?: number;
+  landmarkCount?: number;
   message?: string;
+}
+
+export type NavAlgo = "dijkstra" | "astar" | "bfs" | "bellmanford" | "floyd";
+
+export interface RouteRequest {
+  from: string;
+  to: string;
+  algo?: NavAlgo;
+  accessible?: boolean;
+  avoid?: string[];
+  blockedEdges?: [string, string][];
+}
+
+export interface RouteResponse {
+  found: boolean;
+  distance: number;
+  path: string[];
+  steps: string[];
+  trace?: TraceEvent[];
+  negativeCycle?: boolean;
+  algo?: string;
+  error?: string;
+}
+
+export type ManeuverType =
+  | "start"
+  | "straight"
+  | "slight-left"
+  | "left"
+  | "sharp-left"
+  | "slight-right"
+  | "right"
+  | "sharp-right"
+  | "enter-building"
+  | "stairs-up"
+  | "stairs-down"
+  | "lift"
+  | "arrive";
+
+export interface Maneuver {
+  type: ManeuverType;
+  text: string;
+  distanceM: number;
+  atNodeId: string;
+  lat: number;
+  lng: number;
+  landmark?: string;
+}
+
+export interface DirectionsResponse {
+  maneuvers: Maneuver[];
+  error?: string;
+}
+
+export interface SearchHit {
+  id: string;
+  label: string;
+  name: string;
+  kind: "landmark" | "room";
+  type: "landmark" | "room";
+  number?: string;
+  nodeId?: string;
+  buildingId?: string;
+}
+
+export interface SearchResponse {
+  results: SearchHit[];
+}
+
+export interface CompareAlgoEntry {
+  found: boolean;
+  distance: number;
+  nodesVisited: number;
+  visitedCount: number;
+  timeUs: number;
+  timeMs: number;
+  hops: number;
+}
+
+export interface CompareResponse {
+  results: Record<string, CompareAlgoEntry>;
+}
+
+export interface EvacDataset {
+  assemblyAreas: Array<{
+    id: string;
+    name: string;
+    nodeId: string;
+    capacity: number;
+  }>;
+  buildingExits: Array<{
+    buildingId: string;
+    exitNodeIds?: string[];
+    [key: string]: unknown;
+  }>;
+}
+
+export interface LoadedCampusData {
+  graph: CampusGraph;
+  indoorBuildings: Record<string, IndoorBuilding>;
+  evac: EvacDataset;
+  loadSummary: LoadResponse;
 }
 
 export type NativeCallFn = (fn: string, argsJson: string) => string;
@@ -20,27 +128,29 @@ interface NavcoreModuleInstance {
   call?: NativeCallFn;
 }
 
-// In-memory module cache
+export const INDOOR_BUILDING_IDS = [
+  "b-admin",
+  "b-auditorium",
+  "b-csit",
+  "b-csit-labs",
+  "b-dean-offices",
+  "b-library",
+] as const;
+
 let cachedCallFn: NativeCallFn | null = null;
 let modulePromise: Promise<NativeCallFn> | null = null;
+let campusDataPromise: Promise<LoadedCampusData> | null = null;
 
 /**
  * Loads the WebAssembly core module using dynamic import and returns the native call bridge.
- * Caches the initialized module instance in memory.
  */
 export async function getNavCore(): Promise<NativeCallFn> {
-  if (cachedCallFn) {
-    return cachedCallFn;
-  }
-
-  if (modulePromise) {
-    return modulePromise;
-  }
+  if (cachedCallFn) return cachedCallFn;
+  if (modulePromise) return modulePromise;
 
   modulePromise = (async () => {
-    // Navcore is placed in public/wasm/navcore.js
     const importUrl = "/wasm/navcore.js";
-    const navcoreModule = await (Function("url", "return import(url)")(importUrl));
+    const navcoreModule = await Function("url", "return import(url)")(importUrl);
     const createModule = navcoreModule.default || navcoreModule;
     const instance: NavcoreModuleInstance = await createModule();
 
@@ -60,18 +170,17 @@ export async function getNavCore(): Promise<NativeCallFn> {
   return modulePromise;
 }
 
-/**
- * Invokes the exported C++ WASM ping routine.
- */
-export async function pingCore(): Promise<PingResponse> {
+export async function callNavCore<T>(fn: string, args: unknown = {}): Promise<T> {
   const call = await getNavCore();
-  const raw = call("ping", "{}");
-  return JSON.parse(raw) as PingResponse;
+  const payload = typeof args === "string" ? args : JSON.stringify(args);
+  const raw = call(fn, payload);
+  return JSON.parse(raw) as T;
 }
 
-/**
- * Fetches and caches campus graph JSON via browser fetch cache, then loads it into C++ memory.
- */
+export async function pingCore(): Promise<PingResponse> {
+  return callNavCore<PingResponse>("ping", {});
+}
+
 export async function loadGraphIntoCore(graphUrl: string): Promise<LoadResponse> {
   const call = await getNavCore();
   const response = await fetch(graphUrl, { cache: "force-cache" });
@@ -79,7 +188,88 @@ export async function loadGraphIntoCore(graphUrl: string): Promise<LoadResponse>
     throw new Error(`Failed to fetch graph from ${graphUrl}: HTTP ${response.status}`);
   }
   const graphJsonString = await response.text();
-  const raw = call("load", graphJsonString);
-  return JSON.parse(raw) as LoadResponse;
+  return JSON.parse(call("load", graphJsonString)) as LoadResponse;
 }
 
+/**
+ * Loads outdoor graph.json, all 6 indoor building JSONs, and evac.json into C++ WASM once.
+ */
+export async function ensureAllCampusDataLoaded(): Promise<LoadedCampusData> {
+  if (campusDataPromise) return campusDataPromise;
+
+  campusDataPromise = (async () => {
+    const call = await getNavCore();
+
+    const [graphText, evacText, ...indoorTexts] = await Promise.all([
+      fetch("/data/graph.json", { cache: "force-cache" }).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} loading /data/graph.json`);
+        return r.text();
+      }),
+      fetch("/data/evac.json", { cache: "force-cache" }).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} loading /data/evac.json`);
+        return r.text();
+      }),
+      ...INDOOR_BUILDING_IDS.map((id) =>
+        fetch(`/data/indoor/${id}.json`, { cache: "force-cache" }).then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status} loading /data/indoor/${id}.json`);
+          return r.text();
+        }),
+      ),
+    ]);
+
+    // Load outdoor graph first, then merge all 6 indoor buildings, then evac.json
+    let loadSummary = JSON.parse(call("load", graphText)) as LoadResponse;
+    const indoorBuildings: Record<string, IndoorBuilding> = {};
+
+    for (let i = 0; i < INDOOR_BUILDING_IDS.length; i++) {
+      const id = INDOOR_BUILDING_IDS[i];
+      const text = indoorTexts[i];
+      indoorBuildings[id] = JSON.parse(text) as IndoorBuilding;
+      loadSummary = JSON.parse(call("load", text)) as LoadResponse;
+    }
+
+    loadSummary = JSON.parse(call("load", evacText)) as LoadResponse;
+
+    return {
+      graph: JSON.parse(graphText) as CampusGraph,
+      indoorBuildings,
+      evac: JSON.parse(evacText) as EvacDataset,
+      loadSummary,
+    };
+  })();
+
+  return campusDataPromise;
+}
+
+export async function computeRoute(req: RouteRequest): Promise<RouteResponse> {
+  return callNavCore<RouteResponse>("route", {
+    from: req.from,
+    to: req.to,
+    algo: req.algo ?? "dijkstra",
+    accessible: req.accessible ?? false,
+    avoid: req.avoid ?? [],
+    blockedEdges: req.blockedEdges ?? [],
+  });
+}
+
+export async function getDirections(
+  req: { route: RouteResponse } | RouteRequest,
+): Promise<DirectionsResponse> {
+  return callNavCore<DirectionsResponse>("directions", req);
+}
+
+export async function compareAlgorithms(args: {
+  from: string;
+  to: string;
+  accessible?: boolean;
+}): Promise<CompareResponse> {
+  return callNavCore<CompareResponse>("compare", {
+    from: args.from,
+    to: args.to,
+    accessible: args.accessible ?? false,
+  });
+}
+
+export async function searchCampus(query: string, limit = 15): Promise<SearchResponse> {
+  return callNavCore<SearchResponse>("search", { query, limit });
+}
