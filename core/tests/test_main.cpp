@@ -1189,7 +1189,7 @@ TEST_CASE("Task B4.1: Turn-by-Turn Directions on Straight & L-Shaped Routes and 
     const auto loadRes = json::parse(call("load", syntheticGraph.dump().c_str()));
     REQUIRE(loadRes.value("status", std::string("")) == "ok");
 
-    SUBCASE("Straight route merges consecutive straight edges into start, straight, arrive") {
+    SUBCASE("Straight route merges start and straight into Head <dir> from <short>, then arrive") {
         json dirReq = {
             {"from", "s1"},
             {"to", "s4"},
@@ -1199,25 +1199,26 @@ TEST_CASE("Task B4.1: Turn-by-Turn Directions on Straight & L-Shaped Routes and 
         const auto dirRes = json::parse(call("directions", dirReq.dump().c_str()));
         REQUIRE(dirRes.contains("maneuvers"));
         const auto& m = dirRes["maneuvers"];
-        REQUIRE(m.size() == 3);
+        REQUIRE(m.size() == 2);
         CHECK(m[0]["type"] == "start");
-        CHECK(m[0]["distanceM"].get<double>() == doctest::Approx(0.0));
-        CHECK(m[1]["type"] == "straight");
-        CHECK(m[1]["distanceM"].get<double>() == doctest::Approx(180.0));
-        CHECK(m[2]["type"] == "arrive");
-        CHECK(m[2]["distanceM"].get<double>() == doctest::Approx(0.0));
+        CHECK(m[0]["distanceM"].get<double>() == doctest::Approx(180.0));
+        CHECK(m[0]["text"] == "Head north from South Gate");
+        CHECK(m[1]["type"] == "arrive");
+        CHECK(m[1]["distanceM"].get<double>() == doctest::Approx(0.0));
+        CHECK(m[1]["text"] == "Arrive at North Plaza");
 
-        // Verify no raw node IDs appear in any maneuver text
+        // Verify no raw node IDs or distance strings appear in any maneuver text
         for (const auto& step : m) {
             const std::string txt = step["text"].get<std::string>();
             CHECK(txt.find("s1") == std::string::npos);
             CHECK(txt.find("s2") == std::string::npos);
             CHECK(txt.find("s3") == std::string::npos);
             CHECK(txt.find("s4") == std::string::npos);
+            CHECK(txt.find("180") == std::string::npos);
         }
     }
 
-    SUBCASE("Known L-shaped route gives a right turn with exact distanceM and nearest landmark within 40m, and reverses to left") {
+    SUBCASE("Known L-shaped route gives a right turn with exact distanceM and short landmark name, and reverses to left") {
         // Forward L-route: s1 -> s2 (North 60m) -> e1 (East 40m) => 90 deg right turn at s2
         json fwdReq = {
             {"from", "s1"},
@@ -1227,16 +1228,17 @@ TEST_CASE("Task B4.1: Turn-by-Turn Directions on Straight & L-Shaped Routes and 
         };
         const auto fwdRes = json::parse(call("directions", fwdReq.dump().c_str()));
         const auto& fwdM = fwdRes["maneuvers"];
-        REQUIRE(fwdM.size() == 4);
+        REQUIRE(fwdM.size() == 3);
         CHECK(fwdM[0]["type"] == "start");
-        CHECK(fwdM[1]["type"] == "straight");
-        CHECK(fwdM[1]["distanceM"].get<double>() == doctest::Approx(60.0));
-        CHECK(fwdM[2]["type"] == "right");
-        CHECK(fwdM[2]["distanceM"].get<double>() == doctest::Approx(40.0));
-        CHECK(fwdM[2]["atNodeId"] == "s2");
-        CHECK(fwdM[2].value("landmark", std::string("")) == "Courtyard Fountain");
-        CHECK(fwdM[2]["text"].get<std::string>().find("Courtyard Fountain") != std::string::npos);
-        CHECK(fwdM[3]["type"] == "arrive");
+        CHECK(fwdM[0]["distanceM"].get<double>() == doctest::Approx(60.0));
+        CHECK(fwdM[0]["text"] == "Head north from South Gate");
+        CHECK(fwdM[1]["type"] == "right");
+        CHECK(fwdM[1]["distanceM"].get<double>() == doctest::Approx(40.0));
+        CHECK(fwdM[1]["atNodeId"] == "s2");
+        CHECK(fwdM[1].value("landmark", std::string("")) == "Fountain");
+        CHECK(fwdM[1]["text"] == "Turn right at Fountain");
+        CHECK(fwdM[2]["type"] == "arrive");
+        CHECK(fwdM[2]["text"] == "Arrive at East Lawn");
 
         // Reversed L-route: e1 -> s2 (West 40m) -> s1 (South 60m) => 90 deg left turn at s2
         json revReq = {
@@ -1247,33 +1249,121 @@ TEST_CASE("Task B4.1: Turn-by-Turn Directions on Straight & L-Shaped Routes and 
         };
         const auto revRes = json::parse(call("directions", revReq.dump().c_str()));
         const auto& revM = revRes["maneuvers"];
-        REQUIRE(revM.size() == 4);
+        REQUIRE(revM.size() == 3);
         CHECK(revM[0]["type"] == "start");
-        CHECK(revM[1]["type"] == "straight");
-        CHECK(revM[1]["distanceM"].get<double>() == doctest::Approx(40.0));
-        CHECK(revM[2]["type"] == "left");
-        CHECK(revM[2]["distanceM"].get<double>() == doctest::Approx(60.0));
-        CHECK(revM[2]["atNodeId"] == "s2");
-        CHECK(revM[2].value("landmark", std::string("")) == "Courtyard Fountain");
-        CHECK(revM[3]["type"] == "arrive");
+        CHECK(revM[0]["distanceM"].get<double>() == doctest::Approx(40.0));
+        CHECK(revM[0]["text"] == "Head west from East Lawn");
+        CHECK(revM[1]["type"] == "left");
+        CHECK(revM[1]["distanceM"].get<double>() == doctest::Approx(60.0));
+        CHECK(revM[1]["atNodeId"] == "s2");
+        CHECK(revM[1].value("landmark", std::string("")) == "Fountain");
+        CHECK(revM[1]["text"] == "Turn left at Fountain");
+        CHECK(revM[2]["type"] == "arrive");
     }
 
     SUBCASE("Slight and sharp turns also reverse symmetrically (slight-right <-> slight-left, sharp-right <-> sharp-left)") {
         // s1 -> s2 -> ne1 (slight-right) vs ne1 -> s2 -> s1 (slight-left)
         const auto slightFwd = json::parse(call("directions", R"({"from":"s1","to":"ne1"})"))["maneuvers"];
         const auto slightRev = json::parse(call("directions", R"({"from":"ne1","to":"s1"})"))["maneuvers"];
-        REQUIRE(slightFwd.size() == 4);
-        REQUIRE(slightRev.size() == 4);
-        CHECK(slightFwd[2]["type"] == "slight-right");
-        CHECK(slightRev[2]["type"] == "slight-left");
+        REQUIRE(slightFwd.size() == 3);
+        REQUIRE(slightRev.size() == 3);
+        CHECK(slightFwd[1]["type"] == "slight-right");
+        CHECK(slightFwd[1]["text"] == "Bear right at Fountain");
+        CHECK(slightRev[1]["type"] == "slight-left");
+        CHECK(slightRev[1]["text"] == "Bear left at Fountain");
 
         // s1 -> s2 -> se1 (sharp-right) vs se1 -> s2 -> s1 (sharp-left)
         const auto sharpFwd = json::parse(call("directions", R"({"from":"s1","to":"se1"})"))["maneuvers"];
         const auto sharpRev = json::parse(call("directions", R"({"from":"se1","to":"s1"})"))["maneuvers"];
-        REQUIRE(sharpFwd.size() == 4);
-        REQUIRE(sharpRev.size() == 4);
-        CHECK(sharpFwd[2]["type"] == "sharp-right");
-        CHECK(sharpRev[2]["type"] == "sharp-left");
+        REQUIRE(sharpFwd.size() == 3);
+        REQUIRE(sharpRev.size() == 3);
+        CHECK(sharpFwd[1]["type"] == "sharp-right");
+        CHECK(sharpRev[1]["type"] == "sharp-left");
+    }
+}
+
+TEST_CASE("Task B4b: Directions Quality (20m Window, 10-deg Wobble, 90-deg Corner, 3m Entrance Stub, Short Names)") {
+    // 1. Nearly straight path with ~10 deg zig-zag wobbles every 25m -> 0 turns
+    // 2. Real 90-deg corner -> 1 turn
+    // 3. Final 3m stub into a building entrance -> 0 turn for the stub, merged into previous leg
+    // 4. Start is a single "Head <compass> from <short>" instruction, no distances in text
+    json g = {
+        {"meta", {{"campus", "NED Directions Quality Test"}}},
+        {"nodes", json::array({
+            {{"id", "w0"}, {"name", "Main Gate Full Name"}, {"short", "Main Gate"}, {"lat", 24.930000}, {"lng", 67.110000}, {"kind", "gate"}},
+            {{"id", "w1"}, {"name", ""}, {"lat", 24.930225}, {"lng", 67.110044}, {"kind", "path"}}, // ~25m NNE (~10 deg east)
+            {{"id", "w2"}, {"name", ""}, {"lat", 24.930450}, {"lng", 67.110000}, {"kind", "path"}}, // ~25m NNW (~10 deg west back)
+            {{"id", "w3"}, {"name", ""}, {"lat", 24.930675}, {"lng", 67.110044}, {"kind", "path"}}, // ~25m NNE (~10 deg east)
+            {{"id", "w4"}, {"name", "Corner Plaza Full"}, {"short", "Corner Plaza"}, {"lat", 24.930900}, {"lng", 67.110000}, {"kind", "path"}},
+            {{"id", "c1"}, {"name", ""}, {"lat", 24.930900}, {"lng", 67.110400}, {"kind", "path"}}, // ~40m East (90 deg right at w4)
+            {{"id", "c2"}, {"name", ""}, {"lat", 24.930927}, {"lng", 67.110400}, {"kind", "path"}}  // ~3m North stub (90 deg left, but < 12m into building)
+        })},
+        {"edges", json::array({
+            {{"a", "w0"}, {"b", "w1"}, {"w", 25.4}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "w1"}, {"b", "w2"}, {"w", 25.4}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "w2"}, {"b", "w3"}, {"w", 25.4}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "w3"}, {"b", "w4"}, {"w", 25.4}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "w4"}, {"b", "c1"}, {"w", 40.4}, {"kind", "walkway"}, {"accessible", true}},
+            {{"a", "c1"}, {"b", "c2"}, {"w", 3.0},  {"kind", "walkway"}, {"accessible", true}}
+        })},
+        {"landmarks", json::array({
+            {{"id", "b-test-lib"}, {"name", "Central Research Library Complex"}, {"short", "Library"}, {"nodeId", "c2"}, {"lat", 24.930927}, {"lng", 67.110400}}
+        })},
+        {"indoor", json::array({
+            json{
+                {"buildingId", "b-test-lib"},
+                {"buildingName", "Central Research Library Complex"},
+                {"floors", json::array({0})},
+                {"nodes", json::array({
+                    {{"id", "b-test-lib:entrance"}, {"name", "Main Entrance"}, {"kind", "entrance"}, {"floor", 0}, {"x", 0}, {"y", 0}},
+                    {{"id", "b-test-lib:101"}, {"name", "Reading Room 101"}, {"short", "Reading 101"}, {"kind", "room"}, {"floor", 0}, {"x", 20}, {"y", 0}}
+                })},
+                {"edges", json::array({
+                    {{"a", "c2"}, {"b", "b-test-lib:entrance"}, {"w", 3.0}, {"kind", "entrance"}, {"accessible", true}},
+                    {{"a", "b-test-lib:entrance"}, {"b", "b-test-lib:101"}, {"w", 20.0}, {"kind", "walk"}, {"accessible", true}}
+                })}
+            }
+        })}
+    };
+
+    REQUIRE(json::parse(call("load", g.dump().c_str())).value("status", std::string("")) == "ok");
+
+    SUBCASE("Nearly straight path with 10-degree wobbles gives no turns and single Head start") {
+        const auto res = json::parse(call("directions", R"({"from":"w0","to":"w4","algo":"dijkstra"})"));
+        const auto& m = res["maneuvers"];
+        REQUIRE(m.size() == 2);
+        CHECK(m[0]["type"] == "start");
+        CHECK(m[0]["text"].get<std::string>().rfind("Head north from Main Gate", 0) == 0);
+        CHECK(m[0]["distanceM"].get<double>() == doctest::Approx(101.6));
+        CHECK(m[1]["type"] == "arrive");
+        CHECK(m[1]["text"] == "Arrive at Corner Plaza");
+    }
+
+    SUBCASE("Real 90-degree corner gives one turn and 3m final stub into building entrance gives no turn") {
+        const auto res = json::parse(call("directions", R"({"from":"w0","to":"b-test-lib:101","algo":"dijkstra"})"));
+        const auto& m = res["maneuvers"];
+        // Expected: start (Head north from Main Gate), right (Turn right at Corner Plaza),
+        // enter-building (Enter Library...), straight (corridor), arrive (Arrive at Reading 101...)
+        int turnCount = 0;
+        for (const auto& step : m) {
+            const std::string t = step["type"].get<std::string>();
+            if (t == "left" || t == "right" || t == "slight-left" ||
+                t == "slight-right" || t == "sharp-left" || t == "sharp-right") {
+                ++turnCount;
+                CHECK(t == "right");
+                CHECK(step["atNodeId"] == "w4");
+                CHECK(step["text"] == "Turn right at Corner Plaza");
+                // 40.4m + 3.0m stub merged
+                CHECK(step["distanceM"].get<double>() == doctest::Approx(43.4));
+            }
+            const std::string txt = step["text"].get<std::string>();
+            CHECK(txt.find(" m") == std::string::npos);
+        }
+        CHECK(turnCount == 1);
+        CHECK(m.front()["type"] == "start");
+        CHECK(m.front()["text"] == "Head north from Main Gate");
+        CHECK(m.back()["type"] == "arrive");
+        CHECK(m.back()["text"].get<std::string>().find("Arrive at Reading 101") == 0);
     }
 }
 
