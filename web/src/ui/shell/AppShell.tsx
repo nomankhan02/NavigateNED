@@ -802,7 +802,6 @@ export function AppShell() {
   }, [graph, orderedLandmarks, indoorBuildings]);
 
   const exploreLandmarks = useMemo(() => {
-    const q = whereToQuery.trim().toLowerCase();
     return orderedLandmarks.filter((lm) => {
       if (
         exploreCategory !== "all" &&
@@ -810,14 +809,9 @@ export function AppShell() {
       ) {
         return false;
       }
-      if (!q) return true;
-      return (
-        formatLandmarkName(lm).toLowerCase().includes(q) ||
-        lm.name.toLowerCase().includes(q) ||
-        (lm.number ?? "").toLowerCase().includes(q)
-      );
+      return true;
     });
-  }, [orderedLandmarks, exploreCategory, whereToQuery]);
+  }, [orderedLandmarks, exploreCategory]);
 
   const selectedExploreLandmark = useMemo(() => {
     if (!selectedLandmarkId) return orderedLandmarks[0] ?? null;
@@ -1409,51 +1403,55 @@ export function AppShell() {
               ]}
             />
 
-            <SearchField
-              id="shell-where-to"
-              label="Where to"
-              placeholder="Search buildings or rooms..."
-              value={whereToQuery}
-              onChange={setWhereToQuery}
-              options={searchOptions}
-              onSelectOption={(opt) => {
-                setWhereToQuery(opt.name);
-                setToInput(opt.name);
-                setToTargetId(opt.id);
-                focusLandmarkOnMap(opt.landmarkId);
-                if (opt.id.includes(":")) {
-                  const bid = opt.id.slice(0, opt.id.indexOf(":"));
-                  setSelectedSearchRoom({
-                    buildingId: bid,
-                    nodeId: opt.id,
-                    label: opt.name,
-                  });
-                } else {
-                  setSelectedSearchRoom(null);
-                }
-              }}
-            />
-            {selectedSearchRoom && hasIndoorData(selectedSearchRoom.buildingId) ? (
-              <div className={styles.searchRoomQuickBar}>
-                <span className={styles.searchRoomLabel}>
-                  Room: {selectedSearchRoom.label}
-                </span>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  loading={indoorLoading}
-                  leadingIcon={<BuildingIcon size={13} />}
-                  onClick={() =>
-                    void openIndoorBuilding(
-                      selectedSearchRoom.buildingId,
-                      [],
-                      selectedSearchRoom.nodeId,
-                    )
-                  }
-                >
-                  Show in indoor map
-                </Button>
-              </div>
+            {mode === "navigate" ? (
+              <>
+                <SearchField
+                  id="shell-where-to"
+                  label="Where to"
+                  placeholder="Search buildings or rooms..."
+                  value={whereToQuery}
+                  onChange={setWhereToQuery}
+                  options={searchOptions}
+                  onSelectOption={(opt) => {
+                    setWhereToQuery(opt.name);
+                    setToInput(opt.name);
+                    setToTargetId(opt.id);
+                    focusLandmarkOnMap(opt.landmarkId);
+                    if (opt.id.includes(":")) {
+                      const bid = opt.id.slice(0, opt.id.indexOf(":"));
+                      setSelectedSearchRoom({
+                        buildingId: bid,
+                        nodeId: opt.id,
+                        label: opt.name,
+                      });
+                    } else {
+                      setSelectedSearchRoom(null);
+                    }
+                  }}
+                />
+                {selectedSearchRoom && hasIndoorData(selectedSearchRoom.buildingId) ? (
+                  <div className={styles.searchRoomQuickBar}>
+                    <span className={styles.searchRoomLabel}>
+                      Room: {selectedSearchRoom.label}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={indoorLoading}
+                      leadingIcon={<BuildingIcon size={13} />}
+                      onClick={() =>
+                        void openIndoorBuilding(
+                          selectedSearchRoom.buildingId,
+                          [],
+                          selectedSearchRoom.nodeId,
+                        )
+                      }
+                    >
+                      Show in indoor map
+                    </Button>
+                  </div>
+                ) : null}
+              </>
             ) : null}
           </div>
 
