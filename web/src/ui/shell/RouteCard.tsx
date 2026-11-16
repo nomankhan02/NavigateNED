@@ -34,6 +34,7 @@ export interface RouteCardProps {
   isIndoorMode?: boolean;
   indoorLoading?: boolean;
   sheetSnap?: SheetSnap;
+  docked?: boolean;
   traceReplay?: TraceReplayState;
   traceEvents?: TraceEvent[];
   hasIndoorLeg?: boolean;
@@ -73,6 +74,7 @@ export function RouteCard({
   isIndoorMode = false,
   indoorLoading = false,
   sheetSnap = "peek",
+  docked = false,
   traceReplay,
   traceEvents = [],
   hasIndoorLeg = false,
@@ -97,8 +99,8 @@ export function RouteCard({
     <section
       aria-label="Active route directions"
       className={[
-        styles.routeCard,
-        sheetSnap === "expanded" ? styles.routeCardHiddenMobile : "",
+        docked ? styles.routeCardDocked : styles.routeCard,
+        !docked && sheetSnap === "expanded" ? styles.routeCardHiddenMobile : "",
       ]
         .filter(Boolean)
         .join(" ")}

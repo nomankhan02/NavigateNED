@@ -382,6 +382,27 @@ img.leaflet-zoom-animated {
   box-shadow: var(--map-shadow);
 }
 
+.ned-layer-switcher-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ned-layer-mobile-toggle {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--map-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
 .ned-layer-switcher-row {
   display: flex;
   align-items: center;
@@ -487,7 +508,15 @@ img.leaflet-zoom-animated {
     right: 10px;
     left: auto;
     top: 10px;
-    padding: 5px;
+    padding: 4px;
+    align-items: flex-end;
+  }
+  .ned-layer-mobile-toggle {
+    display: inline-flex;
+    min-height: 36px;
+  }
+  .ned-layer-switcher[data-mobile-open="false"] .ned-layer-switcher-body {
+    display: none;
   }
 }
 

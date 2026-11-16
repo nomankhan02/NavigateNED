@@ -1060,17 +1060,121 @@ export function AppShell() {
     setIsDraggingSheet(false);
   };
 
-  const mobileBottomInset =
+  const mobileMapHeight =
     mobileSnap === "peek"
-      ? "168px"
+      ? "62dvh"
       : mobileSnap === "expanded"
-        ? "calc(100dvh - 54px)"
-        : "52dvh";
+        ? "32dvh"
+        : "45dvh";
 
   const mapStageStyle = {
     "--map-left-inset": dockCollapsed ? "0px" : "392px",
-    "--map-bottom-inset": mobileBottomInset,
+    "--mobile-map-height": mobileMapHeight,
   } as CSSProperties;
+
+  const renderRouteCard = (docked: boolean): ReactNode => {
+    if (mode === "evacuate") {
+      if (
+        evacSubTab !== "go" ||
+        !myAssemblyResult?.found ||
+        myAssemblyManeuvers.length === 0
+      ) {
+        return null;
+      }
+      const indoorEvacManeuvers = activeIndoor
+        ? myAssemblyManeuvers.filter((m) =>
+            m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+          )
+        : [];
+      const displayedEvacManeuvers = activeIndoor
+        ? indoorEvacManeuvers
+        : myAssemblyManeuvers;
+      if (displayedEvacManeuvers.length === 0) return null;
+      const currentIdx = activeIndoor ? indoorStepIndex : evacStepIndex;
+      return (
+        <RouteCard
+          docked={docked}
+          fromLabel={myLocationLabel || "My location"}
+          toLabel={myAssemblyResult.assemblyName || "Assembly Point"}
+          distanceM={myAssemblyResult.distance}
+          algo="dijkstra"
+          maneuvers={displayedEvacManeuvers}
+          activeStepIndex={currentIdx}
+          isIndoorMode={Boolean(activeIndoor)}
+          onStepChange={(idx) => {
+            if (activeIndoor) {
+              setIndoorStepIndex(idx);
+            } else {
+              setEvacStepIndex(idx);
+              setEvacStepFocusActive(true);
+            }
+          }}
+          indoorLoading={indoorLoading}
+          sheetSnap={mobileSnap}
+        />
+      );
+    }
+
+    const activeManeuverSource = routeResult?.found ? effectiveManeuvers : [];
+    if (activeManeuverSource.length === 0) return null;
+    const indoorManeuvers = activeIndoor
+      ? activeManeuverSource.filter((m) =>
+          m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+        )
+      : [];
+    const displayedManeuvers = activeIndoor
+      ? indoorManeuvers
+      : activeManeuverSource;
+    if (displayedManeuvers.length === 0) return null;
+    const currentIdx = activeIndoor ? indoorStepIndex : activeStepIndex;
+    return (
+      <RouteCard
+        docked={docked}
+        fromLabel={fromInput || "Origin"}
+        toLabel={toInput || "Destination"}
+        distanceM={effectiveRouteDistanceM}
+        algo={algo}
+        maneuvers={displayedManeuvers}
+        activeStepIndex={currentIdx}
+        isIndoorMode={Boolean(activeIndoor)}
+        onStepChange={(idx) => {
+          if (activeIndoor) {
+            setIndoorStepIndex(idx);
+          } else {
+            setActiveStepIndex(idx);
+            setStepFocusActive(true);
+          }
+        }}
+        onEnterBuilding={(bid) => {
+          const leg = routeLegs.find(
+            (l) => l.kind === "indoor" && l.buildingId === bid,
+          );
+          void openIndoorBuilding(
+            bid,
+            leg?.nodeIds ?? [],
+            toTargetId.includes(":") ? toTargetId : undefined,
+          );
+        }}
+        indoorLoading={indoorLoading}
+        sheetSnap={mobileSnap}
+        traceReplay={traceReplay}
+        traceEvents={outdoorTraceEvents}
+        hasIndoorLeg={hasIndoorLeg}
+        replayOpen={replayOpen}
+        onToggleReplay={() => {
+          if (replayOpen) {
+            traceReplay.pause();
+            setReplayOpen(false);
+          } else {
+            setReplayOpen(true);
+            traceReplay.seek(0);
+            traceReplay.play();
+          }
+        }}
+        onOpenCompare={() => setCompareOpen(true)}
+      />
+    );
+  };
 
   const mobileSnapClass =
     mobileSnap === "peek"
@@ -1204,109 +1308,7 @@ export function AppShell() {
             </div>
           )}
 
-          {(() => {
-            if (mode === "evacuate") {
-              if (
-                evacSubTab !== "go" ||
-                !myAssemblyResult?.found ||
-                myAssemblyManeuvers.length === 0
-              ) {
-                return null;
-              }
-              const indoorEvacManeuvers = activeIndoor
-                ? myAssemblyManeuvers.filter((m) =>
-                    m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
-                  )
-                : [];
-              const displayedEvacManeuvers = activeIndoor
-                ? indoorEvacManeuvers
-                : myAssemblyManeuvers;
-              if (displayedEvacManeuvers.length === 0) return null;
-              const currentIdx = activeIndoor ? indoorStepIndex : evacStepIndex;
-              return (
-                <RouteCard
-                  fromLabel={myLocationLabel || "My location"}
-                  toLabel={myAssemblyResult.assemblyName || "Assembly Point"}
-                  distanceM={myAssemblyResult.distance}
-                  algo="dijkstra"
-                  maneuvers={displayedEvacManeuvers}
-                  activeStepIndex={currentIdx}
-                  isIndoorMode={Boolean(activeIndoor)}
-                  onStepChange={(idx) => {
-                    if (activeIndoor) {
-                      setIndoorStepIndex(idx);
-                    } else {
-                      setEvacStepIndex(idx);
-                      setEvacStepFocusActive(true);
-                    }
-                  }}
-                  indoorLoading={indoorLoading}
-                  sheetSnap={mobileSnap}
-                />
-              );
-            }
-
-            const activeManeuverSource = routeResult?.found
-              ? effectiveManeuvers
-              : [];
-            if (activeManeuverSource.length === 0) return null;
-            const indoorManeuvers = activeIndoor
-              ? activeManeuverSource.filter((m) =>
-                  m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
-                )
-              : [];
-            const displayedManeuvers = activeIndoor
-              ? indoorManeuvers
-              : activeManeuverSource;
-            if (displayedManeuvers.length === 0) return null;
-            const currentIdx = activeIndoor ? indoorStepIndex : activeStepIndex;
-            return (
-              <RouteCard
-                fromLabel={fromInput || "Origin"}
-                toLabel={toInput || "Destination"}
-                distanceM={effectiveRouteDistanceM}
-                algo={algo}
-                maneuvers={displayedManeuvers}
-                activeStepIndex={currentIdx}
-                isIndoorMode={Boolean(activeIndoor)}
-                onStepChange={(idx) => {
-                  if (activeIndoor) {
-                    setIndoorStepIndex(idx);
-                  } else {
-                    setActiveStepIndex(idx);
-                    setStepFocusActive(true);
-                  }
-                }}
-                onEnterBuilding={(bid) => {
-                  const leg = routeLegs.find(
-                    (l) => l.kind === "indoor" && l.buildingId === bid,
-                  );
-                  void openIndoorBuilding(
-                    bid,
-                    leg?.nodeIds ?? [],
-                    toTargetId.includes(":") ? toTargetId : undefined,
-                  );
-                }}
-                indoorLoading={indoorLoading}
-                sheetSnap={mobileSnap}
-                traceReplay={traceReplay}
-                traceEvents={outdoorTraceEvents}
-                hasIndoorLeg={hasIndoorLeg}
-                replayOpen={replayOpen}
-                onToggleReplay={() => {
-                  if (replayOpen) {
-                    traceReplay.pause();
-                    setReplayOpen(false);
-                  } else {
-                    setReplayOpen(true);
-                    traceReplay.seek(0);
-                    traceReplay.play();
-                  }
-                }}
-                onOpenCompare={() => setCompareOpen(true)}
-              />
-            );
-          })()}
+          {renderRouteCard(false)}
 
           {compareOpen && fromTargetId && toTargetId ? (
             <AlgoCompareCard
@@ -1472,6 +1474,8 @@ export function AppShell() {
               </>
             ) : null}
           </div>
+
+          {renderRouteCard(true)}
 
           <div className={styles.dockScroll}>
             {mode === "navigate" ? (

@@ -19,14 +19,14 @@
 /* --- Title-Block Header Strip --- */
 .titleBlock {
   position: relative;
-  height: 54px;
+  height: calc(54px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) var(--space-4) 0;
   flex-shrink: 0;
   z-index: var(--z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: 0 var(--space-4);
   background-color: var(--color-surface-panel);
 }
 
@@ -612,16 +612,40 @@
     display: none;
   }
 
-  .leftDock {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
+  .mapStage {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mapCanvas {
+    position: relative;
+    inset: auto;
+    flex: none;
     width: 100%;
+    height: var(--mobile-map-height, 62dvh);
+    min-height: 32dvh;
+    max-height: 62dvh;
+    transition: height var(--duration-slow) var(--ease-out-plate);
+  }
+
+  .leftDock {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    flex: 1 1 0%;
+    min-height: 0;
     border-right: none;
     border-top: var(--hairline-width) solid var(--vellum-border);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    transition: height var(--duration-slow) var(--ease-out-plate);
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
   }
 
   .leftDockCollapsed {
@@ -637,7 +661,7 @@
   }
 
   .dockScroll {
-    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
   .dockFooter {
@@ -653,22 +677,12 @@
     -webkit-user-select: none;
   }
 
-  .mobileSnapPeek {
-    height: 168px;
-    min-height: 168px;
-    max-height: 168px;
-  }
-
-  .mobileSnapHalf {
-    height: 52dvh;
-    min-height: 168px;
-    max-height: 52dvh;
-  }
-
+  .mobileSnapPeek,
+  .mobileSnapHalf,
   .mobileSnapExpanded {
-    height: calc(100dvh - 54px);
-    min-height: 168px;
-    max-height: calc(100dvh - 54px);
+    height: auto;
+    min-height: 0;
+    max-height: none;
   }
 
   .setDestBtn {
@@ -704,50 +718,43 @@
 
   .mapStage :global(.ned-map-controls) {
     right: 10px;
-    bottom: calc(var(--map-bottom-inset, 168px) + 12px);
-    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+    bottom: 10px;
+    transition: opacity var(--duration-fast) var(--ease-out-plate);
   }
 
   .mapStage :global(.ned-map-ctrl-btn) {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
 
   .mapStage :global(.ned-map-hud) {
     left: 10px;
-    bottom: calc(var(--map-bottom-inset, 168px) + 12px);
-    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+    bottom: 10px;
+    transition: opacity var(--duration-fast) var(--ease-out-plate);
   }
 
   .mapStage :global(.ned-map-attribution) {
     left: 10px;
-    right: 62px;
-    bottom: calc(var(--map-bottom-inset, 168px) + 46px);
+    right: 60px;
+    bottom: 42px;
     max-width: calc(100% - 76px);
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: bottom var(--duration-slow) var(--ease-out-plate), opacity var(--duration-fast) var(--ease-out-plate);
+    transition: opacity var(--duration-fast) var(--ease-out-plate);
   }
 
   .mapStage[data-sheet-snap="half"] :global(.ned-map-hud),
-  .mapStage[data-sheet-snap="half"] :global(.ned-map-attribution) {
-    display: none;
-  }
-
-  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-controls),
+  .mapStage[data-sheet-snap="half"] :global(.ned-map-attribution),
   .mapStage[data-sheet-snap="expanded"] :global(.ned-map-hud),
-  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-attribution),
-  .mapStage[data-sheet-snap="expanded"] :global(.ned-key-toggle-btn),
-  .mapStage[data-sheet-snap="expanded"] :global(.ned-layer-switcher) {
-    opacity: 0;
-    pointer-events: none;
+  .mapStage[data-sheet-snap="expanded"] :global(.ned-map-attribution) {
+    display: none;
   }
 }
 
 /* --- Breakpoint 3: Narrow Phone < 560px (320, 360, 390, 430) --- */
 @media (max-width: 559px) {
   .titleBlock {
-    padding: 0 10px;
+    padding: env(safe-area-inset-top, 0px) 10px 0;
     gap: 8px;
   }
 

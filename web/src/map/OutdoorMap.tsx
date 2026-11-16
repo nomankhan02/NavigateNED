@@ -249,6 +249,7 @@ export function OutdoorMap({
   const [masterPlanOpacity, setMasterPlanOpacity] = useState(0.8);
   const [isKeyOpen, setIsKeyOpen] = useState(false);
   const [keySearch, setKeySearch] = useState("");
+  const [mobileLayersOpen, setMobileLayersOpen] = useState(false);
 
   const labelItemsRef = useRef<
     Array<{
@@ -943,6 +944,44 @@ export function OutdoorMap({
         animate: true,
       });
     }
+  }, [isReady, graph, route, destinationFootprint]);
+
+  // 5b. Keep Leaflet map size & route bounds synced when mobile split divider resizes container
+  useEffect(() => {
+    const el = containerRef.current;
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    if (!isReady || !el || !map || !L || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    let timer: number | undefined;
+    const ro = new ResizeObserver(() => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        map.invalidateSize({ animate: false });
+        if (graph && route && route.length >= 2) {
+          const nodeLookup = buildNodeLookup(graph.nodes);
+          const rawCoords = getPathCoordinates(route, graph.edges, nodeLookup);
+          const { coords } = destinationFootprint
+            ? trimRouteAtDestinationFootprint(rawCoords, destinationFootprint, 12)
+            : { coords: rawCoords };
+          if (coords.length >= 2) {
+            const pad = window.innerWidth <= 768 ? 24 : 48;
+            map.fitBounds(L.latLngBounds(coords), {
+              padding: [pad, pad],
+              maxZoom: 19,
+              animate: false,
+            });
+          }
+        }
+      }, 60);
+    });
+    ro.observe(el);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      ro.disconnect();
+    };
   }, [isReady, graph, route, destinationFootprint]);
 
   // 4b. Layer (d2): Active maneuver pulsing marker, leg segment highlight, and pan/flyTo
@@ -1818,10 +1857,34 @@ export function OutdoorMap({
       {/* Custom Hand-Drawn SVG Basemap & Master-Plan Layer Switcher */}
       <div
         className="ned-layer-switcher"
+        data-mobile-open={mobileLayersOpen ? "true" : "false"}
         role="region"
         aria-label="Basemap and overlay switcher"
       >
-        <div className="ned-layer-switcher-row" role="radiogroup" aria-label="Basemap style">
+        <button
+          type="button"
+          className="ned-layer-mobile-toggle"
+          aria-expanded={mobileLayersOpen}
+          onClick={() => setMobileLayersOpen((v) => !v)}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="10,3 18,7 10,11 2,7" />
+            <polyline points="2,11 10,15 18,11" />
+            <polyline points="2,15 10,19 18,15" />
+          </svg>
+          <span>Layers</span>
+        </button>
+        <div className="ned-layer-switcher-body">
+          <div className="ned-layer-switcher-row" role="radiogroup" aria-label="Basemap style">
           <button
             type="button"
             className={`ned-layer-btn ${
@@ -1911,6 +1974,7 @@ export function OutdoorMap({
               title={`Master plan opacity: ${Math.round(masterPlanOpacity * 100)}%`}
             />
           )}
+        </div>
         </div>
       </div>
 
