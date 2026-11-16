@@ -214,6 +214,10 @@ export function AppShell() {
     useState<NearestAssemblyResponse | null>(null);
   const [myAssemblyManeuvers, setMyAssemblyManeuvers] = useState<Maneuver[]>([]);
   const [myAssemblyLoading, setMyAssemblyLoading] = useState<boolean>(false);
+  const [evacStepIndex, setEvacStepIndex] = useState<number>(0);
+  const [evacStepFocusActive, setEvacStepFocusActive] = useState<boolean>(false);
+  const [fullAssemblyIds, setFullAssemblyIds] = useState<string[]>([]);
+  const [evacSubTab, setEvacSubTab] = useState<"go" | "sim">("go");
   const [indoorEvacOverlay, setIndoorEvacOverlay] =
     useState<IndoorEvacuationData | null>(null);
 
@@ -531,8 +535,15 @@ export function AppShell() {
               trace: [],
             },
           });
-          setMyAssemblyManeuvers(dirRes.maneuvers ?? []);
-          setActiveStepIndex(0);
+          const rawEvacManeuvers = (dirRes.maneuvers ?? []).map((m) => ({ ...m }));
+          if (rawEvacManeuvers.length > 0) {
+            const lastIdx = rawEvacManeuvers.length - 1;
+            rawEvacManeuvers[lastIdx].text = `Reached ${res.assemblyName}. Stay here and wait for instructions.`;
+            rawEvacManeuvers[lastIdx].landmark = res.assemblyName;
+          }
+          setMyAssemblyManeuvers(rawEvacManeuvers);
+          setEvacStepIndex(0);
+          setEvacStepFocusActive(false);
           setIndoorStepIndex(0);
 
           if (fromId.includes(":")) {
@@ -769,20 +780,81 @@ export function AppShell() {
     return floors.size;
   }, [routeResult, indoorBuildings]);
 
-  const activeManeuverForMap = useMemo(() => {
-    if (!stepFocusActive || activeIndoor || maneuvers.length === 0) return null;
-    const m = maneuvers[Math.max(0, Math.min(maneuvers.length - 1, activeStepIndex))];
-    if (!m) return null;
-    return { lat: m.lat, lng: m.lng, type: m.type, text: m.text };
-  }, [stepFocusActive, activeIndoor, maneuvers, activeStepIndex]);
+  const evacActiveManeuverForMap = useMemo(() => {
+    if (
+      mode !== "evacuate" ||
+      evacSubTab !== "go" ||
+      !evacStepFocusActive ||
+      activeIndoor ||
+      myAssemblyManeuvers.length === 0
+    ) {
+      return null;
+    }
+    const m =
+      myAssemblyManeuvers[
+        Math.max(0, Math.min(myAssemblyManeuvers.length - 1, evacStepIndex))
+      ];
+    return m ? { lat: m.lat, lng: m.lng, type: m.type, text: m.text } : null;
+  }, [mode, evacSubTab, evacStepFocusActive, activeIndoor, myAssemblyManeuvers, evacStepIndex]);
 
-  const activeLegPathForMap = useMemo(() => {
-    if (!stepFocusActive || activeIndoor || maneuvers.length === 0 || outdoorRoutePath.length < 2) {
+  const evacActiveLegPathForMap = useMemo(() => {
+    const evacPath = myAssemblyResult?.found
+      ? extractOutdoorPath(myAssemblyResult.path)
+      : [];
+    if (
+      mode !== "evacuate" ||
+      evacSubTab !== "go" ||
+      !evacStepFocusActive ||
+      activeIndoor ||
+      myAssemblyManeuvers.length === 0 ||
+      evacPath.length < 2
+    ) {
       return undefined;
     }
-    const idx = Math.max(0, Math.min(maneuvers.length - 1, activeStepIndex));
-    const cur = maneuvers[idx];
-    const next = maneuvers[idx + 1];
+    const idx = Math.max(0, Math.min(myAssemblyManeuvers.length - 1, evacStepIndex));
+    const cur = myAssemblyManeuvers[idx];
+    const next = myAssemblyManeuvers[idx + 1];
+    const startIdx = evacPath.indexOf(cur.atNodeId);
+    if (startIdx < 0) return undefined;
+    const endIdx = next ? evacPath.indexOf(next.atNodeId, startIdx) : -1;
+    if (endIdx > startIdx) {
+      return evacPath.slice(startIdx, endIdx + 1);
+    }
+    return evacPath.slice(startIdx);
+  }, [
+    mode,
+    evacSubTab,
+    evacStepFocusActive,
+    activeIndoor,
+    myAssemblyManeuvers,
+    evacStepIndex,
+    myAssemblyResult,
+  ]);
+
+  const activeManeuverForMap = useMemo(() => {
+    if (mode === "evacuate") return null;
+    if (!stepFocusActive || activeIndoor || effectiveManeuvers.length === 0) return null;
+    const m =
+      effectiveManeuvers[
+        Math.max(0, Math.min(effectiveManeuvers.length - 1, activeStepIndex))
+      ];
+    if (!m) return null;
+    return { lat: m.lat, lng: m.lng, type: m.type, text: m.text };
+  }, [mode, stepFocusActive, activeIndoor, effectiveManeuvers, activeStepIndex]);
+
+  const activeLegPathForMap = useMemo(() => {
+    if (
+      mode === "evacuate" ||
+      !stepFocusActive ||
+      activeIndoor ||
+      effectiveManeuvers.length === 0 ||
+      outdoorRoutePath.length < 2
+    ) {
+      return undefined;
+    }
+    const idx = Math.max(0, Math.min(effectiveManeuvers.length - 1, activeStepIndex));
+    const cur = effectiveManeuvers[idx];
+    const next = effectiveManeuvers[idx + 1];
     const startIdx = outdoorRoutePath.indexOf(cur.atNodeId);
     if (startIdx < 0) return undefined;
     const endIdx = next ? outdoorRoutePath.indexOf(next.atNodeId, startIdx) : -1;
@@ -790,7 +862,7 @@ export function AppShell() {
       return outdoorRoutePath.slice(startIdx, endIdx + 1);
     }
     return outdoorRoutePath.slice(startIdx);
-  }, [stepFocusActive, activeIndoor, maneuvers, activeStepIndex, outdoorRoutePath]);
+  }, [mode, stepFocusActive, activeIndoor, effectiveManeuvers, activeStepIndex, outdoorRoutePath]);
 
   const focusLandmarkOnMap = (landmarkId?: string) => {
     if (!landmarkId || !graph) return;
@@ -926,7 +998,7 @@ export function AppShell() {
                 graph={graph}
                 route={
                   mode === "evacuate"
-                    ? myAssemblyResult?.found
+                    ? evacSubTab === "go" && myAssemblyResult?.found
                       ? extractOutdoorPath(myAssemblyResult.path)
                       : []
                     : replayOpen &&
@@ -940,11 +1012,35 @@ export function AppShell() {
                     ? (destOutdoorLandmark?.footprint ?? null)
                     : null
                 }
-                trace={replayOpen ? traceReplay : null}
-                activeManeuver={activeManeuverForMap}
-                activeLegPath={activeLegPathForMap}
-                showGraph={showGraph || (mode === "evacuate" && blockMode)}
-                evacuation={evacOverlay}
+                highlightedNodeIds={
+                  mode === "evacuate" &&
+                  evacSubTab === "go" &&
+                  myAssemblyResult?.found
+                    ? [myAssemblyResult.nodeId]
+                    : undefined
+                }
+                trace={mode === "evacuate" ? null : replayOpen ? traceReplay : null}
+                activeManeuver={
+                  mode === "evacuate"
+                    ? evacActiveManeuverForMap
+                    : activeManeuverForMap
+                }
+                activeLegPath={
+                  mode === "evacuate"
+                    ? evacActiveLegPathForMap
+                    : activeLegPathForMap
+                }
+                showGraph={
+                  showGraph ||
+                  (mode === "evacuate" && evacSubTab === "sim" && blockMode)
+                }
+                evacuation={
+                  mode === "evacuate"
+                    ? evacSubTab === "sim"
+                      ? evacOverlay
+                      : { blockedNodes, blockedEdges }
+                    : null
+                }
                 selectedLandmarkId={selectedLandmarkId}
                 onLandmarkClick={handleLandmarkClickOnMap}
                 onMapClick={(coords) => {
@@ -966,15 +1062,50 @@ export function AppShell() {
           )}
 
           {(() => {
-            const isEvacRoute =
-              mode === "evacuate" &&
-              Boolean(myAssemblyResult?.found) &&
-              myAssemblyManeuvers.length > 0;
-            const activeManeuverSource = isEvacRoute
-              ? myAssemblyManeuvers
-              : routeResult?.found
-                ? effectiveManeuvers
+            if (mode === "evacuate") {
+              if (
+                evacSubTab !== "go" ||
+                !myAssemblyResult?.found ||
+                myAssemblyManeuvers.length === 0
+              ) {
+                return null;
+              }
+              const indoorEvacManeuvers = activeIndoor
+                ? myAssemblyManeuvers.filter((m) =>
+                    m.atNodeId.startsWith(`${activeIndoor.buildingId}:`),
+                  )
                 : [];
+              const displayedEvacManeuvers = activeIndoor
+                ? indoorEvacManeuvers
+                : myAssemblyManeuvers;
+              if (displayedEvacManeuvers.length === 0) return null;
+              const currentIdx = activeIndoor ? indoorStepIndex : evacStepIndex;
+              return (
+                <RouteCard
+                  fromLabel={myLocationLabel || "My location"}
+                  toLabel={myAssemblyResult.assemblyName || "Assembly Point"}
+                  distanceM={myAssemblyResult.distance}
+                  algo="dijkstra"
+                  maneuvers={displayedEvacManeuvers}
+                  activeStepIndex={currentIdx}
+                  isIndoorMode={Boolean(activeIndoor)}
+                  onStepChange={(idx) => {
+                    if (activeIndoor) {
+                      setIndoorStepIndex(idx);
+                    } else {
+                      setEvacStepIndex(idx);
+                      setEvacStepFocusActive(true);
+                    }
+                  }}
+                  indoorLoading={indoorLoading}
+                  sheetSnap={mobileSnap}
+                />
+              );
+            }
+
+            const activeManeuverSource = routeResult?.found
+              ? effectiveManeuvers
+              : [];
             if (activeManeuverSource.length === 0) return null;
             const indoorManeuvers = activeIndoor
               ? activeManeuverSource.filter((m) =>
@@ -988,21 +1119,9 @@ export function AppShell() {
             const currentIdx = activeIndoor ? indoorStepIndex : activeStepIndex;
             return (
               <RouteCard
-                fromLabel={
-                  isEvacRoute
-                    ? myLocationLabel || "My location"
-                    : fromInput || "Origin"
-                }
-                toLabel={
-                  isEvacRoute
-                    ? myAssemblyResult?.assemblyName || "Assembly Point"
-                    : toInput || "Destination"
-                }
-                distanceM={
-                  isEvacRoute
-                    ? (myAssemblyResult?.distance ?? 0)
-                    : effectiveRouteDistanceM
-                }
+                fromLabel={fromInput || "Origin"}
+                toLabel={toInput || "Destination"}
+                distanceM={effectiveRouteDistanceM}
                 algo={algo}
                 maneuvers={displayedManeuvers}
                 activeStepIndex={currentIdx}
