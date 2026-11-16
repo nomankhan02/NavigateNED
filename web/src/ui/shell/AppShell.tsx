@@ -705,7 +705,7 @@ export function AppShell() {
     return trimRouteAtDestinationFootprint(
       rawCoords,
       destOutdoorLandmark.footprint,
-      0.15,
+      12,
     );
   }, [graph, destOutdoorLandmark, outdoorRoutePath]);
 

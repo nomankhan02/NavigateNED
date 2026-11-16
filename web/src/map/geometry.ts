@@ -252,26 +252,41 @@ export function pointInPolygon(pt: LatLngCoord, poly: LatLngCoord[]): boolean {
   return inside;
 }
 
-function segmentIntersectionT(
+function pointToSegmentMeters(
+  pt: LatLngCoord,
   a: LatLngCoord,
   b: LatLngCoord,
-  c: LatLngCoord,
-  d: LatLngCoord
-): number | null {
-  const rLat = b[0] - a[0];
-  const rLng = b[1] - a[1];
-  const sLat = d[0] - c[0];
-  const sLng = d[1] - c[1];
-  const denom = rLng * sLat - rLat * sLng;
-  if (Math.abs(denom) < 1e-14) return null;
-  const qLat = c[0] - a[0];
-  const qLng = c[1] - a[1];
-  const t = (qLng * sLat - qLat * sLng) / denom;
-  const u = (qLng * rLat - qLat * rLng) / denom;
-  if (t >= -1e-9 && t <= 1 + 1e-9 && u >= -1e-9 && u <= 1 + 1e-9) {
-    return Math.max(0, Math.min(1, t));
+  cosLat: number
+): number {
+  const ax = (a[1] - pt[1]) * 111320 * cosLat;
+  const ay = (a[0] - pt[0]) * 111320;
+  const bx = (b[1] - pt[1]) * 111320 * cosLat;
+  const by = (b[0] - pt[0]) * 111320;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 <= 1e-12) {
+    return Math.hypot(ax, ay);
   }
-  return null;
+  const t = Math.max(0, Math.min(1, (-ax * dx - ay * dy) / len2));
+  return Math.hypot(ax + t * dx, ay + t * dy);
+}
+
+export function pointToFootprintDistanceMeters(
+  pt: LatLngCoord,
+  poly: LatLngCoord[]
+): number {
+  if (poly.length < 3) return Infinity;
+  if (pointInPolygon(pt, poly)) return 0;
+  const cosLat = Math.cos((pt[0] * Math.PI) / 180);
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const d = pointToSegmentMeters(pt, a, b, cosLat);
+    if (d < best) best = d;
+  }
+  return best;
 }
 
 export interface RouteTrimResult {
@@ -282,20 +297,20 @@ export interface RouteTrimResult {
 
 /**
  * Walks a route polyline in order and cuts it at the first point inside the
- * destination footprint (shrunk 15% toward its centroid). If the route never
- * enters the shrunk footprint, returns the original coordinates unchanged.
+ * destination footprint (unshrunk) or within `thresholdMeters` (default 12 m)
+ * of its boundary, interpolating the exact cut point along the segment.
+ * If the route never comes within `thresholdMeters`, returns it unchanged.
  */
 export function trimRouteAtDestinationFootprint(
   coords: LatLngCoord[],
   footprint: LatLngCoord[] | undefined | null,
-  shrinkRatio = 0.15
+  thresholdMeters = 12
 ): RouteTrimResult {
   if (!coords || coords.length < 2 || !footprint || footprint.length < 3) {
     return { coords, trimmedMeters: 0, wasTrimmed: false };
   }
 
-  const shrunk = shrinkPolygonTowardCentroid(footprint, shrinkRatio);
-  if (pointInPolygon(coords[0], shrunk)) {
+  if (pointToFootprintDistanceMeters(coords[0], footprint) <= thresholdMeters) {
     return { coords, trimmedMeters: 0, wasTrimmed: false };
   }
 
@@ -305,26 +320,59 @@ export function trimRouteAtDestinationFootprint(
   for (let i = 0; i < coords.length - 1; i++) {
     const a = coords[i];
     const b = coords[i + 1];
-    let bestT: number | null = null;
-    for (let j = 0; j < shrunk.length; j++) {
-      const c = shrunk[j];
-      const d = shrunk[(j + 1) % shrunk.length];
-      const t = segmentIntersectionT(a, b, c, d);
-      if (t !== null && (bestT === null || t < bestT)) {
-        bestT = t;
-      }
-    }
-    if (bestT !== null) {
+
+    if (pointToFootprintDistanceMeters(a, footprint) <= thresholdMeters) {
       cutSegIdx = i;
-      cutPoint = [
-        a[0] + (b[0] - a[0]) * bestT,
-        a[1] + (b[1] - a[1]) * bestT,
-      ];
+      cutPoint = a;
       break;
     }
-    if (pointInPolygon(b, shrunk)) {
+
+    // Collect sorted candidate t values along a->b: uniform samples + projections of polygon vertices
+    const cosLat = Math.cos(((a[0] + b[0]) * 0.5 * Math.PI) / 180);
+    const abx = (b[1] - a[1]) * 111320 * cosLat;
+    const aby = (b[0] - a[0]) * 111320;
+    const abLen2 = abx * abx + aby * aby;
+    const ts: number[] = [];
+    const steps = 24;
+    for (let s = 0; s <= steps; s++) ts.push(s / steps);
+    if (abLen2 > 1e-12) {
+      for (const v of footprint) {
+        const vx = (v[1] - a[1]) * 111320 * cosLat;
+        const vy = (v[0] - a[0]) * 111320;
+        const projT = (vx * abx + vy * aby) / abLen2;
+        if (projT > 0 && projT < 1) ts.push(projT);
+      }
+    }
+    ts.sort((x, y) => x - y);
+
+    let prevT = 0;
+    let hitT: number | null = null;
+    for (const t of ts) {
+      const pt: LatLngCoord = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      if (pointToFootprintDistanceMeters(pt, footprint) <= thresholdMeters) {
+        hitT = t;
+        break;
+      }
+      prevT = t;
+    }
+
+    if (hitT !== null) {
+      let lo = prevT;
+      let hi = hitT;
+      for (let iter = 0; iter < 24; iter++) {
+        const mid = (lo + hi) * 0.5;
+        const midPt: LatLngCoord = [
+          a[0] + (b[0] - a[0]) * mid,
+          a[1] + (b[1] - a[1]) * mid,
+        ];
+        if (pointToFootprintDistanceMeters(midPt, footprint) <= thresholdMeters) {
+          hi = mid;
+        } else {
+          lo = mid;
+        }
+      }
       cutSegIdx = i;
-      cutPoint = b;
+      cutPoint = [a[0] + (b[0] - a[0]) * hi, a[1] + (b[1] - a[1]) * hi];
       break;
     }
   }
@@ -365,11 +413,24 @@ export function runGeometryTrimSelfChecks(): boolean {
     [24.9305, 67.1105],
     [24.9315, 67.1105],
   ];
-  const r1 = trimRouteAtDestinationFootprint(entering, poly, 0.15);
+  const r1 = trimRouteAtDestinationFootprint(entering, poly, 12);
+  // Path running alongside the west edge (~6 m outside lng 67.11, never entering interior)
+  const alongside: LatLngCoord[] = [
+    [24.929, 67.10994],
+    [24.9312, 67.10994],
+  ];
+  const r2 = trimRouteAtDestinationFootprint(alongside, poly, 12);
   const outside: LatLngCoord[] = [
     [24.929, 67.109],
     [24.931, 67.109],
   ];
-  const r2 = trimRouteAtDestinationFootprint(outside, poly, 0.15);
-  return r1.wasTrimmed && r1.trimmedMeters > 0 && !r2.wasTrimmed && r2.coords.length === 2;
+  const r3 = trimRouteAtDestinationFootprint(outside, poly, 12);
+  return (
+    r1.wasTrimmed &&
+    r1.trimmedMeters > 0 &&
+    r2.wasTrimmed &&
+    r2.trimmedMeters > 0 &&
+    !r3.wasTrimmed &&
+    r3.coords.length === 2
+  );
 }

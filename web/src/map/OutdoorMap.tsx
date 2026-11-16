@@ -877,7 +877,7 @@ export function OutdoorMap({
     const rawCoords = getPathCoordinates(route, graph.edges, nodeLookup);
     if (rawCoords.length < 2) return;
     const { coords } = destinationFootprint
-      ? trimRouteAtDestinationFootprint(rawCoords, destinationFootprint, 0.15)
+      ? trimRouteAtDestinationFootprint(rawCoords, destinationFootprint, 12)
       : { coords: rawCoords };
     if (coords.length < 2) return;
 
