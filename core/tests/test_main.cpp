@@ -1612,4 +1612,75 @@ TEST_CASE("Task B4.3: Indoor-to-Outdoor Directions, Turn Reversal & Live Rerouti
     }
 }
 
+TEST_CASE("Nearest access node routing with toLandmark") {
+    loadRealMergedGraph();
+
+    std::ifstream gf("data/graph.json");
+    REQUIRE(gf.is_open());
+    json gJson;
+    gf >> gJson;
+
+    std::string multiId;
+    std::string multiShort;
+    std::string multiOfficial;
+    std::vector<std::string> multiAccess;
+    for (const auto& lm : gJson["landmarks"]) {
+        if (lm.contains("accessNodeIds") && lm["accessNodeIds"].size() > 1) {
+            const std::string lid = lm["id"].get<std::string>();
+            if (lid == "b-main-gate") continue;
+            multiId = lid;
+            multiShort = lm.value("short", lm.value("name", ""));
+            multiOfficial = lm["nodeId"].get<std::string>();
+            for (const auto& aid : lm["accessNodeIds"]) {
+                multiAccess.push_back(aid.get<std::string>());
+            }
+            break;
+        }
+    }
+    REQUIRE(!multiId.empty());
+    REQUIRE(multiAccess.size() > 1);
+
+    for (const std::string& algo : {"dijkstra", "astar", "bfs", "bellmanford", "floyd"}) {
+        json officialReq = {{"from", "b-main-gate"}, {"to", multiOfficial}, {"algo", algo}};
+        json lmReq = {{"from", "b-main-gate"}, {"to", multiId}, {"toLandmark", multiId}, {"algo", algo}};
+
+        const auto offRes = json::parse(call("route", officialReq.dump().c_str()));
+        const auto lmRes1 = json::parse(call("route", lmReq.dump().c_str()));
+        const auto lmRes2 = json::parse(call("route", lmReq.dump().c_str()));
+
+        REQUIRE(offRes["found"].get<bool>() == true);
+        REQUIRE(lmRes1["found"].get<bool>() == true);
+        CHECK(lmRes1.dump() == lmRes2.dump()); // Deterministic across repeated runs
+        CHECK(lmRes1["distance"].get<double>() <= offRes["distance"].get<double>() + 1e-9);
+
+        // Verify chosen end node is one of accessNodeIds and is the minimum-distance access node
+        const std::string chosenEnd = lmRes1["path"].back().get<std::string>();
+        CHECK(std::find(multiAccess.begin(), multiAccess.end(), chosenEnd) != multiAccess.end());
+
+        double minCandDist = 1e18;
+        for (const auto& cid : multiAccess) {
+            json cReq = {{"from", "b-main-gate"}, {"to", cid}, {"algo", algo}};
+            const auto cRes = json::parse(call("route", cReq.dump().c_str()));
+            if (cRes["found"].get<bool>()) {
+                minCandDist = std::min(minCandDist, cRes["distance"].get<double>());
+            }
+        }
+        CHECK(lmRes1["distance"].get<double>() == doctest::Approx(minCandDist).epsilon(1e-6));
+
+        // Arrival maneuver says "Arrive at <short name>"
+        json dirReq = {{"route", lmRes1}};
+        const auto dirRes = json::parse(call("directions", dirReq.dump().c_str()));
+        REQUIRE(dirRes.contains("maneuvers"));
+        REQUIRE(!dirRes["maneuvers"].empty());
+        CHECK(dirRes["maneuvers"].back()["type"] == "arrive");
+        CHECK(dirRes["maneuvers"].back()["text"] == "Arrive at " + multiShort);
+    }
+
+    // Indoor room destinations remain unchanged even if toLandmark is supplied
+    json indoorReq = {{"from", "b-main-gate"}, {"to", "b-library:204"}, {"toLandmark", "b-library"}, {"algo", "dijkstra"}};
+    const auto indoorRes = json::parse(call("route", indoorReq.dump().c_str()));
+    REQUIRE(indoorRes["found"].get<bool>() == true);
+    CHECK(indoorRes["path"].back() == "b-library:204");
+}
+
 

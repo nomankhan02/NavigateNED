@@ -250,6 +250,7 @@ struct Landmark {
   std::string shortName; // e.g. "CS & IT"
   std::string number;    // e.g. "5"
   std::string nodeId;    // Outdoor entrance node ID, e.g. "n21"
+  std::vector<std::string> accessNodeIds; // Perimeter access nodes
   std::string category;  // e.g. "academic"
 };
 
@@ -371,6 +372,7 @@ struct RouteResult {
   std::vector<std::string> path;
   std::vector<std::string> steps;
   std::vector<TraceEvent> trace;
+  std::string toLandmark;
   std::string error;
 };
 
@@ -866,6 +868,13 @@ public:
           }
         }
         item.nodeId = lm.value("nodeId", "");
+        if (lm.contains("accessNodeIds") && lm["accessNodeIds"].is_array()) {
+          for (const auto &aid : lm["accessNodeIds"]) {
+            if (aid.is_string()) {
+              item.accessNodeIds.push_back(aid.get<std::string>());
+            }
+          }
+        }
         item.category = lm.value("category", "");
 
         if (!item.id.empty()) {
@@ -5423,6 +5432,9 @@ inline std::string serializeRouteResult(const RouteResult &r) {
               {"trace", std::move(traceJson)},
               {"visitedCount", r.visitedCount},
               {"negativeCycle", r.negativeCycle}};
+  if (!r.toLandmark.empty()) {
+    out["toLandmark"] = r.toLandmark;
+  }
   if (r.negativeCycle && !r.error.empty()) {
     out["error"] = r.error;
   }
@@ -5460,23 +5472,82 @@ inline std::string handleRoute(const std::string &argsJson) {
 
   const std::string fromId = args.value("from", "");
   const std::string toId = args.value("to", "");
-  if (fromId.empty() || toId.empty()) {
+  const std::string toLandmark = args.value("toLandmark", "");
+  if (fromId.empty() || (toId.empty() && toLandmark.empty())) {
     return makeErrorJson("Both 'from' and 'to' node IDs are required");
   }
 
   const int fromIdx = resolveEndpointIndex(g, fromId);
-  const int toIdx = resolveEndpointIndex(g, toId);
   if (fromIdx < 0) {
     return makeErrorJson("Unknown 'from' node ID: " + fromId);
-  }
-  if (toIdx < 0) {
-    return makeErrorJson("Unknown 'to' node ID: " + toId);
   }
 
   const RouteOptions opts = parseRouteOptions(g, args);
   const std::string normAlgo =
       toLowerCopy(opts.algo.empty() ? "dijkstra" : opts.algo);
   const uint64_t bHash = opts.blockedSetHash();
+
+  if (!toLandmark.empty() && toId.find(':') == std::string::npos) {
+    auto lmIt = g.landmarkIdToIndex.find(toLandmark);
+    if (lmIt != g.landmarkIdToIndex.end() && lmIt->second >= 0 &&
+        lmIt->second < static_cast<int>(g.landmarks.size())) {
+      const Landmark &lm = g.landmarks[lmIt->second];
+      std::vector<std::string> candIds = lm.accessNodeIds;
+      if (candIds.empty() && !lm.nodeId.empty()) {
+        candIds.push_back(lm.nodeId);
+      }
+      std::sort(candIds.begin(), candIds.end());
+      candIds.erase(std::unique(candIds.begin(), candIds.end()), candIds.end());
+
+      std::ostringstream keyOss;
+      keyOss << fromIdx << "|lm:" << toLandmark << "|" << normAlgo << "|"
+             << (opts.accessibleOnly ? 1 : 0) << "|" << bHash;
+      const std::string cacheKey = keyOss.str();
+
+      RouteResult cachedRes;
+      if (globalRouteCache().get(cacheKey, bHash, cachedRes)) {
+        return serializeRouteResult(cachedRes);
+      }
+
+      RouteResult best;
+      bool hasFound = false;
+      std::string bestNodeId;
+      for (const std::string &cid : candIds) {
+        const int candIdx = resolveEndpointIndex(g, cid);
+        if (candIdx < 0) continue;
+        RouteResult r = computeRoute(g, fromIdx, candIdx, opts);
+        if (!r.error.empty() && !r.negativeCycle) {
+          return makeErrorJson(r.error);
+        }
+        if (r.negativeCycle) {
+          globalRouteCache().put(cacheKey, bHash, r);
+          return serializeRouteResult(r);
+        }
+        if (r.found) {
+          const std::string &endId = g.nodes[candIdx].id;
+          if (!hasFound || r.distance < best.distance - 1e-9 ||
+              (std::abs(r.distance - best.distance) <= 1e-9 &&
+               endId < bestNodeId)) {
+            best = std::move(r);
+            bestNodeId = endId;
+            hasFound = true;
+          }
+        } else if (!hasFound) {
+          best = std::move(r);
+        }
+      }
+      if (hasFound) {
+        best.toLandmark = toLandmark;
+      }
+      globalRouteCache().put(cacheKey, bHash, best);
+      return serializeRouteResult(best);
+    }
+  }
+
+  const int toIdx = resolveEndpointIndex(g, toId);
+  if (toIdx < 0) {
+    return makeErrorJson("Unknown 'to' node ID: " + toId);
+  }
 
   std::ostringstream keyOss;
   keyOss << fromIdx << "|" << toIdx << "|" << normAlgo << "|"
@@ -5936,8 +6007,25 @@ inline std::string handleDirections(const std::string &argsJson) {
     return makeErrorJson(err);
   }
 
-  const std::vector<Maneuver> maneuvers =
+  std::vector<Maneuver> maneuvers =
       computeDirectionsForPath(g, pathIndices, opts);
+  std::string toLandmark = args.value("toLandmark", "");
+  if (toLandmark.empty() && args.contains("route") && args["route"].is_object()) {
+    toLandmark = args["route"].value("toLandmark", "");
+  }
+  if (!toLandmark.empty() && !maneuvers.empty() &&
+      maneuvers.back().type == "arrive") {
+    auto lmIt = g.landmarkIdToIndex.find(toLandmark);
+    if (lmIt != g.landmarkIdToIndex.end() && lmIt->second >= 0 &&
+        lmIt->second < static_cast<int>(g.landmarks.size())) {
+      const std::string shortDisp =
+          landmarkDisplayName(g.landmarks[lmIt->second]);
+      if (!shortDisp.empty()) {
+        maneuvers.back().text = "Arrive at " + shortDisp;
+        maneuvers.back().landmark = shortDisp;
+      }
+    }
+  }
   double totalDistM = 0.0;
   for (const auto &m : maneuvers) {
     totalDistM += m.distanceM;
