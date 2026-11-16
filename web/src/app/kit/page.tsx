@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { useState } from "react";
 import {
   AccessibilityIcon,
@@ -50,6 +51,9 @@ const COLOR_SWATCHES = [
 ] as const;
 
 export default function KitPage() {
+  if (process.env.NODE_ENV !== "development") {
+    notFound();
+  }
   const { theme, setTheme } = useTheme();
   const [mode, setMode] = useState<"navigate" | "explore" | "evacuate">("navigate");
   const [algo, setAlgo] = useState<"dijkstra" | "astar" | "bfs" | "bellmanford">("astar");

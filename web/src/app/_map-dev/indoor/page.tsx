@@ -7,6 +7,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { notFound } from "next/navigation";
 import {
   IndoorMap,
   useTraceReplay,
@@ -76,6 +77,9 @@ function findSamplePath(building: IndoorBuilding | null): string[] {
 }
 
 export default function IndoorMapDevHarness() {
+  if (process.env.NODE_ENV !== "development") {
+    notFound();
+  }
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("b-csit");
   const [building, setBuilding] = useState<IndoorBuilding | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { notFound } from "next/navigation";
 import {
   OutdoorMap,
   useTraceReplay,
@@ -57,6 +58,9 @@ const SAMPLE_USER_LOCATION: UserLocation = {
 };
 
 export default function MapDevHarnessPage() {
+  if (process.env.NODE_ENV !== "development") {
+    notFound();
+  }
   const [graph, setGraph] = useState<CampusGraph | null>(null);
   const [error, setError] = useState<string | null>(null);
 

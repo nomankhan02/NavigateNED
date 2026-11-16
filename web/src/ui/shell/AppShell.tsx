@@ -1106,15 +1106,17 @@ export function AppShell() {
               <GraphIcon size={16} />
             </IconButton>
             <ThemeSwitch size="sm" />
-            <Link
-              href="/kit"
-              className={styles.kitLinkBtn}
-              aria-label="Open UI Kit"
-              title="UI Kit"
-            >
-              <LayersIcon size={15} />
-              <span className={styles.kitLinkLabel}>UI Kit</span>
-            </Link>
+            {process.env.NODE_ENV === "development" ? (
+              <Link
+                href="/kit"
+                className={styles.kitLinkBtn}
+                aria-label="Open UI Kit"
+                title="UI Kit"
+              >
+                <LayersIcon size={15} />
+                <span className={styles.kitLinkLabel}>UI Kit</span>
+              </Link>
+            ) : null}
           </div>
         </div>
 
