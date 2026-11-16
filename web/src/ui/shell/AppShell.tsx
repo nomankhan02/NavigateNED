@@ -258,6 +258,7 @@ export function AppShell() {
 
   const [dockCollapsed, setDockCollapsed] = useState<boolean>(false);
   const [mobileSnap, setMobileSnap] = useState<SheetSnap>("peek");
+  const [isDraggingSheet, setIsDraggingSheet] = useState<boolean>(false);
   const dragStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -1035,10 +1036,12 @@ export function AppShell() {
 
   const handleGrabPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
     dragStartYRef.current = e.clientY;
+    setIsDraggingSheet(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handleGrabPointerUp = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    setIsDraggingSheet(false);
     if (dragStartYRef.current === null) return;
     const dy = e.clientY - dragStartYRef.current;
     dragStartYRef.current = null;
@@ -1052,12 +1055,17 @@ export function AppShell() {
     }
   };
 
+  const handleGrabPointerCancel = () => {
+    dragStartYRef.current = null;
+    setIsDraggingSheet(false);
+  };
+
   const mobileBottomInset =
     mobileSnap === "peek"
       ? "168px"
       : mobileSnap === "expanded"
         ? "calc(100dvh - 54px)"
-        : "52vh";
+        : "52dvh";
 
   const mapStageStyle = {
     "--map-left-inset": dockCollapsed ? "0px" : "392px",
@@ -1120,7 +1128,13 @@ export function AppShell() {
       >
         <div className={styles.mapCanvas}>
           {graph ? (
-            <div className={styles.outdoorWrap}>
+            <div
+              className={styles.outdoorWrap}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerMove={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+            >
               <OutdoorMap
                 graph={graph}
                 route={
@@ -1342,6 +1356,7 @@ export function AppShell() {
         {/* EDGE-ATTACHED LEFT PANEL (DESKTOP) / DRAGGABLE BOTTOM SHEET (PHONE) */}
         <aside
           aria-label="Campus navigation panel"
+          data-dragging={isDraggingSheet ? "true" : undefined}
           className={[
             styles.leftDock,
             dockCollapsed ? styles.leftDockCollapsed : "",
@@ -1370,6 +1385,7 @@ export function AppShell() {
             aria-label={`Survey sheet (${mobileSnap}). Drag or tap to resize`}
             onPointerDown={handleGrabPointerDown}
             onPointerUp={handleGrabPointerUp}
+            onPointerCancel={handleGrabPointerCancel}
           >
             <span className={styles.mobileGrabPill} aria-hidden="true" />
             <span className={styles.mobileSnapStatus}>

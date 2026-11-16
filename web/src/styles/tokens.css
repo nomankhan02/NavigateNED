@@ -420,6 +420,7 @@ body {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: var(--leading-normal);
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
