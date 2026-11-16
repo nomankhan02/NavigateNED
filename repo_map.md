@@ -95,7 +95,7 @@
 - `web/src/ui/shell/AppShell.tsx`: Full-bleed Campus Survey Plate app shell with 3-level sidebar hierarchy, floating search dropdowns, `RouteCard`, `AlgoCompareCard`, live `OutdoorMap`, and `IndoorStage` transitions.
 - `web/src/ui/shell/AlgoCompareCard.tsx`: Floating frosted-vellum comparison dialog calling `compareAlgorithms()` with 4 hand-built SVG bar charts and click-to-select + replay.
 - `web/src/ui/shell/algoCompare.module.css`: Scoped token styles for `AlgoCompareCard`.
-- `web/src/ui/shell/EvacuatePanel.tsx`: Evacuate tab panel with slim hazard band, people-group scenario builder + presets, map tap-to-block path/junction controls, and evacuation mode runner.
+- `web/src/ui/shell/EvacuatePanel.tsx`: Evacuate tab panel with default `"Go to assembly"` emergency egress workflow (3-step guide, location search + GPS snap, `"Show me the way out"`, `"Area is full, find next"` cycling) and secondary `"Campus simulation"` tab.
 - `web/src/ui/shell/EvacResultsCard.tsx`: Evacuation summary totals, per-area capacity load bars, and Nearest vs Capacity-aware comparison card.
 - `web/src/ui/shell/evacuatePanel.module.css`: Scoped token styles for `EvacuatePanel`.
 - `web/src/ui/shell/RouteCard.tsx`: Frosted vellum floating route card over the map with current maneuver, Prev/Next stepper, expandable directions list, `"Watch the search"` / `"Compare algorithms"` triggers, and indoor `"Enter <building>?"` / `"Open indoor map"` actions.

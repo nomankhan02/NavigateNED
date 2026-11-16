@@ -17,6 +17,7 @@ import {
   type CampusLandmark,
   type EvacuationOverlayData,
   getPathCoordinates,
+  haversineMeters,
   type IndoorBuilding,
   type IndoorEvacuationData,
   OutdoorMap,
@@ -217,6 +218,10 @@ export function AppShell() {
   const [evacStepIndex, setEvacStepIndex] = useState<number>(0);
   const [evacStepFocusActive, setEvacStepFocusActive] = useState<boolean>(false);
   const [fullAssemblyIds, setFullAssemblyIds] = useState<string[]>([]);
+  const [allAssembliesFullNotice, setAllAssembliesFullNotice] =
+    useState<boolean>(false);
+  const [gpsLoading, setGpsLoading] = useState<boolean>(false);
+  const [gpsMessage, setGpsMessage] = useState<string | null>(null);
   const [evacSubTab, setEvacSubTab] = useState<"go" | "sim">("go");
   const [indoorEvacOverlay, setIndoorEvacOverlay] =
     useState<IndoorEvacuationData | null>(null);
@@ -513,17 +518,88 @@ export function AppShell() {
   );
 
   const runMyAssembly = useCallback(
-    async (fromId: string, fromLabel: string) => {
+    async (
+      fromId: string,
+      fromLabel: string,
+      excludeIds: string[] = fullAssemblyIds,
+    ) => {
       if (!wasmReady || !fromId) return;
       setMyLocationId(fromId);
       setMyLocationLabel(fromLabel);
       setMyAssemblyLoading(true);
+      setAllAssembliesFullNotice(false);
       try {
-        const res = await findNearestAssembly({
-          from: fromId,
-          blocked: { nodes: blockedNodes, edges: blockedEdges },
-          disableLifts: true,
-        });
+        const blocked = { nodes: blockedNodes, edges: blockedEdges };
+        let res: NearestAssemblyResponse | null = null;
+
+        if (excludeIds.length === 0) {
+          res = await findNearestAssembly({
+            from: fromId,
+            blocked,
+            disableLifts: true,
+          });
+        } else {
+          const allAreas = evacDataset?.assemblyAreas ?? [];
+          const remaining = allAreas.filter((a) => !excludeIds.includes(a.id));
+          if (remaining.length === 0) {
+            setAllAssembliesFullNotice(true);
+            res = await findNearestAssembly({
+              from: fromId,
+              blocked,
+              disableLifts: true,
+            });
+          } else {
+            let bestArea: (typeof remaining)[number] | null = null;
+            let bestRoute: Awaited<ReturnType<typeof computeRoute>> | null = null;
+            for (const area of remaining) {
+              const r = await computeRoute({
+                from: fromId,
+                to: area.nodeId,
+                algo: "dijkstra",
+                accessible: false,
+                avoid: blockedNodes,
+                blockedEdges,
+              });
+              if (
+                r.found &&
+                (!bestRoute ||
+                  r.distance < bestRoute.distance - 1e-6 ||
+                  (Math.abs(r.distance - bestRoute.distance) <= 1e-6 &&
+                    area.id < (bestArea?.id ?? "")))
+              ) {
+                bestRoute = r;
+                bestArea = area;
+              }
+            }
+            if (bestArea && bestRoute) {
+              res = {
+                found: true,
+                from: fromId,
+                assemblyId: bestArea.id,
+                assemblyName: bestArea.name,
+                nodeId: bestArea.nodeId,
+                capacity: bestArea.capacity,
+                distance: bestRoute.distance,
+                path: bestRoute.path,
+                steps: bestRoute.steps,
+              };
+            } else {
+              res = {
+                found: false,
+                from: fromId,
+                assemblyId: "",
+                assemblyName: "",
+                nodeId: "",
+                capacity: 0,
+                distance: 0,
+                path: [],
+                steps: [],
+                error: "No reachable non-full assembly area found.",
+              };
+            }
+          }
+        }
+
         setMyAssemblyResult(res);
         if (res.found) {
           const dirRes = await getDirections({
@@ -535,7 +611,9 @@ export function AppShell() {
               trace: [],
             },
           });
-          const rawEvacManeuvers = (dirRes.maneuvers ?? []).map((m) => ({ ...m }));
+          const rawEvacManeuvers = (dirRes.maneuvers ?? []).map((m) => ({
+            ...m,
+          }));
           if (rawEvacManeuvers.length > 0) {
             const lastIdx = rawEvacManeuvers.length - 1;
             rawEvacManeuvers[lastIdx].text = `Reached ${res.assemblyName}. Stay here and wait for instructions.`;
@@ -586,8 +664,63 @@ export function AppShell() {
         setMyAssemblyLoading(false);
       }
     },
-    [wasmReady, blockedNodes, blockedEdges],
+    [wasmReady, blockedNodes, blockedEdges, fullAssemblyIds, evacDataset],
   );
+
+  const handleUseGpsLocation = useCallback(() => {
+    if (!graph) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGpsMessage("Location services are unavailable in this browser. Please search above.");
+      return;
+    }
+    setGpsLoading(true);
+    setGpsMessage(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLoading(false);
+        const { latitude, longitude, accuracy } = pos.coords;
+        if (accuracy > 150) {
+          setGpsMessage(
+            `GPS accuracy is too low (${Math.round(accuracy)} m). Please select your building or room above.`,
+          );
+          return;
+        }
+        let bestNodeId = "";
+        let bestDist = Infinity;
+        for (const n of graph.nodes) {
+          const d = haversineMeters([latitude, longitude], [n.lat, n.lng]);
+          if (d < bestDist) {
+            bestDist = d;
+            bestNodeId = n.id;
+          }
+        }
+        if (!bestNodeId || bestDist > 600) {
+          setGpsMessage(
+            "You appear to be outside the NED campus area. Please select a building above.",
+          );
+          return;
+        }
+        const matchedLm = graph.landmarks.find(
+          (lm) => lm.nodeId === bestNodeId || lm.accessNodeIds?.includes(bestNodeId),
+        );
+        const label = matchedLm
+          ? formatLandmarkName(matchedLm)
+          : `Campus junction (${bestNodeId})`;
+        setGpsMessage(null);
+        setFullAssemblyIds([]);
+        void runMyAssembly(bestNodeId, label, []);
+      },
+      (err) => {
+        setGpsLoading(false);
+        setGpsMessage(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied. Please choose your building or room above."
+            : "Could not read your GPS position. Please choose your building or room above.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 },
+    );
+  }, [graph, runMyAssembly]);
 
   const evacOverlay: EvacuationOverlayData | null = useMemo(() => {
     if (mode !== "evacuate") return null;
@@ -1806,7 +1939,44 @@ export function AppShell() {
 
             {mode === "evacuate" ? (
               <EvacuatePanel
+                evacSubTab={evacSubTab}
+                onChangeSubTab={setEvacSubTab}
                 searchOptions={searchOptions}
+                myLocationId={myLocationId}
+                myLocationLabel={myLocationLabel}
+                onSelectMyLocation={(id, label) => {
+                  setMyLocationId(id);
+                  setMyLocationLabel(label);
+                  setGpsMessage(null);
+                  setFullAssemblyIds([]);
+                  setAllAssembliesFullNotice(false);
+                }}
+                onUseGpsLocation={handleUseGpsLocation}
+                gpsLoading={gpsLoading}
+                gpsMessage={gpsMessage}
+                onShowWayOut={() =>
+                  void runMyAssembly(myLocationId, myLocationLabel, fullAssemblyIds)
+                }
+                myAssemblyResult={myAssemblyResult}
+                myAssemblyLoading={myAssemblyLoading}
+                fullAssemblyIds={fullAssemblyIds}
+                allAssembliesFullNotice={allAssembliesFullNotice}
+                onMarkAreaFull={() => {
+                  if (!myAssemblyResult?.found || !myAssemblyResult.assemblyId) return;
+                  const nextFull = Array.from(
+                    new Set([...fullAssemblyIds, myAssemblyResult.assemblyId]),
+                  );
+                  setFullAssemblyIds(nextFull);
+                  void runMyAssembly(myLocationId, myLocationLabel, nextFull);
+                }}
+                onResetFullAreas={() => {
+                  setFullAssemblyIds([]);
+                  setAllAssembliesFullNotice(false);
+                  if (myLocationId) {
+                    void runMyAssembly(myLocationId, myLocationLabel, []);
+                  }
+                }}
+                totalAssemblyCount={evacDataset?.assemblyAreas.length ?? 7}
                 groups={evacGroups}
                 onAddGroup={(at, label, count) =>
                   setEvacGroups((prev) => [
@@ -1884,11 +2054,6 @@ export function AppShell() {
                 evacDataset={evacDataset}
                 evacResult={evacResult}
                 evacCompare={evacCompare}
-                myLocationId={myLocationId}
-                myLocationLabel={myLocationLabel}
-                onSelectMyLocation={(id, label) => void runMyAssembly(id, label)}
-                myAssemblyResult={myAssemblyResult}
-                myAssemblyLoading={myAssemblyLoading}
               />
             ) : null}
           </div>

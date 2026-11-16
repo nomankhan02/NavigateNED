@@ -276,3 +276,134 @@
     transition: none !important;
   }
 }
+
+/* Go to assembly (default emergency egress view) */
+
+.emergencyHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: var(--hairline-width) solid var(--color-hazard-red);
+  background-color: var(--color-hazard-red-subtle);
+}
+
+.emergencyTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 800;
+  color: var(--color-hazard-red);
+}
+
+.stepsGuide {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stepGuideItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.stepNum {
+  font-family: var(--font-numerals);
+  font-weight: 800;
+  color: var(--color-hazard-red);
+  flex-shrink: 0;
+}
+
+.locationActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ctaBtn {
+  width: 100%;
+  min-height: 44px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.geoMsg {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-hazard-red);
+}
+
+.assemblyResultCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-signal-vermilion);
+  background-color: var(--color-surface-elevated);
+}
+
+.assemblyHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.assemblyName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.rankCounter {
+  font-family: var(--font-numerals);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.assemblyMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.assemblyActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.resetLink {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.resetLink:hover {
+  color: var(--color-text-primary);
+}
