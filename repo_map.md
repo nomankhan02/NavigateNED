@@ -60,7 +60,7 @@
 - `web/src/app/%5Fmap-dev/indoor/page.tsx`: Next.js App Router URL-encoded underscore route wrapper for `/_map-dev/indoor`.
 - `web/src/core/navcore.ts`: Typed TypeScript client bridge calling WASM runtime (`ensureAllCampusDataLoaded`, `computeRoute`, `getDirections`, `compareAlgorithms`, `searchCampus`).
 - `web/src/map/`: Map rendering canvas and SVG components (owned by Member A).
-- `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, and straight-line fallbacks.
+- `web/src/map/geometry.ts`: Polyline geometry helpers resolving edge geometries, traversal orientation, path stitching, straight-line fallbacks, and destination footprint trimming (`trimRouteAtDestinationFootprint`).
 - `web/src/map/index.ts`: Barrel exports for `OutdoorMap`, `useTraceReplay`, geometry helpers, and all map TypeScript interfaces.
 - `web/src/map/indoor/`: Multi-floor architectural indoor SVG map renderer and components.
 - `web/src/map/indoor/floors.tsx`: Multi-floor state helpers and vertical floor switcher component.

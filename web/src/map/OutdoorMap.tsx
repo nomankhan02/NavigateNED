@@ -8,6 +8,7 @@ import {
   getEdgeCoordinatesBetween,
   getPathCoordinates,
   getTraceSegments,
+  trimRouteAtDestinationFootprint,
 } from "./geometry";
 import type {
   BasemapMode,
@@ -206,6 +207,7 @@ function resolveMapVar(
 export function OutdoorMap({
   graph,
   route,
+  destinationFootprint = null,
   highlightedNodeIds,
   activeManeuver = null,
   activeLegPath,
@@ -872,7 +874,11 @@ export function OutdoorMap({
     if (!route || route.length < 2) return;
 
     const nodeLookup = buildNodeLookup(graph.nodes);
-    const coords = getPathCoordinates(route, graph.edges, nodeLookup);
+    const rawCoords = getPathCoordinates(route, graph.edges, nodeLookup);
+    if (rawCoords.length < 2) return;
+    const { coords } = destinationFootprint
+      ? trimRouteAtDestinationFootprint(rawCoords, destinationFootprint, 0.15)
+      : { coords: rawCoords };
     if (coords.length < 2) return;
 
     // Casing line underneath for contrast
@@ -937,7 +943,7 @@ export function OutdoorMap({
         animate: true,
       });
     }
-  }, [isReady, graph, route]);
+  }, [isReady, graph, route, destinationFootprint]);
 
   // 4b. Layer (d2): Active maneuver pulsing marker, leg segment highlight, and pan/flyTo
   useEffect(() => {

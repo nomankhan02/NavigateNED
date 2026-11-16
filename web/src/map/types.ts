@@ -124,6 +124,7 @@ export interface ActiveManeuverMarker {
 export interface OutdoorMapProps {
   graph: CampusGraph;
   route?: string[];
+  destinationFootprint?: [number, number][] | null;
   highlightedNodeIds?: string[];
   activeManeuver?: ActiveManeuverMarker | null;
   activeLegPath?: string[];

@@ -12,12 +12,15 @@ import {
   useState,
 } from "react";
 import {
+  buildNodeLookup,
   type CampusGraph,
   type CampusLandmark,
   type EvacuationOverlayData,
+  getPathCoordinates,
   type IndoorBuilding,
   type IndoorEvacuationData,
   OutdoorMap,
+  trimRouteAtDestinationFootprint,
   useTraceReplay,
 } from "@/map";
 import {
@@ -686,6 +689,61 @@ export function AppShell() {
     [routeResult],
   );
 
+  const destOutdoorLandmark = useMemo(() => {
+    if (!graph || !toTargetId || toTargetId.includes(":") || !toTargetId.startsWith("b-")) {
+      return null;
+    }
+    return graph.landmarks.find((lm) => lm.id === toTargetId) ?? null;
+  }, [graph, toTargetId]);
+
+  const routeTrimResult = useMemo(() => {
+    if (!graph || !destOutdoorLandmark || outdoorRoutePath.length < 2) {
+      return { coords: [], trimmedMeters: 0, wasTrimmed: false };
+    }
+    const lookup = buildNodeLookup(graph.nodes);
+    const rawCoords = getPathCoordinates(outdoorRoutePath, graph.edges, lookup);
+    return trimRouteAtDestinationFootprint(
+      rawCoords,
+      destOutdoorLandmark.footprint,
+      0.15,
+    );
+  }, [graph, destOutdoorLandmark, outdoorRoutePath]);
+
+  const effectiveRouteDistanceM = useMemo(() => {
+    if (!routeResult?.found) return 0;
+    return Math.max(0, routeResult.distance - routeTrimResult.trimmedMeters);
+  }, [routeResult, routeTrimResult.trimmedMeters]);
+
+  const effectiveManeuvers = useMemo(() => {
+    if (!routeTrimResult.wasTrimmed || !destOutdoorLandmark || maneuvers.length === 0) {
+      return maneuvers;
+    }
+    const next = maneuvers.map((m) => ({ ...m }));
+    const lastIdx = next.length - 1;
+    const shortName =
+      destOutdoorLandmark.short || destOutdoorLandmark.name || toTargetId;
+    next[lastIdx].text = `Arrive at ${shortName}`;
+    next[lastIdx].landmark = shortName;
+    const cutPt = routeTrimResult.coords[routeTrimResult.coords.length - 1];
+    if (cutPt) {
+      next[lastIdx].lat = cutPt[0];
+      next[lastIdx].lng = cutPt[1];
+    }
+    // Reduce the leg length leading into arrival
+    if (lastIdx > 0 && next[lastIdx].distanceM === 0) {
+      next[lastIdx - 1].distanceM = Math.max(
+        0,
+        next[lastIdx - 1].distanceM - routeTrimResult.trimmedMeters,
+      );
+    } else {
+      next[lastIdx].distanceM = Math.max(
+        0,
+        next[lastIdx].distanceM - routeTrimResult.trimmedMeters,
+      );
+    }
+    return next;
+  }, [maneuvers, routeTrimResult, destOutdoorLandmark, toTargetId]);
+
   const routeLegs = useMemo(
     () =>
       routeResult?.found
@@ -877,6 +935,11 @@ export function AppShell() {
                       ? []
                       : outdoorRoutePath
                 }
+                destinationFootprint={
+                  mode !== "evacuate"
+                    ? (destOutdoorLandmark?.footprint ?? null)
+                    : null
+                }
                 trace={replayOpen ? traceReplay : null}
                 activeManeuver={activeManeuverForMap}
                 activeLegPath={activeLegPathForMap}
@@ -910,7 +973,7 @@ export function AppShell() {
             const activeManeuverSource = isEvacRoute
               ? myAssemblyManeuvers
               : routeResult?.found
-                ? maneuvers
+                ? effectiveManeuvers
                 : [];
             if (activeManeuverSource.length === 0) return null;
             const indoorManeuvers = activeIndoor
@@ -938,7 +1001,7 @@ export function AppShell() {
                 distanceM={
                   isEvacRoute
                     ? (myAssemblyResult?.distance ?? 0)
-                    : (routeResult?.distance ?? 0)
+                    : effectiveRouteDistanceM
                 }
                 algo={algo}
                 maneuvers={displayedManeuvers}
@@ -1269,7 +1332,7 @@ export function AppShell() {
                     <StatReadout
                       size="sm"
                       label="Distance"
-                      value={routeResult?.found ? routeResult.distance : 0}
+                      value={routeResult?.found ? effectiveRouteDistanceM : 0}
                       decimals={1}
                       unit="m"
                       tone="vermilion"
@@ -1280,7 +1343,7 @@ export function AppShell() {
                       label="Walk time"
                       value={
                         routeResult?.found
-                          ? Math.max(1, Math.round(routeResult.distance / 78))
+                          ? Math.max(1, Math.round(effectiveRouteDistanceM / 78))
                           : 0
                       }
                       unit="min"
