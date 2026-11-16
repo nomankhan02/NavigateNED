@@ -1615,7 +1615,8 @@ TEST_CASE("Task B4.3: Indoor-to-Outdoor Directions, Turn Reversal & Live Rerouti
 TEST_CASE("Nearest access node routing with toLandmark") {
     loadRealMergedGraph();
 
-    std::ifstream gf("data/graph.json");
+    const std::string dataDir = navcore::Graph::resolveDataDirectory("data");
+    std::ifstream gf(dataDir + "/graph.json");
     REQUIRE(gf.is_open());
     json gJson;
     gf >> gJson;
