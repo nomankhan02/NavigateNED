@@ -24,6 +24,7 @@ export type NavAlgo = "dijkstra" | "astar" | "bfs" | "bellmanford" | "floyd";
 export interface RouteRequest {
   from: string;
   to: string;
+  toLandmark?: string;
   algo?: NavAlgo;
   accessible?: boolean;
   avoid?: string[];
@@ -38,6 +39,7 @@ export interface RouteResponse {
   trace?: TraceEvent[];
   negativeCycle?: boolean;
   algo?: string;
+  toLandmark?: string;
   error?: string;
 }
 
@@ -282,6 +284,7 @@ export async function computeRoute(req: RouteRequest): Promise<RouteResponse> {
   return callNavCore<RouteResponse>("route", {
     from: req.from,
     to: req.to,
+    ...(req.toLandmark ? { toLandmark: req.toLandmark } : {}),
     algo: req.algo ?? "dijkstra",
     accessible: req.accessible ?? false,
     avoid: req.avoid ?? [],

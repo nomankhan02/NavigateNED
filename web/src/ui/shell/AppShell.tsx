@@ -332,9 +332,11 @@ export function AppShell() {
       setRouteError(null);
       setReplayOpen(false);
       try {
+        const isOutdoorLandmark = !toId.includes(":") && toId.startsWith("b-");
         const res = await computeRoute({
           from: fromId,
           to: toId,
+          toLandmark: isOutdoorLandmark ? toId : undefined,
           algo: selectedAlgo,
           accessible,
         });
