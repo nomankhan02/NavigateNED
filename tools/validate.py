@@ -269,6 +269,17 @@ def validate(graph_path="data/graph.json"):
         if not fp or not isinstance(fp, list) or len(fp) < 3:
             errors.append(f"Landmark '{lid}' must provide a closed footprint polygon (>= 3 points)")
 
+        access_ids = lm.get("accessNodeIds")
+        if access_ids is not None:
+            if not isinstance(access_ids, list) or not access_ids:
+                errors.append(f"Landmark '{lid}' accessNodeIds must be a non-empty list when present")
+            else:
+                for aid in access_ids:
+                    if aid not in node_ids:
+                        errors.append(f"Landmark '{lid}' accessNodeIds references nonexistent node '{aid}'")
+                if nid and nid not in access_ids:
+                    errors.append(f"Landmark '{lid}' accessNodeIds must include official entrance node '{nid}'")
+
     # 6. Indoor buildings validation (data/indoor/*.json)
     indoor_dir = os.path.join(os.path.dirname(graph_path), "indoor")
     indoor_summaries = []

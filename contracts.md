@@ -30,6 +30,7 @@
       "name": "Department of CS & IT",
       "short": "CSIT",
       "nodeId": "n1",
+      "accessNodeIds": ["n1", "n2"],
       "category": "academic",
       "footprint": [[24.9317, 67.1128], [24.9320, 67.1128], [24.9320, 67.1132], [24.9317, 67.1132]]
     }
@@ -37,6 +38,7 @@
 }
 ```
 - Node `kind` enum: `"path" | "entrance" | "gate" | "assembly" | "poi"`
+- Optional `landmarks[].accessNodeIds`: Array of outdoor node IDs (always includes `nodeId`) representing valid perimeter access points for outdoor routing.
 - Weights (`w`): Edge distances strictly in meters (cumulative Haversine distance along `geometry` when present).
 - Optional `geometry`: Array of `[lat, lng]` points along the real footpath from `a` to `b` (display-only; consumers must continue working when omitted).
 
@@ -90,7 +92,7 @@ call(fn: string, argsJson: string): string
 ### Exported Functions
 1. `load(graphJson: string) -> {"status": "ok" | "error", "message"?: string}`
 2. `ping() -> {"status": "pong", "version": string}`
-3. `route(args: {from: string, to: string, algo: "dijkstra"|"astar"|"bfs"|"bellmanford", accessible?: boolean, avoid?: string[]}) -> {found: boolean, distance: number, path: string[], steps: string[], trace: Array<{type: "visit"|"relax"|"frontier", node: string, dist: number}>}`
+3. `route(args: {from: string, to: string, toLandmark?: string, algo: "dijkstra"|"astar"|"bfs"|"bellmanford"|"floyd", accessible?: boolean, avoid?: string[]}) -> {found: boolean, distance: number, path: string[], steps: string[], trace: Array<{type: "visit"|"relax"|"frontier", node: string, dist: number}>}`
 4. `compare(args: {from: string, to: string}) -> {results: Record<string, {distance: number, timeMs: number, visitedCount: number}>}`
 5. `allPairs() -> {matrix: Record<string, Record<string, number>>}` (Floyd-Warshall)
 6. `mst() -> {totalWeight: number, edges: Array<{a: string, b: string, w: number}>}`
