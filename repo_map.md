@@ -32,6 +32,8 @@
 - `tools/.gitignore`: Git ignore rule excluding generated floor preview PNGs (`previews/`).
 - `tools/add_access_nodes.py`: Computes and attaches `landmarks[].accessNodeIds` (within 15 m of footprint, capped at 6, always including official `nodeId`) to `data/graph.json` and `web/public/data/graph.json`.
 - `tools/add_geometry.py`: Re-runnable footpath geometry and honest edge weight generator snapping to OSM ways and building exterior perimeters.
+- `tools/audit_crossings.py`: Audits outdoor edges against 25%-shrunk building footprints (ignoring endpoint-owned buildings).
+- `tools/fix_crossings.py`: Reroutes crossing edge geometries around obstacle footprints via a 4 m-pushed visibility graph and updates honest weights `w`.
 - `tools/extract_ned.py`: Re-runnable georeferenced dataset extraction pipeline from TraverseNED.
 - `tools/generate_evac.py`: Re-runnable emergency evacuation assembly areas and building exits generator.
 - `tools/generate_indoor.py`: Re-runnable multi-floor indoor graph and PNG preview generator for 6 buildings.

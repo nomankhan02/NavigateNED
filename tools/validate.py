@@ -555,6 +555,13 @@ def validate(graph_path="data/graph.json"):
     print(f"Connected Components: 1 (Connected: {len(visited) == len(node_ids)})" if node_ids else "Empty")
     if geom_checked_count > 0:
         print(f"Edges with Geometry: {geom_checked_count}/{len(edges)} (Improved: {geom_improved_count}, Straight fallback: {geom_straight_count})")
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from audit_crossings import find_crossings
+        remaining_crossings = find_crossings(data, 0.25)
+        print(f"Remaining 25%-shrunk footprint crossings: {len(remaining_crossings)}")
+    except Exception as exc:
+        warnings.append(f"Could not run 25%-shrunk crossing check: {exc}")
 
     if indoor_summaries:
         print(f"\n--- Indoor Validation Report ({len(indoor_summaries)} buildings) ---")
